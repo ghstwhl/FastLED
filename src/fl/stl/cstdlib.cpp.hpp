@@ -19,10 +19,13 @@ namespace fl {
 // ============================================================================
 
 void *aligned_alloc(fl::size_t alignment, fl::size_t size) {
-#if defined(FL_IS_AVR) || defined(FL_IS_ESP8266) || defined(FL_IS_NRF52) || defined(FL_IS_APOLLO3)
-    // nRF52/Apollo3 newlib_nano's aligned_alloc calls posix_memalign which
-    // doesn't exist on bare-metal.  Fall back to plain malloc (sufficient for
-    // the alignments FastLED actually requests on these targets).
+#if defined(FL_IS_AVR) || defined(FL_IS_ESP8266) || defined(FL_IS_ARM) || defined(FL_IS_APOLLO3)
+    // Many bare-metal toolchains (newlib-nano on STM32, nRF52, SAMD, RP2040,
+    // Teensy, etc.) ship an aligned_alloc that internally calls
+    // posix_memalign, which doesn't exist on bare-metal and causes an
+    // "undefined reference to `posix_memalign'" link error.
+    // Fall back to plain malloc — sufficient for the alignments FastLED
+    // actually requests on these constrained targets.
     (void)alignment;
     return ::malloc(size);
 #elif defined(FL_IS_WIN)
@@ -34,7 +37,7 @@ void *aligned_alloc(fl::size_t alignment, fl::size_t size) {
 }
 
 void aligned_free(void *ptr) {
-#if defined(FL_IS_AVR) || defined(FL_IS_ESP8266) || defined(FL_IS_NRF52) || defined(FL_IS_APOLLO3)
+#if defined(FL_IS_AVR) || defined(FL_IS_ESP8266) || defined(FL_IS_ARM) || defined(FL_IS_APOLLO3)
     ::free(ptr);
 #elif defined(FL_IS_WIN)
     ::_aligned_free(ptr);
