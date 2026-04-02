@@ -22,6 +22,7 @@ from ci.lint.stage_impls import (
     run_iwyu_pragma_check,
     run_js_lint,
     run_js_lint_single_file,
+    run_noexcept_check,
     run_python_lint_single_file,
     run_python_pipeline,
 )
@@ -189,6 +190,8 @@ def create_stages(args: LintArgs) -> list[LintStage]:
             ):
                 return False
             if not run_clang_tidy(args.no_fingerprint, args.run_tidy):
+                return False
+            if not run_noexcept_check(args.run_tidy):
                 return False
             return True
 

@@ -131,6 +131,65 @@ def run_clang_tidy(no_fingerprint: bool, run_tidy: bool) -> bool:
         return True
 
 
+def run_noexcept_check(run_tidy: bool) -> bool:
+    """
+    Run FL_NOEXCEPT enforcement on ESP32 driver functions.
+
+    Uses clang-query AST analysis to find functions missing FL_NOEXCEPT
+    in platforms/esp/32/drivers/. Requires clang-query to be installed.
+
+    Args:
+        run_tidy: Only run when --tidy is enabled
+
+    Returns:
+        True if check passed (or skipped), False if violations found
+    """
+    print("")
+    print("🔍 FL_NOEXCEPT ESP32 DRIVER CHECK")
+    print("-----------------------------------")
+
+    if not run_tidy:
+        print("⏭️  noexcept check skipped (use --tidy to enable)")
+        return True
+
+    from ci.lint.clang_tidy.noexcept_esp32_drivers import (
+        _find_clang_query,
+        _find_missing_noexcept,
+    )
+
+    clang_query = _find_clang_query()
+    if not clang_query:
+        print("⏭️  noexcept check skipped (clang-query not found)")
+        return True
+
+    print(f"Using: {clang_query}")
+    print("Running clang-query AST analysis on ESP32 drivers...")
+
+    hits = _find_missing_noexcept(clang_query)
+
+    if not hits:
+        print("✅ All ESP32 driver functions have FL_NOEXCEPT")
+        return True
+
+    # Group by file for display
+    by_file: dict[str, list[tuple[int, str]]] = {}
+    for filepath, line_num, line_text in hits:
+        by_file.setdefault(filepath, []).append((line_num, line_text))
+
+    print(
+        f"\n❌ Found {len(hits)} functions missing FL_NOEXCEPT in {len(by_file)} files:"
+    )
+    for filepath in sorted(by_file):
+        print(f"  {filepath}:")
+        for line_num, line_text in sorted(by_file[filepath]):
+            print(f"    Line {line_num}: {line_text}")
+
+    print(
+        "\n💡 Auto-fix: uv run python ci/lint/clang_tidy/noexcept_esp32_drivers.py --fix"
+    )
+    return False
+
+
 def run_cpp_lint(no_fingerprint: bool, run_full: bool, run_iwyu: bool) -> bool:
     """
     Run C++ linting stage.
