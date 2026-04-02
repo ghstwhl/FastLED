@@ -128,6 +128,7 @@ FL_TEST_CASE("tcp::socket - Loopback connect and I/O") {
         size_t n = server_peer.read_some(
             fl::span<fl::u8>(buf + total_read, sizeof(buf) - total_read), ec);
         if (ec.code == errc::would_block) {
+            fl::this_thread::sleep_for(fl::chrono::milliseconds(10));  // ok sleep for - blocking retry in test
             continue;
         }
         if (!ec.ok()) {

@@ -5,6 +5,16 @@
 
 namespace fl {
 
+namespace {
+// Clamp a float to [0, 255] before casting to u8, avoiding UB from
+// out-of-range float-to-integer conversion.
+inline u8 clamp_u8(float v) {
+    if (v <= 0.0f) return 0;
+    if (v >= 255.0f) return 255;
+    return u8(v);
+}
+} // namespace
+
 // ---------------------------------------------------------------------------
 // Particle structs
 // ---------------------------------------------------------------------------
@@ -279,7 +289,7 @@ void PerlinParticlePunch::writeMax(CRGB &dst, const CRGB &src) {
 void PerlinParticlePunch::renderAmbient(const AmbientParticle &p) {
     int center = int(p.position);
     float frac = p.position - float(center);
-    u8 bri = u8(p.brightness);
+    u8 bri = clamp_u8(p.brightness);
     CRGB baseColor =
         ColorFromPalette(mAmbientPalette, p.paletteIndex, bri, LINEARBLEND);
 
@@ -291,17 +301,17 @@ void PerlinParticlePunch::renderAmbient(const AmbientParticle &p) {
         // Linear falloff: 100% at head → 20% at tail of gradient
         float falloff = 1.0f - (float(offset) / float(p.headWidth)) * 0.8f;
         CRGB pixel = baseColor;
-        pixel.nscale8(u8(falloff * 255.0f));
+        pixel.nscale8(clamp_u8(falloff * 255.0f));
 
         // Sub-pixel blending for the leading edge
         if (offset == 0 && frac > 0.01f) {
             int nextIdx = center + 1;
             if (nextIdx < mNumLeds) {
                 CRGB subPixel = pixel;
-                subPixel.nscale8(u8(frac * 255.0f));
+                subPixel.nscale8(clamp_u8(frac * 255.0f));
                 writeMax(mTrailBuffer[nextIdx], subPixel);
             }
-            pixel.nscale8(u8((1.0f - frac) * 255.0f));
+            pixel.nscale8(clamp_u8((1.0f - frac) * 255.0f));
         }
 
         writeMax(mTrailBuffer[idx], pixel);
@@ -318,7 +328,7 @@ void PerlinParticlePunch::renderMeteor(const MeteorParticle &m) {
         if (idx < 0 || idx >= mNumLeds)
             continue;
         float weight = kGaussian[offset + 2];
-        u8 bri = u8(255.0f * m.intensity * weight);
+        u8 bri = clamp_u8(255.0f * m.intensity * weight);
         // Re-entry sparkle: random brightness jitter per pixel per frame
         bri = scale8(bri, random8(153, 255));
         CRGB headColor = mMeteorHeadColor;
@@ -338,11 +348,11 @@ void PerlinParticlePunch::renderMeteor(const MeteorParticle &m) {
 
         // t: 0.0 at head, 1.0 at tail tip
         float t = float(i) / float(tailPixels);
-        fract8 blendAmt = u8(t * 255.0f);
+        fract8 blendAmt = clamp_u8(t * 255.0f);
         CRGB tailColor = blend(mMeteorMidColor, mMeteorTailColor, blendAmt);
         // Quadratic brightness falloff along tail
         float bri = (1.0f - t * t) * m.intensity;
-        tailColor.nscale8(u8(bri * 255.0f));
+        tailColor.nscale8(clamp_u8(bri * 255.0f));
         writeMax(mTrailBuffer[idx], tailColor);
     }
 }
@@ -350,19 +360,19 @@ void PerlinParticlePunch::renderMeteor(const MeteorParticle &m) {
 void PerlinParticlePunch::renderDebris(const DebrisParticle &d) {
     int idx = int(d.position);
     float frac = d.position - float(idx);
-    u8 bri = u8(d.brightness);
+    u8 bri = clamp_u8(d.brightness);
     CRGB pixel = d.color;
     pixel.nscale8(bri);
 
     if (idx >= 0 && idx < mNumLeds) {
         CRGB main = pixel;
-        main.nscale8(u8((1.0f - frac) * 255.0f));
+        main.nscale8(clamp_u8((1.0f - frac) * 255.0f));
         writeMax(mTrailBuffer[idx], main);
     }
     int nextIdx = idx + 1;
     if (nextIdx >= 0 && nextIdx < mNumLeds && frac > 0.01f) {
         CRGB sub = pixel;
-        sub.nscale8(u8(frac * 255.0f));
+        sub.nscale8(clamp_u8(frac * 255.0f));
         writeMax(mTrailBuffer[nextIdx], sub);
     }
 }
@@ -373,7 +383,7 @@ void PerlinParticlePunch::spawnDebrisFromMeteor(MeteorParticle &m, u32) {
         return;
 
     float tailLen = m.tailLength();
-    u8 maxOffset = u8(tailLen);
+    u8 maxOffset = clamp_u8(tailLen);
     if (maxOffset < 3)
         maxOffset = 3;
     float spawnOffset = float(random8(2, maxOffset));
@@ -385,7 +395,7 @@ void PerlinParticlePunch::spawnDebrisFromMeteor(MeteorParticle &m, u32) {
     float t = spawnOffset / tailLen;
     if (t > 1.0f)
         t = 1.0f;
-    fract8 blendAmt = u8(t * 255.0f);
+    fract8 blendAmt = clamp_u8(t * 255.0f);
     CRGB debrisColor = blend(mMeteorMidColor, mMeteorTailColor, blendAmt);
 
     d->alive = true;

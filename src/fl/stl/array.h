@@ -111,6 +111,55 @@ template <typename T, fl::size N> class array {
     }
 };
 
+// Specialization for zero-size array to avoid T mData[0] UB.
+template <typename T> class array<T, 0> {
+  public:
+    using value_type = T;
+    using size_type = fl::size;
+    using difference_type = ptrdiff_t;
+    using reference = value_type &;
+    using const_reference = const value_type &;
+    using pointer = value_type *;
+    using const_pointer = const value_type *;
+    using iterator = pointer;
+    using const_iterator = const_pointer;
+
+    // Element access — all return error_value since there are no elements
+    T &at(fl::size) FL_NOEXCEPT { return error_value(); }
+    const T &at(fl::size) const FL_NOEXCEPT { return error_value(); }
+    T &operator[](fl::size) FL_NOEXCEPT { return error_value(); }
+    const_reference operator[](fl::size) const FL_NOEXCEPT { return error_value(); }
+    T &front() FL_NOEXCEPT { return error_value(); }
+    const T &front() const FL_NOEXCEPT { return error_value(); }
+    T &back() FL_NOEXCEPT { return error_value(); }
+    const T &back() const FL_NOEXCEPT { return error_value(); }
+    pointer data() FL_NOEXCEPT { return nullptr; }
+    const_pointer data() const FL_NOEXCEPT { return nullptr; }
+
+    // Iterators — begin == end for empty container
+    iterator begin() FL_NOEXCEPT { return nullptr; }
+    const_iterator begin() const FL_NOEXCEPT { return nullptr; }
+    const_iterator cbegin() const FL_NOEXCEPT { return nullptr; }
+    iterator end() FL_NOEXCEPT { return nullptr; }
+    const_iterator end() const FL_NOEXCEPT { return nullptr; }
+    const_iterator cend() const FL_NOEXCEPT { return nullptr; }
+
+    // Capacity
+    bool empty() const FL_NOEXCEPT { return true; }
+    fl::size size() const FL_NOEXCEPT { return 0; }
+    fl::size max_size() const FL_NOEXCEPT { return 0; }
+
+    // Operations
+    void fill(const T &) FL_NOEXCEPT {}
+    void swap(array &) FL_NOEXCEPT {}
+
+  private:
+    static T &error_value() FL_NOEXCEPT {
+        static T empty_value;
+        return empty_value;
+    }
+};
+
 // Non-member functions
 template <typename T, fl::size N>
 bool operator==(const array<T, N> &lhs, const array<T, N> &rhs) FL_NOEXCEPT {

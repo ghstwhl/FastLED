@@ -99,8 +99,10 @@ constexpr i64 log2_h0(i64 t) FL_NOEXCEPT {
 }
 
 constexpr i32 log2_with_msb(u32 val, int msb) FL_NOEXCEPT {
+    // Use multiplication instead of left-shift to avoid UB when (msb - FRAC)
+    // is negative (left-shifting a negative value is undefined in C++).
     return static_cast<i32>(
-        (static_cast<i64>(msb - FRAC) << FRAC) +
+        static_cast<i64>(msb - FRAC) * static_cast<i64>(1LL << FRAC) +
         log2_h0(static_cast<i64>(log2_t(val, msb)))
     );
 }
