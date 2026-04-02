@@ -3,10 +3,11 @@ from ci.util.global_interrupt_handler import handle_keyboard_interrupt
 
 #!/usr/bin/env python3
 """
-CI Build Scanner — lists all builds with status, URLs, and error logs for failures.
+CI Build Scanner — lists all builds and tests with status, URLs, and error logs for failures.
 
-Auto-discovers builds from .github/workflows/build_*.yml files so that adding
-a new workflow automatically adds it to the report.
+Auto-discovers workflows from .github/workflows/ matching build_*.yml,
+unit_test_*.yml, and example_test_*.yml so that adding a new workflow
+automatically adds it to the report.
 
 Usage:
     uv run ci/tools/gh/ci_builds.py                  # list all builds
@@ -31,6 +32,8 @@ from typing import Any, Optional
 # Priority list: builds are sorted so these appear first (in order)
 # ---------------------------------------------------------------------------
 PRIORITY_BOARDS = [
+    "unit_test",
+    "example_test",
     "uno",
     "attiny85",
     "esp32s3",
@@ -44,6 +47,15 @@ _EXCLUDE_PATTERNS = [
     "build_clone_and_compile",
     "build_esp_extra_libs",
     "build_wasm_compilers",
+    "template_unit_test",
+    "template_example_test",
+]
+
+# Glob patterns for workflow discovery (in addition to build_*.yml)
+_WORKFLOW_GLOBS = [
+    "build_*.yml",
+    "unit_test_*.yml",
+    "example_test_*.yml",
 ]
 
 
@@ -69,8 +81,9 @@ class BuildInfo:
     def priority_index(self) -> int:
         """Lower = higher priority.  Boards not in the list get a large number."""
         name_lower = self.name.lower()
+        file_lower = self.workflow_file.lower()
         for i, board in enumerate(PRIORITY_BOARDS):
-            if board in name_lower:
+            if board in name_lower or board in file_lower:
                 return i
         return len(PRIORITY_BOARDS) + 1000
 
@@ -101,35 +114,42 @@ def _get_repo() -> str:
 
 
 def discover_builds(repo_root: Path) -> list[BuildInfo]:
-    """Discover all build workflow files and extract metadata."""
+    """Discover all build and test workflow files and extract metadata."""
     workflows_dir = repo_root / ".github" / "workflows"
     builds: list[BuildInfo] = []
+    seen_files: set[str] = set()
 
-    for wf_path in sorted(workflows_dir.glob("build_*.yml")):
-        filename = wf_path.name
+    for glob_pattern in _WORKFLOW_GLOBS:
+        for wf_path in sorted(workflows_dir.glob(glob_pattern)):
+            filename = wf_path.name
 
-        # Skip templates and meta-builds
-        if any(pat in filename for pat in _EXCLUDE_PATTERNS):
-            continue
+            # Deduplicate across glob patterns
+            if filename in seen_files:
+                continue
+            seen_files.add(filename)
 
-        # Read the workflow to get the name and args
-        text = wf_path.read_text(encoding="utf-8")
+            # Skip templates and meta-builds
+            if any(pat in filename for pat in _EXCLUDE_PATTERNS):
+                continue
 
-        # Extract `name:` (first occurrence, top-level)
-        name_match = re.search(r"^name:\s*(.+)$", text, re.MULTILINE)
-        name = name_match.group(1).strip() if name_match else filename
+            # Read the workflow to get the name and args
+            text = wf_path.read_text(encoding="utf-8")
 
-        # Extract args passed to build_template
-        args_match = re.search(r'args:\s*["\']?([^"\'"\n]+)', text)
-        args = args_match.group(1).strip() if args_match else ""
+            # Extract `name:` (first occurrence, top-level)
+            name_match = re.search(r"^name:\s*(.+)$", text, re.MULTILINE)
+            name = name_match.group(1).strip() if name_match else filename
 
-        builds.append(
-            BuildInfo(
-                name=name,
-                workflow_file=filename,
-                args=args,
+            # Extract args passed to build_template
+            args_match = re.search(r'args:\s*["\']?([^"\'"\n]+)', text)
+            args = args_match.group(1).strip() if args_match else ""
+
+            builds.append(
+                BuildInfo(
+                    name=name,
+                    workflow_file=filename,
+                    args=args,
+                )
             )
-        )
 
     return builds
 
@@ -384,7 +404,12 @@ Examples:
         builds = [
             b
             for b in builds
-            if any(f in b.name.lower() or f in b.args.lower() for f in filters)
+            if any(
+                f in b.name.lower()
+                or f in b.args.lower()
+                or f in b.workflow_file.lower()
+                for f in filters
+            )
         ]
         print(f"Filtered to {len(builds)} build(s)", file=sys.stderr)
 
