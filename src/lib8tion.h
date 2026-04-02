@@ -21,6 +21,9 @@
 #include "fl/math/memmove.h"
 #include "platforms/math8_config.h"
 #include "fl/math/ease.h"
+#include "fl/math/squarewave.h"
+#include "fl/math/beat.h"
+#include "fl/math/time_functions.h"
 #include "fl/stl/chrono.h"
 
 
@@ -293,6 +296,21 @@ using fl::q44;
 using fl::q62;
 using fl::q88;
 using fl::q124;
+// squarewave.h (namespace fl)
+using fl::squarewave8;
+// beat.h (namespace fl)
+using fl::beat88;
+using fl::beat16;
+using fl::beat8;
+using fl::beatsin88;
+using fl::beatsin16;
+using fl::beatsin8;
+// time_functions.h (namespace fl)
+using fl::seconds16;
+using fl::minutes16;
+using fl::hours8;
+using fl::div1024_32_16;
+using fl::bseconds16;
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -690,37 +708,8 @@ LIB8STATIC fl::u8 cubicwave8(fl::u8 in)
 }
 
 
-/// Square wave generator.
-/// Useful for turning a one-byte ever-increasing value
-/// into a one-byte value that is either 0 or 255.
-/// The width of the output "pulse" is determined by
-/// the pulsewidth argument:
-///   @code
-///   if pulsewidth is 255, output is always 255.
-///   if pulsewidth < 255, then
-///     if input < pulsewidth  then output is 255
-///     if input >= pulsewidth then output is 0
-///   @endcode
-///
-/// The output looking like:
-///
-///   @code
-///     255   +--pulsewidth--+
-///      .    |              |
-///      0    0              +--------(256-pulsewidth)--------
-///   @endcode
-///
-/// @param in input value
-/// @param pulsewidth width of the output pulse
-/// @returns square wave output
-LIB8STATIC fl::u8 squarewave8( fl::u8 in, u8 pulsewidth=128)
-{
-    if( in < pulsewidth || (pulsewidth == 255)) {
-        return 255;
-    } else {
-        return 0;
-    }
-}
+// squarewave8 is now in fl/math/squarewave.h (namespace fl),
+// brought into global scope via 'using fl::squarewave8' above.
 
 /// @} WaveformGenerators
 
@@ -761,240 +750,11 @@ fl::u32 get_millisecond_timer();
 /// @{
 
 
-///////////////////////////////////////////////////////////////////////
-///
-/// @defgroup BeatGenerators Waveform Beat Generators
-/// Waveform generators that reset at a given number
-/// of "beats per minute" (BPM).
-///
-/// The standard "beat" functions generate "sawtooth" waves which rise from
-/// 0 up to a max value and then reset, continuously repeating that cycle at
-/// the specified frequency (BPM).
-///
-/// The "sin" versions function similarly, but create an oscillating sine wave
-/// at the specified frequency.
-///
-/// BPM can be supplied two ways. The simpler way of specifying BPM is as
-/// a simple 8-bit integer from 1-255, (e.g., "120").
-/// The more sophisticated way of specifying BPM allows for fractional
-/// "Q8.8" fixed point number (an ::accum88) with an 8-bit integer part and
-/// an 8-bit fractional part.  The easiest way to construct this is to multiply
-/// a floating point BPM value (e.g. 120.3) by 256, (e.g. resulting in 30796
-/// in this case), and pass that as the 16-bit BPM argument.
-///
-/// Originally these functions were designed to make an entire animation project pulse.
-/// with brightness. For that effect, add this line just above your existing call to
-/// "FastLED.show()":
-///   @code
-///   uint8_t bright = beatsin8( 60 /*BPM*/, 192 /*dimmest*/, 255 /*brightest*/ ));
-///   FastLED.setBrightness( bright );
-///   FastLED.show();
-///   @endcode
-///
-/// The entire animation will now pulse between brightness 192 and 255 once per second.
-///
-/// @warning Any "BPM88" parameter **MUST** always be provided in Q8.8 format!
-/// @note The beat generators need access to a millisecond counter
-/// to track elapsed time. See ::GET_MILLIS for reference. When using the Arduino
-/// `millis()` function, accuracy is a bit better than one part in a thousand.
-///
-/// @{
+// Beat generators (beat88, beat16, beat8, beatsin88, beatsin16, beatsin8) are now
+// in fl/math/beat.h (namespace fl), brought into global scope via 'using' above.
 
-
-/// Generates a 16-bit "sawtooth" wave at a given BPM, with BPM
-/// specified in Q8.8 fixed-point format.
-/// @param beats_per_minute_88 the frequency of the wave, in Q8.8 format
-/// @param timebase the time offset of the wave from the millis() timer
-/// @warning The BPM parameter **MUST** be provided in Q8.8 format! E.g.
-/// for 120 BPM it would be 120*256 = 30720. If you just want to specify
-/// "120", use beat16() or beat8().
-LIB8STATIC fl::u16 beat88( accum88 beats_per_minute_88, u32 timebase = 0)
-{
-    // BPM is 'beats per minute', or 'beats per 60000ms'.
-    // To avoid using the (slower) division operator, we
-    // want to convert 'beats per 60000ms' to 'beats per 65536ms',
-    // and then use a simple, fast bit-shift to divide by 65536.
-    //
-    // The ratio 65536:60000 is 279.620266667:256; we'll call it 280:256.
-    // The conversion is accurate to about 0.05%, more or less,
-    // e.g. if you ask for "120 BPM", you'll get about "119.93".
-    return (((GET_MILLIS()) - timebase) * beats_per_minute_88 * 280) >> 16;
-}
-
-/// Generates a 16-bit "sawtooth" wave at a given BPM
-/// @param beats_per_minute the frequency of the wave, in decimal
-/// @param timebase the time offset of the wave from the millis() timer
-LIB8STATIC fl::u16 beat16( accum88 beats_per_minute, u32 timebase = 0)
-{
-    // Convert simple 8-bit BPM's to full Q8.8 accum88's if needed
-    if( beats_per_minute < 256) beats_per_minute <<= 8;
-    return beat88(beats_per_minute, timebase);
-}
-
-/// Generates an 8-bit "sawtooth" wave at a given BPM
-/// @param beats_per_minute the frequency of the wave, in decimal
-/// @param timebase the time offset of the wave from the millis() timer
-LIB8STATIC fl::u8 beat8( accum88 beats_per_minute, u32 timebase = 0)
-{
-    return beat16( beats_per_minute, timebase) >> 8;
-}
-
-
-/// Generates a 16-bit sine wave at a given BPM that oscillates within
-/// a given range.
-/// @param beats_per_minute_88 the frequency of the wave, in Q8.8 format
-/// @param lowest the lowest output value of the sine wave
-/// @param highest the highest output value of the sine wave
-/// @param timebase the time offset of the wave from the millis() timer
-/// @param phase_offset phase offset of the wave from the current position
-/// @warning The BPM parameter **MUST** be provided in Q8.8 format! E.g.
-/// for 120 BPM it would be 120*256 = 30720. If you just want to specify
-/// "120", use beatsin16() or beatsin8().
-LIB8STATIC fl::u16 beatsin88( accum88 beats_per_minute_88, fl::u16 lowest = 0, fl::u16 highest = 65535,
-                              fl::u32 timebase = 0, fl::u16 phase_offset = 0)
-{
-    fl::u16 beat = beat88( beats_per_minute_88, timebase);
-    fl::u16 beatsin = (sin16( beat + phase_offset) + 32768);
-    fl::u16 rangewidth = highest - lowest;
-    fl::u16 scaledbeat = scale16( beatsin, rangewidth);
-    fl::u16 result = lowest + scaledbeat;
-    // With FASTLED_SCALE8_FIXED=1, scale16 can return rangewidth+1, causing overflow
-    if (result > highest) {
-        result = highest;
-    }
-    return result;
-}
-
-/// Generates a 16-bit sine wave at a given BPM that oscillates within
-/// a given range.
-/// @param beats_per_minute the frequency of the wave, in decimal
-/// @param lowest the lowest output value of the sine wave
-/// @param highest the highest output value of the sine wave
-/// @param timebase the time offset of the wave from the millis() timer
-/// @param phase_offset phase offset of the wave from the current position
-LIB8STATIC fl::u16 beatsin16( accum88 beats_per_minute, fl::u16 lowest = 0, fl::u16 highest = 65535,
-                               fl::u32 timebase = 0, fl::u16 phase_offset = 0)
-{
-    fl::u16 beat = beat16( beats_per_minute, timebase);
-    fl::u16 beatsin = (sin16( beat + phase_offset) + 32768);
-    fl::u16 rangewidth = highest - lowest;
-    fl::u16 scaledbeat = scale16( beatsin, rangewidth);
-    fl::u16 result = lowest + scaledbeat;
-    // With FASTLED_SCALE8_FIXED=1, scale16 can return rangewidth+1, causing overflow
-    if (result > highest) {
-        result = highest;
-    }
-    return result;
-}
-
-/// Generates an 8-bit sine wave at a given BPM that oscillates within
-/// a given range.
-/// @param beats_per_minute the frequency of the wave, in decimal
-/// @param lowest the lowest output value of the sine wave
-/// @param highest the highest output value of the sine wave
-/// @param timebase the time offset of the wave from the millis() timer
-/// @param phase_offset phase offset of the wave from the current position
-LIB8STATIC fl::u8 beatsin8( accum88 beats_per_minute, fl::u8 lowest = 0, u8 highest = 255,
-                            fl::u32 timebase = 0, fl::u8 phase_offset = 0)
-{
-    fl::u8 beat = beat8( beats_per_minute, timebase);
-    fl::u8 beatsin = sin8( beat + phase_offset);
-    fl::u8 rangewidth = highest - lowest;
-    fl::u8 scaledbeat = scale8( beatsin, rangewidth);
-    fl::u8 result = lowest + scaledbeat;
-    // With FASTLED_SCALE8_FIXED=1, scale8 can return rangewidth+1, causing overflow
-    if (result > highest) {
-        result = highest;
-    }
-    return result;
-}
-
-/// @} BeatGenerators
-
-/// @} lib8tion, to exclude timekeeping functions
-
-
-///////////////////////////////////////////////////////////////////////
-///
-/// @addtogroup Timekeeping
-/// @{
-
-/// Return the current seconds since boot in a 16-bit value.  Used as part of the
-/// "every N time-periods" mechanism
-LIB8STATIC fl::u16 seconds16()
-{
-    fl::u32 ms = GET_MILLIS();
-    fl::u16 s16;
-    s16 = ms / 1000;
-    return s16;
-}
-
-/// Return the current minutes since boot in a 16-bit value.  Used as part of the
-/// "every N time-periods" mechanism
-LIB8STATIC fl::u16 minutes16()
-{
-    fl::u32 ms = GET_MILLIS();
-    fl::u16 m16;
-    m16 = (ms / (60000L)) & 0xFFFF;
-    return m16;
-}
-
-/// Return the current hours since boot in an 8-bit value.  Used as part of the
-/// "every N time-periods" mechanism
-LIB8STATIC fl::u8 hours8()
-{
-    fl::u32 ms = GET_MILLIS();
-    fl::u8 h8;
-    h8 = (ms / (3600000L)) & 0xFF;
-    return h8;
-}
-
-
-/// Helper routine to divide a 32-bit value by 1024, returning
-/// only the low 16 bits. 
-/// You'd think this would be just
-///   @code
-///   result = (in32 >> 10) & 0xFFFF;
-///   @endcode
-/// And on ARM, that's what you want and all is well.
-/// But on AVR that code turns into a loop that executes
-/// a four-byte shift ten times: 40 shifts in all, plus loop
-/// overhead. This routine gets exactly the same result with
-/// just six shifts (vs 40), and no loop overhead.
-/// Used to convert millis to "binary seconds" aka bseconds:
-/// one bsecond == 1024 millis.
-LIB8STATIC fl::u16 div1024_32_16( u32 in32)
-{
-    fl::u16 out16;
-#if defined(FL_IS_AVR)
-    asm volatile (
-        "  lsr %D[in]  \n\t"
-        "  ror %C[in]  \n\t"
-        "  ror %B[in]  \n\t"
-        "  lsr %D[in]  \n\t"
-        "  ror %C[in]  \n\t"
-        "  ror %B[in]  \n\t"
-        "  mov %B[out],%C[in] \n\t"
-        "  mov %A[out],%B[in] \n\t"
-        : [in] "+r" (in32),
-        [out] "=r" (out16)
-    );
-#else
-    out16 = (in32 >> 10) & 0xFFFF;
-#endif
-    return out16;
-}
-
-/// Returns the current time-since-boot in
-/// "binary seconds", which are actually 1024/1000 of a
-/// second long.
-LIB8STATIC fl::u16 bseconds16()
-{
-    fl::u32 ms = GET_MILLIS();
-    fl::u16 s16;
-    s16 = div1024_32_16( ms);
-    return s16;
-}
+// Time functions (seconds16, minutes16, hours8, div1024_32_16, bseconds16) are now
+// in fl/math/time_functions.h (namespace fl), brought into global scope via 'using' above.
 
 /// Preprocessor-based class "template" for ::CEveryNTime, used with `EVERY_N_TIME` timekeepers. 
 /// Classes to implement ::EVERY_N_MILLIS, ::EVERY_N_SECONDS,
