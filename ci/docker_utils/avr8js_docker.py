@@ -149,10 +149,15 @@ class DockerAVR8jsRunner:
 
         try:
             # Run Docker container and capture output
+            # capture_output=True is required so result.stdout contains the
+            # emulator serial output; without it stdout is None and the
+            # output file is never written (causing "No Output" CI failure).
             result = RunningProcess.run(
                 docker_cmd,
                 cwd=None,
                 check=False,
+                capture_output=True,
+                text=True,
                 timeout=timeout + 10,  # Add buffer to Docker timeout
             )
 

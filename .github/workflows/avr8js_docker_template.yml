@@ -392,10 +392,10 @@ jobs:
           echo ""
 
           # Check for expected output patterns
-          if grep -q "SETUP COMPLETE" avr8js_output.log; then
-            echo "  ✅ Found: 'SETUP COMPLETE' message"
+          if grep -q "Test setup starting" avr8js_output.log; then
+            echo "  ✅ Found: 'Test setup starting' message"
           else
-            echo "  ❌ Missing: 'SETUP COMPLETE' message"
+            echo "  ❌ Missing: 'Test setup starting' message"
             echo ""
             echo "Expected pattern not found. Test failed."
             exit 1
