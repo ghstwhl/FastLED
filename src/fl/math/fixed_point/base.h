@@ -13,6 +13,7 @@
 #include "fl/stl/stdint.h"
 #include "fl/stl/type_traits.h"
 #include "fl/stl/noexcept.h"
+#include "fl/stl/undef.h"  // Undefine abs/min/max macros from Arduino.h
 
 FL_OPTIMIZATION_LEVEL_O3_BEGIN
 
