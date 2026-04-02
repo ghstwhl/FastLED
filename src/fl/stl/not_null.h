@@ -18,7 +18,7 @@
 // - Desktop/Host: Full assertion support with detailed error messages
 // - ESP32: Serial output via fl::println() with assertion message
 // - WASM: Browser console warning + debugger breakpoint (emscripten_debugger)
-// - AVR: Lightweight assertion (FASTLED_WARN_IF) due to memory constraints
+// - AVR: Lightweight assertion (FL_WARN_IF) due to memory constraints
 // - All platforms: Assertions only active in debug builds (FL_DEBUG defined)
 //
 // Usage Example:
@@ -122,7 +122,7 @@ public:
 // assertion behavior:
 // - Debug builds (FL_DEBUG defined): Active runtime checks with error messages
 // - Release builds: Assertions are compiled out (zero overhead, undefined behavior if violated)
-// - Desktop platforms: Full assertion support via FASTLED_WARN_IF
+// - Desktop platforms: Full assertion support via FL_WARN_IF
 // - ESP32: Serial output with panic behavior (fl::println + potential halt)
 // - WASM: Browser debugger breakpoint (emscripten_debugger())
 // - AVR: Lightweight warnings (memory constrained)

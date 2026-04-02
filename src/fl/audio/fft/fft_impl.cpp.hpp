@@ -68,7 +68,7 @@ class Context {
 
         mFftrCfg = kiss_fftr_alloc(samples, 0, nullptr, nullptr);
         if (!mFftrCfg) {
-            FASTLED_WARN("Failed to allocate Impl context");
+            FL_WARN("Failed to allocate Impl context");
             return;
         }
 
@@ -86,7 +86,7 @@ class Context {
             initOctaveWise(samples, bands, fmin, fmax, sample_rate);
             break;
         case Mode::AUTO:
-            FASTLED_WARN("Mode::AUTO should have been resolved");
+            FL_WARN("Mode::AUTO should have been resolved");
             break;
         }
     }
@@ -128,7 +128,7 @@ class Context {
             runHybrid(buffer, out);
             break;
         case Mode::AUTO:
-            FASTLED_WARN("Mode::AUTO should have been resolved");
+            FL_WARN("Mode::AUTO should have been resolved");
             break;
         }
     }
@@ -1139,7 +1139,7 @@ fl::string Impl::info() const {
     if (mContext) {
         return mContext->info();
     } else {
-        FASTLED_WARN("Impl context is not initialized");
+        FL_WARN("Impl context is not initialized");
         return fl::string();
     }
 }
@@ -1162,7 +1162,7 @@ Impl::Result Impl::run(span<const i16> sample, Bins *out) {
         return Impl::Result(false, "Impl context is not initialized");
     }
     if (sample.size() != mContext->sampleSize()) {
-        FASTLED_WARN("Impl sample size mismatch");
+        FL_WARN("Impl sample size mismatch");
         return Impl::Result(false, "Impl sample size mismatch");
     }
     mContext->run(sample, out);

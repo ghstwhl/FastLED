@@ -4,6 +4,33 @@
 #include "fl/stl/strstream.h"  // IWYU pragma: keep - Required by FL_WARN/FL_ERROR/FL_DBG macros
 #include "fl/stl/chrono.h"       // IWYU pragma: keep - Required by FL_WARN_EVERY/FL_DBG_EVERY/FL_PRINT_EVERY macros
 
+// =============================================================================
+// FL_LOG_*_ENABLED → FASTLED_LOG_*_ENABLED backward compatibility
+// =============================================================================
+// Users can now use the shorter FL_LOG_*_ENABLED defines. The old
+// FASTLED_LOG_*_ENABLED names still work for backward compatibility.
+#if defined(FL_LOG_SPI_ENABLED) && !defined(FASTLED_LOG_SPI_ENABLED)
+    #define FASTLED_LOG_SPI_ENABLED
+#endif
+#if defined(FL_LOG_RMT_ENABLED) && !defined(FASTLED_LOG_RMT_ENABLED)
+    #define FASTLED_LOG_RMT_ENABLED
+#endif
+#if defined(FL_LOG_PARLIO_ENABLED) && !defined(FASTLED_LOG_PARLIO_ENABLED)
+    #define FASTLED_LOG_PARLIO_ENABLED
+#endif
+#if defined(FL_LOG_AUDIO_ENABLED) && !defined(FASTLED_LOG_AUDIO_ENABLED)
+    #define FASTLED_LOG_AUDIO_ENABLED
+#endif
+#if defined(FL_LOG_INTERRUPT_ENABLED) && !defined(FASTLED_LOG_INTERRUPT_ENABLED)
+    #define FASTLED_LOG_INTERRUPT_ENABLED
+#endif
+#if defined(FL_LOG_FLEXIO_ENABLED) && !defined(FASTLED_LOG_FLEXIO_ENABLED)
+    #define FASTLED_LOG_FLEXIO_ENABLED
+#endif
+#if defined(FL_LOG_OBJECTFLED_ENABLED) && !defined(FASTLED_LOG_OBJECTFLED_ENABLED)
+    #define FASTLED_LOG_OBJECTFLED_ENABLED
+#endif
+
 // Conditional include for async logger functions (only when logging features are enabled)
 #if defined(FASTLED_LOG_SPI_ENABLED) || defined(FASTLED_LOG_RMT_ENABLED) || defined(FASTLED_LOG_PARLIO_ENABLED) || defined(FASTLED_LOG_AUDIO_ENABLED) || defined(FASTLED_LOG_INTERRUPT_ENABLED)
     #include "fl/detail/async_logger.h"  // IWYU pragma: keep - Required by FL_LOG_*_ASYNC_* macros
@@ -228,12 +255,12 @@ const char *fastled_file_offset(const char *file) FL_NOEXCEPT;
 /// Each category can be independently enabled/disabled via preprocessor defines at compile-time.
 ///
 /// Usage:
-///   - Enable category debugging: Define FASTLED_LOG_<CATEGORY>_ENABLED before including this file
+///   - Enable category debugging: Define FL_LOG_<CATEGORY>_ENABLED before including this file
 ///   - Use the macro: FL_LOG_<CATEGORY>("message" << value)
 ///   - Logging is compile-time controlled; disabled categories produce no code
 ///
 /// Example:
-///   #define FASTLED_LOG_SPI_ENABLED
+///   #define FL_LOG_SPI_ENABLED
 ///   #include "fl/system/log.h"
 ///
 ///   FL_LOG_SPI("Initializing SPI bus " << bus_id);

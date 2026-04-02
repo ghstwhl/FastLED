@@ -685,33 +685,33 @@ struct json_value {
     json_value(const fl::string& s) FL_NOEXCEPT : data(s) {
     }
     json_value(const json_array& a) FL_NOEXCEPT : data(a) {
-        //FASTLED_WARN("Created json_value with array");
+        //FL_WARN("Created json_value with array");
     }
     json_value(const json_object& o) FL_NOEXCEPT : data(o) {
-        //FASTLED_WARN("Created json_value with object");
+        //FL_WARN("Created json_value with object");
     }
     json_value(const fl::vector<i16>& audio) FL_NOEXCEPT : data(audio) {
-        //FASTLED_WARN("Created json_value with audio data");
+        //FL_WARN("Created json_value with audio data");
     }
     
     json_value(fl::vector<i16>&& audio) FL_NOEXCEPT : data(fl::move(audio)) {
-        //FASTLED_WARN("Created json_value with moved audio data");
+        //FL_WARN("Created json_value with moved audio data");
     }
     
     json_value(const fl::vector<u8>& bytes) FL_NOEXCEPT : data(bytes) {
-        //FASTLED_WARN("Created json_value with byte data");
+        //FL_WARN("Created json_value with byte data");
     }
     
     json_value(fl::vector<u8>&& bytes) FL_NOEXCEPT : data(fl::move(bytes)) {
-        //FASTLED_WARN("Created json_value with moved byte data");
+        //FL_WARN("Created json_value with moved byte data");
     }
     
     json_value(const fl::vector<float>& floats) FL_NOEXCEPT : data(floats) {
-        //FASTLED_WARN("Created json_value with float data");
+        //FL_WARN("Created json_value with float data");
     }
     
     json_value(fl::vector<float>&& floats) FL_NOEXCEPT : data(fl::move(floats)) {
-        //FASTLED_WARN("Created json_value with moved float data");
+        //FL_WARN("Created json_value with moved float data");
     }
 
     // Copy constructor
@@ -802,19 +802,19 @@ struct json_value {
 
     // Type queries - using is<T>() instead of index() for fl::variant
     bool is_null() const FL_NOEXCEPT { 
-        //FASTLED_WARN("is_null called, tag=" << data.tag());
+        //FL_WARN("is_null called, tag=" << data.tag());
         return data.is<fl::nullptr_t>(); 
     }
     bool is_bool() const FL_NOEXCEPT { 
-        //FASTLED_WARN("is_bool called, tag=" << data.tag());
+        //FL_WARN("is_bool called, tag=" << data.tag());
         return data.is<bool>(); 
     }
     bool is_int() const FL_NOEXCEPT {
-        //FASTLED_WARN("is_int called, tag=" << data.tag());
+        //FL_WARN("is_int called, tag=" << data.tag());
         return data.is<i64>();
     }
     bool is_double() const FL_NOEXCEPT { 
-        //FASTLED_WARN("is_double called, tag=" << data.tag());
+        //FL_WARN("is_double called, tag=" << data.tag());
         return data.is<float>(); 
     }
     bool is_float() const FL_NOEXCEPT {
@@ -825,7 +825,7 @@ struct json_value {
         return is_int() || is_float();
     }
     bool is_string() const FL_NOEXCEPT { 
-        //FASTLED_WARN("is_string called, tag=" << data.tag());
+        //FL_WARN("is_string called, tag=" << data.tag());
         return data.is<fl::string>(); 
     }
     // Visitor for array type checking
@@ -864,7 +864,7 @@ struct json_value {
     };
     
     bool is_array() const FL_NOEXCEPT { 
-        //FASTLED_WARN("is_array called, tag=" << data.tag());
+        //FL_WARN("is_array called, tag=" << data.tag());
         IsArrayVisitor visitor;
         data.visit(visitor);
         return visitor.result;
@@ -876,19 +876,19 @@ struct json_value {
     }
     
     bool is_object() const FL_NOEXCEPT { 
-        //FASTLED_WARN("is_object called, tag=" << data.tag());
+        //FL_WARN("is_object called, tag=" << data.tag());
         return data.is<json_object>(); 
     }
     bool is_audio() const FL_NOEXCEPT {
-        //FASTLED_WARN("is_audio called, tag=" << data.tag());
+        //FL_WARN("is_audio called, tag=" << data.tag());
         return data.is<fl::vector<i16>>();
     }
     bool is_bytes() const FL_NOEXCEPT {
-        //FASTLED_WARN("is_bytes called, tag=" << data.tag());
+        //FL_WARN("is_bytes called, tag=" << data.tag());
         return data.is<fl::vector<u8>>();
     }
     bool is_floats() const FL_NOEXCEPT {
-        //FASTLED_WARN("is_floats called, tag=" << data.tag());
+        //FL_WARN("is_floats called, tag=" << data.tag());
         return data.is<fl::vector<float>>();
     }
 

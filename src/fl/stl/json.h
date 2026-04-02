@@ -168,9 +168,9 @@ public:
     static json from_char(char c) FL_NOEXCEPT {
         json result;
         auto value = fl::make_shared<json_value>(fl::string(1, c));
-        //FASTLED_WARN("Created json_value with string: " << value->is_string() << ", int: " << value->is_int());
+        //FL_WARN("Created json_value with string: " << value->is_string() << ", int: " << value->is_int());
         result.mValue = value;
-        //FASTLED_WARN("json has string: " << result.is_string() << ", int: " << result.is_int());
+        //FL_WARN("json has string: " << result.is_string() << ", int: " << result.is_int());
         return result;
     }
 

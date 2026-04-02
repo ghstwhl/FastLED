@@ -8,7 +8,7 @@
 #include "fl/math/math.h"
 #include "fl/math/math.h"
 
-#define DBG FASTLED_DBG
+#define DBG FL_DBG
 
 namespace fl {
 namespace video {

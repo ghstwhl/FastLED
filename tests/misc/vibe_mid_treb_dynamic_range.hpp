@@ -184,7 +184,7 @@ FL_TEST_CASE("audio::detector::Vibe mid dynamic range with alternating signal") 
     }
 
     float midRange = midMax - midMin;
-    FASTLED_WARN("Mid dynamic range: min=" << midMin << " max=" << midMax
+    FL_WARN("Mid dynamic range: min=" << midMin << " max=" << midMax
                  << " range=" << midRange);
 
     // For LED visualization, we need at least 0.3 dynamic range.
@@ -238,7 +238,7 @@ FL_TEST_CASE("audio::detector::Vibe treble dynamic range with alternating signal
     }
 
     float trebRange = trebMax - trebMin;
-    FASTLED_WARN("Treble dynamic range: min=" << trebMin << " max=" << trebMax
+    FL_WARN("Treble dynamic range: min=" << trebMin << " max=" << trebMax
                  << " range=" << trebRange);
 
     FL_CHECK_GT(trebRange, 0.3f);
@@ -282,7 +282,7 @@ FL_TEST_CASE("audio::detector::Vibe mid dynamic range with gradual variation (re
     }
 
     float midRange = midMax - midMin;
-    FASTLED_WARN("Realistic mid dynamic range: min=" << midMin << " max="
+    FL_WARN("Realistic mid dynamic range: min=" << midMin << " max="
                  << midMax << " range=" << midRange);
 
     // With gradual 3x variation, we need at least 0.3 dynamic range
@@ -337,7 +337,7 @@ FL_TEST_CASE("audio::detector::Vibe mid with sustained signal and brief gaps") {
     }
 
     float midRange = midMax - midMin;
-    FASTLED_WARN("Sustained mid with gaps: min=" << midMin << " max=" << midMax
+    FL_WARN("Sustained mid with gaps: min=" << midMin << " max=" << midMax
                  << " range=" << midRange);
 
     // Even with brief gaps in otherwise sustained signal,
@@ -390,7 +390,7 @@ FL_TEST_CASE("audio::detector::Vibe bass dynamic range with alternating signal (
     }
 
     float bassRange = bassMax - bassMin;
-    FASTLED_WARN("Bass dynamic range: min=" << bassMin << " max=" << bassMax
+    FL_WARN("Bass dynamic range: min=" << bassMin << " max=" << bassMax
                  << " range=" << bassRange);
 
     // Bass should have good dynamic range (this is the control test)
@@ -439,7 +439,7 @@ FL_TEST_CASE("audio::detector::Vibe mid dynamic range with MEMS noise floor") {
     }
 
     float midRange = midMax - midMin;
-    FASTLED_WARN("Mid with MEMS noise: min=" << midMin << " max=" << midMax
+    FL_WARN("Mid with MEMS noise: min=" << midMin << " max=" << midMax
                  << " range=" << midRange);
 
     FL_CHECK_GT(midRange, 0.3f);
@@ -483,7 +483,7 @@ FL_TEST_CASE("audio::detector::Vibe treble dynamic range with MEMS noise floor")
     }
 
     float trebRange = trebMax - trebMin;
-    FASTLED_WARN("Treble with MEMS noise: min=" << trebMin << " max="
+    FL_WARN("Treble with MEMS noise: min=" << trebMin << " max="
                  << trebMax << " range=" << trebRange);
 
     FL_CHECK_GT(trebRange, 0.3f);
@@ -540,7 +540,7 @@ FL_TEST_CASE("audio::detector::Vibe mid dynamic range with spectral leakage") {
     }
 
     float midRange = midMax - midMin;
-    FASTLED_WARN("Mid with spectral leakage: min=" << midMin << " max="
+    FL_WARN("Mid with spectral leakage: min=" << midMin << " max="
                  << midMax << " range=" << midRange);
 
     FL_CHECK_GT(midRange, 0.3f);
@@ -650,7 +650,7 @@ FL_TEST_CASE("audio::detector::Vibe treble worst case: noise + leakage + gradual
     }
 
     float trebRange = trebMax - trebMin;
-    FASTLED_WARN("Treble worst case (noise+leakage+gradual): min=" << trebMin
+    FL_WARN("Treble worst case (noise+leakage+gradual): min=" << trebMin
                  << " max=" << trebMax << " range=" << trebRange);
 
     // This is the hardest test. Leakage + noise create a high baseline

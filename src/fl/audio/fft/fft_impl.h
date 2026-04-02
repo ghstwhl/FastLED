@@ -19,7 +19,7 @@ struct Args;
 //   Impl fft(512, 16);
 //   auto sample = SINE WAVE OF 512 SAMPLES
 //   fft.run(buffer, &out);
-//   FASTLED_WARN("Impl output: " << out);  // 16 bands of output.
+//   FL_WARN("Impl output: " << out);  // 16 bands of output.
 class Impl {
   public:
     // Result indicating success or failure of the Impl run (in which case

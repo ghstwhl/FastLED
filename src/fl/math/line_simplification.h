@@ -170,7 +170,7 @@ template <typename NumberT = float> class LineSimplifier {
                 NumberT d2 = PerpendicularDistance2(polyLine[i], polyLine[i0],
                                                     polyLine[i1]);
 
-                // FASTLED_WARN("Perpendicular distance2 between "
+                // FL_WARN("Perpendicular distance2 between "
                 //              << polyLine[i] << " and " << polyLine[i0]
                 //              << " and " << polyLine[i1] << " is " << d2);
 

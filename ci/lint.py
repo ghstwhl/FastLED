@@ -27,6 +27,7 @@ from ci.lint.stage_impls import (
     run_python_pipeline,
 )
 from ci.lint.stages import LintStage
+from ci.lint_meson.run_all_checkers import run_meson_lint
 from ci.util.global_interrupt_handler import install_signal_handler, wait_for_cleanup
 
 
@@ -212,6 +213,17 @@ def create_stages(args: LintArgs) -> list[LintStage]:
                 display_name="JAVASCRIPT LINTING",
                 run_fn=lambda: run_js_lint(args.no_fingerprint),
                 timeout=120.0,
+            )
+        )
+
+    # Meson build file stage (runs in parallel with other stages)
+    if run_cpp:
+        stages.append(
+            LintStage(
+                name="meson_linting",
+                display_name="MESON BUILD LINTING",
+                run_fn=run_meson_lint,
+                timeout=30.0,
             )
         )
 

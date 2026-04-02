@@ -487,7 +487,7 @@ FL_TEST_CASE("audio::SpectralEqualizer - swept peak follows A-weighting curve") 
         if (delta > maxDelta) maxDelta = delta;
     }
 
-    FASTLED_WARN("SpectralEQ swept peak A-weighting: max_delta=" << maxDelta
+    FL_WARN("SpectralEQ swept peak A-weighting: max_delta=" << maxDelta
                  << " bass=" << outputPeaks[0] << " mid=" << outputPeaks[6]
                  << " treble=" << outputPeaks[15]);
 
@@ -539,7 +539,7 @@ FL_TEST_CASE("audio::SpectralEqualizer - A-weighting 32-band swept peak is smoot
         if (delta > maxDelta) maxDelta = delta;
     }
 
-    FASTLED_WARN("SpectralEQ 32-band swept peak: max_delta=" << maxDelta);
+    FL_WARN("SpectralEQ 32-band swept peak: max_delta=" << maxDelta);
 
     // 32-band curve should be smoother than 16-band (smaller steps)
     FL_CHECK_LT(maxDelta, 20.0f);

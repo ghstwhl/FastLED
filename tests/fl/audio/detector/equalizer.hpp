@@ -681,7 +681,7 @@ FL_TEST_CASE("audio::detector::EqualizerDetector - tone sweep moves dominant bin
         prevDomFreq = domFreq;
     }
 
-    FASTLED_WARN("audio::detector::Equalizer tone sweep: monotonic violations="
+    FL_WARN("audio::detector::Equalizer tone sweep: monotonic violations="
                  << monotonicViolations << " / " << (numFrames - 10));
 
     // Allow a few violations due to audio::fft::FFT bin quantization, but should be rare
@@ -749,7 +749,7 @@ FL_TEST_CASE("audio::detector::EqualizerDetector - tone sweep activates bass the
     int trebleBin = feedAndGetPeakBin(4000.0f, 30);
     FL_CHECK_GE(trebleBin, 11);
 
-    FASTLED_WARN("audio::detector::Equalizer band test: bass_bin=" << bassBin
+    FL_WARN("audio::detector::Equalizer band test: bass_bin=" << bassBin
                  << " mid_bin=" << midBin << " treble_bin=" << trebleBin);
 }
 
@@ -803,7 +803,7 @@ FL_TEST_CASE("audio::detector::EqualizerDetector - tone sweep bins have no jitte
         }
     }
 
-    FASTLED_WARN("audio::detector::Equalizer tone sweep jitter: worst=" << worstJitter
+    FL_WARN("audio::detector::Equalizer tone sweep jitter: worst=" << worstJitter
                  << " in bin " << worstBin);
 
     // Normalized 2nd derivative should be bounded.

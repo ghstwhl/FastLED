@@ -123,15 +123,15 @@ void setup() {
 
     decayTimeSeconds.onChanged([](float value) {
         audioFadeTracker.setDecayTime(value);
-        FASTLED_WARN("Fade time seconds: " << value);
+        FL_WARN("Fade time seconds: " << value);
     });
     attackTimeSeconds.onChanged([](float value) {
         audioFadeTracker.setAttackTime(value);
-        FASTLED_WARN("Attack time seconds: " << value);
+        FL_WARN("Attack time seconds: " << value);
     });
     outputTimeSec.onChanged([](float value) {
         audioFadeTracker.setOutputTime(value);
-        FASTLED_WARN("Output time seconds: " << value);
+        FL_WARN("Output time seconds: " << value);
     });
 
     // Initialize pitch detection
@@ -187,7 +187,7 @@ bool doFrame() {
 
 void loop() {
     if (triggered) {
-        FASTLED_WARN("Triggered");
+        FL_WARN("Triggered");
     }
 
     // x = pointX.as_int();
@@ -213,12 +213,12 @@ void loop() {
 
         float fade = audioFadeTracker(sample.pcm().data(), sample.pcm().size());
         shiftUp();
-        // FASTLED_WARN("Audio sample size: " << sample.pcm().size());
+        // FL_WARN("Audio sample size: " << sample.pcm().size());
         soundLevelMeter.processBlock(sample.pcm());
-        // FASTLED_WARN("")
+        // FL_WARN("")
         auto dbfs = soundLevelMeter.getDBFS();
         FASTLED_UNUSED(dbfs);
-        // FASTLED_WARN("getDBFS: " << dbfs);
+        // FL_WARN("getDBFS: " << dbfs);
         int32_t max = 0;
         for (size_t i = 0; i < sample.pcm().size(); ++i) {
             int32_t x = ABS(sample.pcm()[i]);
@@ -231,7 +231,7 @@ void loop() {
         anim = fl::clamp(anim, 0.0f, 1.0f);
 
         x = fl::map_range<float, float>(anim, 0.0f, 1.0f, 0.0f, WIDTH - 1);
-        // FASTLED_WARN("x: " << x);
+        // FL_WARN("x: " << x);
 
         // fft.run(sample.pcm(), &fftOut);
         sample.fft(&fftOut);
@@ -248,13 +248,13 @@ void loop() {
                 uint8_t heatIndex =
                     fl::map_range<float, uint8_t>(v, 0, 1, 0, 255);
 
-                // FASTLED_WARN(v);
+                // FL_WARN(v);
 
                 // Use FastLED's built-in HeatColors palette
                 auto c = ColorFromPalette(HeatColors_p, heatIndex);
                 c.fadeToBlackBy(255 - heatIndex);
                 framebuffer[frameBufferXY(x, 0)] = c;
-                // FASTLED_WARN("y: " << i << " b: " << b);
+                // FL_WARN("y: " << i << " b: " << b);
             }
         }
 
@@ -264,7 +264,7 @@ void loop() {
 
         if (enableRMS) {
             float rms = sample.rms();
-            FASTLED_WARN("RMS: " << rms);
+            FL_WARN("RMS: " << rms);
             rms = fl::map_range<float, float>(rms, 0.0f, 32768.0f, 0.0f, 1.0f);
             rms = fl::clamp(rms, 0.0f, 1.0f) * WIDTH;
             framebuffer[frameBufferXY(rms, HEIGHT * 3 / 4)] = fl::CRGB(0, 0, 255);

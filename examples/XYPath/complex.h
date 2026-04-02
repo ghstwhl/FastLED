@@ -82,13 +82,13 @@ void setupUiCallbacks() {
 
     trigger.onChanged([]() {
         // shapeProgress.trigger(millis());
-        FASTLED_WARN("Trigger pressed");
+        FL_WARN("Trigger pressed");
     });
     useWaveFx.onChanged([](bool on) {
         if (on) {
-            FASTLED_WARN("WaveFX enabled");
+            FL_WARN("WaveFX enabled");
         } else {
-            FASTLED_WARN("WaveFX disabled");
+            FL_WARN("WaveFX disabled");
         }
     });
 }
@@ -132,13 +132,13 @@ void loop() {
         time_warp.reset(now);
         now_warped = time_warp.update(now);
         shapeProgress.trigger(now_warped);
-        FASTLED_WARN("Transition triggered on " << shape->name());
+        FL_WARN("Transition triggered on " << shape->name());
         curr_alpha = getAnimationTime(now_warped);
         s_prev_alpha = curr_alpha;
     }
 
-    // FASTLED_WARN("Current alpha: " << curr_alpha);
-    // FASTLED_WARN("maxAnimation: " << maxAnimation.value());
+    // FL_WARN("Current alpha: " << curr_alpha);
+    // FL_WARN("maxAnimation: " << maxAnimation.value());
 
     const bool is_active =
         true || curr_alpha < maxAnimation.value() && curr_alpha > 0.0f;
@@ -203,7 +203,7 @@ void loop() {
 
     EVERY_N_SECONDS(1) {
         uint32_t frame_time = millis() - now;
-        FASTLED_WARN("Frame time: " << frame_time << "ms");
+        FL_WARN("Frame time: " << frame_time << "ms");
     }
 
     FastLED.show();

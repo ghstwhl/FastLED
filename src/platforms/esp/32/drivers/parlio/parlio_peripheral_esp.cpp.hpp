@@ -194,7 +194,7 @@ bool ParlioPeripheralESPImpl::initialize(const ParlioPeripheralConfig& config) F
     esp_config.clk_out_gpio_num = static_cast<gpio_num_t>(-1);
     esp_config.valid_gpio_num = static_cast<gpio_num_t>(-1);
 
-    // Log heap availability before allocation attempts (visible with FASTLED_LOG_PARLIO_ENABLED)
+    // Log heap availability before allocation attempts (visible with FL_LOG_PARLIO_ENABLED)
     FL_LOG_PARLIO("PARLIO_PERIPH: DMA heap - free: "
            << heap_caps_get_free_size(MALLOC_CAP_DMA)
            << ", largest block: " << heap_caps_get_largest_free_block(MALLOC_CAP_DMA));
@@ -413,7 +413,7 @@ u8* ParlioPeripheralESPImpl::allocateDmaBuffer(size_t size) FL_NOEXCEPT {
 
     if (buffer == nullptr) {
         FL_WARN("ParlioPeripheralESP: Failed to allocate DMA buffer (" << aligned_size << " bytes)");
-        // Detailed heap stats visible with FASTLED_LOG_PARLIO_ENABLED
+        // Detailed heap stats visible with FL_LOG_PARLIO_ENABLED
         FL_LOG_PARLIO("  DMA heap: " << heap_caps_get_free_size(MALLOC_CAP_DMA)
                 << " free, " << heap_caps_get_largest_free_block(MALLOC_CAP_DMA) << " largest block");
         if (mPreferPsram) {

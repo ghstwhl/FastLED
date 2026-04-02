@@ -168,7 +168,7 @@ void Painter::PaintVuNotes(uint32_t /*now_ms*/,
                            LedRopeInterface* led_rope) {
 
 
- FASTLED_WARN("\n\n############## VU NOTES ################\n\n");
+ FL_WARN("\n\n############## VU NOTES ################\n\n");
  
  led_rope->RawBeginDraw();
                      
@@ -235,7 +235,7 @@ void Painter::PaintVuMidNotesFade(uint32_t /*delta_ms*/,
                                   const int* led_column_table, int led_column_table_length,
                                   LedRopeInterface* led_rope) {
 
-  FASTLED_WARN("\n\n############## VU MID NOTES FADE ################\n\n");
+  FL_WARN("\n\n############## VU MID NOTES FADE ################\n\n");
 
   struct DrawPoints {
     int n_black0;

@@ -66,7 +66,7 @@ FL_TEST_CASE("audio::detector::FrequencyBands - tone sweep shows continuous band
     FL_CHECK_GT(trebPeak, 0.0f);
 
     // --- Check 2: Peaks should be ordered bass < mid < treb in time ---
-    FASTLED_WARN("FreqBands sweep peak frames: bass=" << bassPeakFrame
+    FL_WARN("FreqBands sweep peak frames: bass=" << bassPeakFrame
                  << " mid=" << midPeakFrame << " treb=" << trebPeakFrame);
     FL_CHECK_LT(bassPeakFrame, midPeakFrame);
     FL_CHECK_LT(midPeakFrame, trebPeakFrame);
@@ -140,7 +140,7 @@ FL_TEST_CASE("audio::detector::FrequencyBands - tone sweep has no jitter in raw 
     float midJitter = computeJitter(midHistory, numFrames);
     float trebJitter = computeJitter(trebHistory, numFrames);
 
-    FASTLED_WARN("FreqBands sweep jitter: bass=" << bassJitter
+    FL_WARN("FreqBands sweep jitter: bass=" << bassJitter
                  << " mid=" << midJitter << " treb=" << trebJitter);
 
     // With the exponential smoothing in audio::detector::FrequencyBands, transitions should be
@@ -200,7 +200,7 @@ FL_TEST_CASE("audio::detector::FrequencyBands - tone sweep normalized levels tra
         if (td > trebMaxDelta) trebMaxDelta = td;
     }
 
-    FASTLED_WARN("FreqBands sweep max delta: bass=" << bassMaxDelta
+    FL_WARN("FreqBands sweep max delta: bass=" << bassMaxDelta
                  << " mid=" << midMaxDelta << " treb=" << trebMaxDelta);
 
     // Normalized levels shouldn't jump more than 0.5 per frame

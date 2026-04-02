@@ -131,16 +131,16 @@ FL_TEST_CASE("FL_DBG macro compilation") {
     }
 }
 
-FL_TEST_CASE("FASTLED_DBG macro compilation") {
+FL_TEST_CASE("FL_DBG macro compilation") {
     FL_SUBCASE("compiles with various types") {
-        FASTLED_DBG("Simple string");
-        FASTLED_DBG("Value: " << 42);
+        FL_DBG("Simple string");
+        FL_DBG("Value: " << 42);
         FL_CHECK(true);
     }
 
-    FL_SUBCASE("FASTLED_DBG_IF compiles with conditions") {
-        FASTLED_DBG_IF(true, "Message");
-        FASTLED_DBG_IF(false, "Should not print");
+    FL_SUBCASE("FL_DBG_IF compiles with conditions") {
+        FL_DBG_IF(true, "Message");
+        FL_DBG_IF(false, "Should not print");
         FL_CHECK(true);
     }
 }
@@ -170,20 +170,20 @@ FL_TEST_CASE("debug macro configuration") {
 }
 
 // ============================================================================
-// Test Suite: FL_WARN / FASTLED_WARN Warning Macros (merged from warn.cpp)
+// Test Suite: FL_WARN / FL_WARN Warning Macros (merged from warn.cpp)
 // ============================================================================
 
 FL_TEST_CASE("FL_WARN macros are defined") {
-    FL_SUBCASE("FASTLED_WARN is defined") {
-        #ifdef FASTLED_WARN
+    FL_SUBCASE("FL_WARN is defined") {
+        #ifdef FL_WARN
         FL_CHECK(true);
         #else
         FL_CHECK(false);
         #endif
     }
 
-    FL_SUBCASE("FASTLED_WARN_IF is defined") {
-        #ifdef FASTLED_WARN_IF
+    FL_SUBCASE("FL_WARN_IF is defined") {
+        #ifdef FL_WARN_IF
         FL_CHECK(true);
         #else
         FL_CHECK(false);
@@ -275,27 +275,27 @@ FL_TEST_CASE("FL_WARN_IF macro compiles and executes") {
     }
 }
 
-FL_TEST_CASE("FASTLED_WARN macro compiles and executes") {
-    FL_SUBCASE("FASTLED_WARN with string literal") {
-        FASTLED_WARN("Test FASTLED warning");
+FL_TEST_CASE("FL_WARN macro compiles and executes") {
+    FL_SUBCASE("FL_WARN with string literal") {
+        FL_WARN("Test FASTLED warning");
         FL_CHECK(true);
     }
 
-    FL_SUBCASE("FASTLED_WARN with stream expression") {
+    FL_SUBCASE("FL_WARN with stream expression") {
         int value = 99;
-        FASTLED_WARN("FASTLED value: " << value);
+        FL_WARN("FASTLED value: " << value);
         FL_CHECK(true);
     }
 }
 
-FL_TEST_CASE("FASTLED_WARN_IF macro compiles and executes") {
-    FL_SUBCASE("FASTLED_WARN_IF with true condition") {
-        FASTLED_WARN_IF(true, "FASTLED condition is true");
+FL_TEST_CASE("FL_WARN_IF macro compiles and executes") {
+    FL_SUBCASE("FL_WARN_IF with true condition") {
+        FL_WARN_IF(true, "FASTLED condition is true");
         FL_CHECK(true);
     }
 
-    FL_SUBCASE("FASTLED_WARN_IF with false condition") {
-        FASTLED_WARN_IF(false, "FASTLED condition is false");
+    FL_SUBCASE("FL_WARN_IF with false condition") {
+        FL_WARN_IF(false, "FASTLED condition is false");
         FL_CHECK(true);
     }
 }
@@ -308,8 +308,8 @@ FL_TEST_CASE("warning macros are safe in all contexts") {
         FL_CHECK(true);
     }
 
-    FL_SUBCASE("mixed FASTLED_WARN and FL_WARN") {
-        FASTLED_WARN("FASTLED message");
+    FL_SUBCASE("mixed FL_WARN and FL_WARN") {
+        FL_WARN("FASTLED message");
         FL_WARN("FL message");
         FL_CHECK(true);
     }

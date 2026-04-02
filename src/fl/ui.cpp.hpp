@@ -141,7 +141,7 @@ void UIButton::Listener::onBeginFrame() FL_NOEXCEPT {
     const bool clicked_changed = (clicked_this_frame != mClickedLastFrame);
     mClickedLastFrame = clicked_this_frame;
     if (clicked_changed) {
-        // FASTLED_WARN("Button: " << mOwner->name() << " clicked: " <<
+        // FL_WARN("Button: " << mOwner->name() << " clicked: " <<
         // mOwner->clicked());
         mOwner->mCallbacks.invoke(*mOwner);
     }

@@ -70,7 +70,7 @@ class NullFileHandle : public filebuf {
 class NullFileSystem : public FsImpl {
   public:
     NullFileSystem() FL_NOEXCEPT {
-        FASTLED_WARN("NullFileSystem instantiated as a placeholder, please "
+        FL_WARN("NullFileSystem instantiated as a placeholder, please "
                      "implement a file system for your platform.");
     }
     ~NullFileSystem() FL_NOEXCEPT override {}
@@ -128,7 +128,7 @@ bool FileSystem::readScreenMaps(const char *path,
                                 fl::flat_map<string, ScreenMap> *out, string *error) {
     string text;
     if (!readText(path, &text)) {
-        FASTLED_WARN("Failed to read file: " << path);
+        FL_WARN("Failed to read file: " << path);
         if (error) {
             *error = "Failed to read file: ";
             error->append(path);
@@ -138,7 +138,7 @@ bool FileSystem::readScreenMaps(const char *path,
     string err;
     bool ok = ScreenMap::ParseJson(text.c_str(), out, &err);
     if (!ok) {
-        FASTLED_WARN("Failed to parse screen map: " << err.c_str());
+        FL_WARN("Failed to parse screen map: " << err.c_str());
         *error = err;
         return false;
     }
@@ -149,7 +149,7 @@ bool FileSystem::readScreenMap(const char *path, const char *name,
                                ScreenMap *out, string *error) {
     string text;
     if (!readText(path, &text)) {
-        FASTLED_WARN("Failed to read file: " << path);
+        FL_WARN("Failed to read file: " << path);
         if (error) {
             *error = "Failed to read file: ";
             error->append(path);
@@ -159,7 +159,7 @@ bool FileSystem::readScreenMap(const char *path, const char *name,
     string err;
     bool ok = ScreenMap::ParseJson(text.c_str(), name, out, &err);
     if (!ok) {
-        FASTLED_WARN("Failed to parse screen map: " << err.c_str());
+        FL_WARN("Failed to parse screen map: " << err.c_str());
         *error = err;
         return false;
     }
@@ -184,7 +184,7 @@ Video FileSystem::openVideo(const char *path, fl::size pixelsPerFrame, float fps
 bool FileSystem::readText(const char *path, fl::string *out) {
     fl::ifstream file = openRead(path);
     if (!file.is_open()) {
-        FASTLED_WARN("Failed to open file: " << path);
+        FL_WARN("Failed to open file: " << path);
         return false;
     }
     fl::size size = file.size();
@@ -197,7 +197,7 @@ bool FileSystem::readText(const char *path, fl::string *out) {
         wrote = true;
     }
     file.close();
-    FASTLED_DBG_IF(!wrote, "Failed to write any data to the output string.");
+    FL_DBG_IF(!wrote, "Failed to write any data to the output string.");
     return wrote;
 }
 

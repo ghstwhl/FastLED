@@ -74,15 +74,15 @@ FL_TEST_CASE("fft tester 512") {
         float b = expected_output[i];
         bool almost_equal = fl::almost_equal(a, b, tolerance);
         if (!almost_equal) {
-            FASTLED_WARN("Impl output mismatch at index " << i << ": " << a
+            FL_WARN("Impl output mismatch at index " << i << ": " << a
                                                          << " != " << b);
         }
         FL_CHECK(almost_equal);
     }
 
     fl::string info = fft.info();
-    FASTLED_WARN("Impl info: " << info);
-    FASTLED_WARN("Done");
+    FL_WARN("Impl info: " << info);
+    FL_WARN("Done");
 }
 
 FL_TEST_CASE("fft tester 256") {
@@ -133,15 +133,15 @@ FL_TEST_CASE("fft tester 256") {
         float b = expected_output[i];
         bool almost_equal = fl::almost_equal(a, b, tolerance);
         if (!almost_equal) {
-            FASTLED_WARN("Impl output mismatch at index " << i << ": " << a
+            FL_WARN("Impl output mismatch at index " << i << ": " << a
                                                          << " != " << b);
         }
         FL_CHECK(almost_equal);
     }
 
     fl::string info = fft.info();
-    FASTLED_WARN("Impl info: " << info);
-    FASTLED_WARN("Done");
+    FL_WARN("Impl info: " << info);
+    FL_WARN("Done");
 }
 
 FL_TEST_CASE("fft tester 256 with 64 bands") {
@@ -212,14 +212,14 @@ FL_TEST_CASE("fft tester 256 with 64 bands") {
         float b = expected_output[i];
         bool almost_equal = fl::almost_equal(a, b, tolerance);
         if (!almost_equal) {
-            FASTLED_WARN("Impl output mismatch at index " << i << ": " << a
+            FL_WARN("Impl output mismatch at index " << i << ": " << a
                                                          << " != " << b);
         }
         FL_CHECK(almost_equal);
     }
     fl::string info = fft.info();
-    FASTLED_WARN("Impl info: " << info);
-    FASTLED_WARN("Done");
+    FL_WARN("Impl info: " << info);
+    FL_WARN("Done");
 }
 
 namespace { // fft_tests
@@ -739,7 +739,7 @@ FL_TEST_CASE("Binning adversarial - LOG_REBIN peak accuracy per bin") {
         int diff = peakBin - b;
         if (diff < 0) diff = -diff;
         if (diff > 1) {
-            FASTLED_WARN("LOG_REBIN: sine at " << centerFreq
+            FL_WARN("LOG_REBIN: sine at " << centerFreq
                          << " Hz (bin " << b << ") peaked in bin "
                          << peakBin << " (off by " << diff << ")");
             mismatches++;
@@ -771,7 +771,7 @@ FL_TEST_CASE("Binning adversarial - CQ_OCTAVE peak accuracy per bin") {
         int diff = peakBin - b;
         if (diff < 0) diff = -diff;
         if (diff > 1) {
-            FASTLED_WARN("CQ_OCTAVE: sine at " << centerFreq
+            FL_WARN("CQ_OCTAVE: sine at " << centerFreq
                          << " Hz (bin " << b << ") peaked in bin "
                          << peakBin << " (off by " << diff << ")");
             mismatches++;
@@ -812,7 +812,7 @@ FL_TEST_CASE("Binning adversarial - LOG_REBIN vs CQ_OCTAVE peak agreement") {
         if (diff < 0) diff = -diff;
 
         if (diff > 0) {
-            FASTLED_WARN("Cross-mode disagreement at " << freq
+            FL_WARN("Cross-mode disagreement at " << freq
                          << " Hz: LOG_REBIN bin " << logPeak
                          << " vs CQ_OCTAVE bin " << cqPeak
                          << " (diff=" << diff << ")");
@@ -824,7 +824,7 @@ FL_TEST_CASE("Binning adversarial - LOG_REBIN vs CQ_OCTAVE peak agreement") {
         FL_CHECK_LE(diff, 2);
     }
     // Known issue: LOG_REBIN vs CQ bin grid mismatch causes disagreements.
-    FASTLED_WARN("Cross-mode disagreements: " << disagreements << " of 8 frequencies");
+    FL_WARN("Cross-mode disagreements: " << disagreements << " of 8 frequencies");
     FL_CHECK_LE(disagreements, 3);
 }
 
@@ -852,7 +852,7 @@ FL_TEST_CASE("Binning adversarial - LOG_REBIN monotonicity sweep") {
 
         int peak = findPeakBin(bins.raw());
         if (prevPeak >= 0 && peak < prevPeak) {
-            FASTLED_WARN("Monotonicity violation at " << freq
+            FL_WARN("Monotonicity violation at " << freq
                          << " Hz: peak bin " << peak
                          << " < previous peak " << prevPeak);
             violations++;
@@ -884,7 +884,7 @@ FL_TEST_CASE("Binning adversarial - CQ_OCTAVE monotonicity sweep") {
 
         int peak = findPeakBin(bins.raw());
         if (prevPeak >= 0 && peak < prevPeak) {
-            FASTLED_WARN("CQ monotonicity violation at " << freq
+            FL_WARN("CQ monotonicity violation at " << freq
                          << " Hz: peak bin " << peak
                          << " < previous peak " << prevPeak);
             violations++;
@@ -931,7 +931,7 @@ FL_TEST_CASE("Binning adversarial - LOG_REBIN energy bias check") {
     }
 
     // All bins should produce measurable energy when their center freq plays
-    FASTLED_WARN("LOG_REBIN valid bins with energy: " << validBins << "/" << bands);
+    FL_WARN("LOG_REBIN valid bins with energy: " << validBins << "/" << bands);
     FL_CHECK_GE(validBins, bands - 2); // Allow up to 2 edge bins to be weak
 
     // Check energy ratio among valid bins
@@ -946,7 +946,7 @@ FL_TEST_CASE("Binning adversarial - LOG_REBIN energy bias check") {
 
     if (minE > 0.0f) {
         float ratio = maxE / minE;
-        FASTLED_WARN("LOG_REBIN peak energy ratio (max/min): " << ratio);
+        FL_WARN("LOG_REBIN peak energy ratio (max/min): " << ratio);
         // For a pure sine, peak bin energy should be similar across bins
         FL_CHECK_LT(ratio, 20.0f);
     }
@@ -1062,7 +1062,7 @@ FL_TEST_CASE("Binning adversarial - bin boundary frequency assignment") {
         int peak = findPeakBin(bins.raw());
         bool inRange = (peak == b || peak == b + 1);
         if (!inRange) {
-            FASTLED_WARN("Boundary freq " << boundary << " Hz between bins "
+            FL_WARN("Boundary freq " << boundary << " Hz between bins "
                          << b << " and " << (b + 1) << " peaked in bin "
                          << peak);
         }
@@ -1155,7 +1155,7 @@ FL_TEST_CASE("Binning adversarial - freqToBin matches actual LOG_REBIN peak") {
         if (diff < 0) diff = -diff;
 
         if (diff > 1) {
-            FASTLED_WARN("freqToBin(" << freq << ") = " << reportedBin
+            FL_WARN("freqToBin(" << freq << ") = " << reportedBin
                          << " but LOG_REBIN peak at bin " << actualPeak
                          << " (off by " << diff << ")");
             mismatches++;
@@ -1190,7 +1190,7 @@ FL_TEST_CASE("Binning adversarial - 64 bins CQ_OCTAVE peak accuracy") {
         if (diff < 0) diff = -diff;
 
         if (diff > 2) {
-            FASTLED_WARN("64-bin CQ: sine at " << freq << " Hz: expected bin "
+            FL_WARN("64-bin CQ: sine at " << freq << " Hz: expected bin "
                          << expected << " got bin " << peak);
         }
         FL_CHECK_LE(diff, 2);
@@ -1227,7 +1227,7 @@ FL_TEST_CASE("Binning adversarial - no NaN in any output for edge signals") {
 
             for (int i = 0; i < bands; ++i) {
                 if (isNaNCheck(bins.raw()[i])) {
-                    FASTLED_WARN("NaN in " << modeNames[m] << " " << names[s]
+                    FL_WARN("NaN in " << modeNames[m] << " " << names[s]
                                  << " raw bin " << i);
                 }
                 FL_CHECK_FALSE(isNaNCheck(bins.raw()[i]));
@@ -1295,7 +1295,7 @@ FL_TEST_CASE("Binning adversarial - LOG_REBIN energy concentration") {
 
     float concentration = maxBinEnergy / totalEnergy;
     if (concentration < 0.50f) {
-        FASTLED_WARN("LOG_REBIN: 1kHz sine energy concentration = "
+        FL_WARN("LOG_REBIN: 1kHz sine energy concentration = "
                      << (concentration * 100.0f) << "% (expected > 50%)");
     }
     FL_CHECK_GT(concentration, 0.50f);

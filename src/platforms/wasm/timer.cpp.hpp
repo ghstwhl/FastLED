@@ -65,13 +65,13 @@ double get_time_since_epoch() {
     double elapsed = now - gStartTime;
     
     // Debug output to track the timing issue
-    //FASTLED_WARN("gStartTime: " << gStartTime);
-    //FASTLED_WARN("now: " << now);
-    //FASTLED_WARN("elapsed: " << elapsed);
+    //FL_WARN("gStartTime: " << gStartTime);
+    //FL_WARN("now: " << now);
+    //FL_WARN("elapsed: " << elapsed);
     
     // Ensure we return a reasonable positive elapsed time
     if (elapsed < 0 || elapsed == 0xffffffff) {
-        FASTLED_WARN("WARNING: Negative elapsed time detected, resetting start time");
+        FL_WARN("WARNING: Negative elapsed time detected, resetting start time");
         gStartTime = now;
         elapsed = 0;
     }

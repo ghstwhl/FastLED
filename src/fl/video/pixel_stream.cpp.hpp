@@ -4,7 +4,7 @@
 #include "fl/stl/limits.h"
 #include "fl/stl/noexcept.h"
 
-#define DBG FASTLED_DBG
+#define DBG FL_DBG
 
 namespace fl {
 namespace video {
@@ -77,7 +77,7 @@ bool PixelStream::hasFrame(fl::u32 frameNumber) {
 bool PixelStream::readFrameAt(fl::u32 frameNumber, Frame *frame) {
     if (mType == kStreaming) {
         // Streaming handle doesn't support seeking
-        FASTLED_DBG("Streaming handle doesn't support seeking");
+        FL_DBG("Streaming handle doesn't support seeking");
         return false;
     }
     mHandle->seek(frameNumber * mbytesPerFrame);

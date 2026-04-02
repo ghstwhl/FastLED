@@ -483,7 +483,7 @@ FL_TEST_CASE("audio::detector::Vibe - tone sweep shows continuous band motion") 
 
     // --- Check 2: Peaks should be ordered bass < mid < treb in time ---
     // Bass band is low frequencies (early in sweep), treb is high (late).
-    FASTLED_WARN("Tone sweep peak frames: bass=" << bassPeakFrame
+    FL_WARN("Tone sweep peak frames: bass=" << bassPeakFrame
                  << " mid=" << midPeakFrame << " treb=" << trebPeakFrame);
     FL_CHECK_LT(bassPeakFrame, midPeakFrame);
     FL_CHECK_LT(midPeakFrame, trebPeakFrame);
@@ -572,7 +572,7 @@ FL_TEST_CASE("audio::detector::Vibe - tone sweep has no jitter in raw band energ
     float midJitter = computeJitter(midHistory, numFrames);
     float trebJitter = computeJitter(trebHistory, numFrames);
 
-    FASTLED_WARN("Tone sweep jitter (normalized 2nd derivative): bass="
+    FL_WARN("Tone sweep jitter (normalized 2nd derivative): bass="
                  << bassJitter << " mid=" << midJitter
                  << " treb=" << trebJitter);
 
@@ -644,7 +644,7 @@ FL_TEST_CASE("audio::detector::Vibe - tone sweep normalized levels track smoothl
         if (trebNorm[i] > trebMax) trebMax = trebNorm[i];
     }
 
-    FASTLED_WARN("Sweep normalized ranges: bass=[" << bassMin << "," << bassMax
+    FL_WARN("Sweep normalized ranges: bass=[" << bassMin << "," << bassMax
                  << "] mid=[" << midMin << "," << midMax
                  << "] treb=[" << trebMin << "," << trebMax << "]");
 
@@ -666,7 +666,7 @@ FL_TEST_CASE("audio::detector::Vibe - tone sweep normalized levels track smoothl
         if (td > trebMaxDelta) trebMaxDelta = td;
     }
 
-    FASTLED_WARN("Sweep max frame-to-frame delta: bass=" << bassMaxDelta
+    FL_WARN("Sweep max frame-to-frame delta: bass=" << bassMaxDelta
                  << " mid=" << midMaxDelta << " treb=" << trebMaxDelta);
 
     // Normalized levels shouldn't jump more than 1.0 per frame
@@ -739,7 +739,7 @@ FL_TEST_CASE("ADVERSARIAL - phase-coherent fixed tone has stable raw output") {
     float jitterRange = maxBass - minBass;
     float jitterPct = (maxBass > 0.001f) ? (jitterRange / maxBass * 100.0f) : 0.0f;
 
-    FASTLED_WARN("Phase-coherent 440Hz stability: min=" << minBass
+    FL_WARN("Phase-coherent 440Hz stability: min=" << minBass
                  << " max=" << maxBass << " jitter=" << jitterPct << "%");
 
     // With a fixed frequency, raw energy jitter should be small.
@@ -782,7 +782,7 @@ FL_TEST_CASE("ADVERSARIAL - band boundary dwell causes energy oscillation") {
     }
 
     float oscillation = maxRatio - minRatio;
-    FASTLED_WARN("Band boundary dwell (3688 Hz): ratio range=[" << minRatio
+    FL_WARN("Band boundary dwell (3688 Hz): ratio range=[" << minRatio
                  << "," << maxRatio << "] oscillation=" << oscillation);
 
     // If oscillation > 0.3, the bass/mid split is unstable at the boundary.
@@ -835,7 +835,7 @@ FL_TEST_CASE("ADVERSARIAL - phase-coherent sweep has worse jitter than phase-res
     float resetJitter = sweepAndMeasureJitter(false);
     float coherentJitter = sweepAndMeasureJitter(true);
 
-    FASTLED_WARN("Sweep jitter comparison: phase-reset=" << resetJitter
+    FL_WARN("Sweep jitter comparison: phase-reset=" << resetJitter
                  << " phase-coherent=" << coherentJitter);
 
     // Both should still be below the jitter threshold
@@ -892,7 +892,7 @@ FL_TEST_CASE("ADVERSARIAL - micro-sweep at band boundary exposes step discontinu
     float peakToAvgRatio = (avgDelta > 0.001f) ? (maxDelta / avgDelta) : 0.0f;
     float freqAtMaxDelta = startFreq + static_cast<float>(maxDeltaFrame);
 
-    FASTLED_WARN("Band boundary micro-sweep: max_delta=" << maxDelta
+    FL_WARN("Band boundary micro-sweep: max_delta=" << maxDelta
                  << " avg_delta=" << avgDelta << " peak_ratio=" << peakToAvgRatio
                  << " at " << freqAtMaxDelta << " Hz");
 
@@ -937,7 +937,7 @@ FL_TEST_CASE("ADVERSARIAL - sub-bin frequency causes inter-frame energy wobble")
     variance /= static_cast<float>(numFrames - 2);
     float cv = (mean > 0.001f) ? (fl::sqrtf(variance) / mean * 100.0f) : 0.0f;
 
-    FASTLED_WARN("Sub-bin freq (443.7 Hz) energy wobble: mean=" << mean
+    FL_WARN("Sub-bin freq (443.7 Hz) energy wobble: mean=" << mean
                  << " cv=" << cv << "%");
 
     // Coefficient of variation > 15% means the energy wobbles significantly
@@ -1003,7 +1003,7 @@ FL_TEST_CASE("ADVERSARIAL - phase-coherent sweep across all 3 bands tracks smoot
     float midNormDelta = (midRange > 0.001f) ? (midMaxDelta / midRange) : 0.0f;
     float trebNormDelta = (trebRange > 0.001f) ? (trebMaxDelta / trebRange) : 0.0f;
 
-    FASTLED_WARN("Phase-coherent sweep deltas (normalized): bass=" << bassNormDelta
+    FL_WARN("Phase-coherent sweep deltas (normalized): bass=" << bassNormDelta
                  << " mid=" << midNormDelta << " treb=" << trebNormDelta);
 
     // A single frame shouldn't jump more than 30% of the total range.

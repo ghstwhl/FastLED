@@ -5,7 +5,7 @@
 ///
 /// To enable RMT operational logging (channel creation, queueing,
 /// transmission):
-///   #define FASTLED_LOG_RMT_ENABLED
+///   #define FL_LOG_RMT_ENABLED
 ///
 /// RMT logging uses FL_LOG_RMT which is compile-time controlled via fl/log.h.
 /// When disabled (default), FL_LOG_RMT produces no code overhead (zero-cost

@@ -77,7 +77,7 @@ void CRGB::downscale(const CRGB *src, const fl::XYMap &srcXY, CRGB *dst,
 
 void CRGB::upscale(const CRGB *src, const fl::XYMap &srcXY, CRGB *dst,
                    const fl::XYMap &dstXY) {
-    FASTLED_WARN_IF(
+    FL_WARN_IF(
         srcXY.getType() != fl::XYMap::kLineByLine,
         "Upscaling only works with a src matrix that is rectangular");
     fl::u16 w = srcXY.getWidth();

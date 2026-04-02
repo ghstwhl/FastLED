@@ -68,7 +68,7 @@ KeyboardState keyboard;
 //  velocity - Value between 0-127
 void HandleNoteOn(byte channel, byte midi_note, byte velocity) {
   FL_UNUSED(channel);
-  FASTLED_DBG("HandleNoteOn: midi_note = " << int(midi_note) << ", velocity = " << int(velocity));
+  FL_DBG("HandleNoteOn: midi_note = " << int(midi_note) << ", velocity = " << int(velocity));
   keyboard.HandleNoteOn(midi_note, velocity, color_selector.curr_val(), fl::millis());
 }
 
@@ -80,7 +80,7 @@ void HandleNoteOn(byte channel, byte midi_note, byte velocity) {
 //  velocity - Value between 0-127
 void HandleNoteOff(byte channel, byte midi_note, byte velocity) {
   FL_UNUSED(channel);
-  FASTLED_DBG("HandleNoteOn: midi_note = " << int(midi_note) << ", velocity = " << int(velocity));
+  FL_DBG("HandleNoteOn: midi_note = " << int(midi_note) << ", velocity = " << int(velocity));
   keyboard.HandleNoteOff(midi_note, velocity, fl::millis());
 }
 
@@ -119,7 +119,7 @@ void HandleAfterTouchChannel(byte channel, byte pressure) {
 /////////////////////////////////////////////////////////
 // Called once when the app starts.
 void setup() {
-  FASTLED_DBG("setup");
+  FL_DBG("setup");
   // Serial port for logging.
   Serial.begin(57600);
   //start serial with midi baudrate 31250
@@ -171,7 +171,7 @@ void DbgDoSimulatedKeyboardPress() {
 /////////////////////////////////////////////////////////;p
 // Repeatedly called by the app.
 void loop() {
-  //FASTLED_DBG("loop");
+  //FL_DBG("loop");
 
 
   // Calculate dt.
@@ -241,7 +241,7 @@ void loop() {
   }
 
   EVERY_N_SECONDS(1) {
-    FASTLED_DBG("is_debugging = " << is_debugging);
+    FL_DBG("is_debugging = " << is_debugging);
   }
 
 

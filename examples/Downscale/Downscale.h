@@ -86,13 +86,13 @@ void setupUiCallbacks() {
 
     trigger.onClicked([]() {
         // shapeProgress.trigger(millis());
-        FASTLED_WARN("Trigger pressed");
+        FL_WARN("Trigger pressed");
     });
     useWaveFx.onChanged([](fl::UICheckbox &checkbox) {
         if (checkbox.value()) {
-            FASTLED_WARN("WaveFX enabled");
+            FL_WARN("WaveFX enabled");
         } else {
-            FASTLED_WARN("WaveFX disabled");
+            FL_WARN("WaveFX disabled");
         }
     });
 }
@@ -145,7 +145,7 @@ void loop() {
         time_warp.reset(now);
         now_warped = time_warp.update(now);
         shapeProgress.trigger(now_warped);
-        FASTLED_WARN("Transition triggered on " << shape->name());
+        FL_WARN("Transition triggered on " << shape->name());
         curr_alpha = getAnimationTime(now_warped);
         s_prev_alpha = curr_alpha;
     }

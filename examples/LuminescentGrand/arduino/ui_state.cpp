@@ -60,7 +60,7 @@ ui_state ui_update(uint32_t now_ms, uint32_t delta_ms) {
   vis_selector.Update(now_ms);
   color_selector.Update();
   int32_t curr_val = vis_selector.curr_val();
-  FASTLED_DBG("curr_val: " << curr_val);
+  FL_DBG("curr_val: " << curr_val);
 
   out.color_scheme = color_selector.curr_val();
 

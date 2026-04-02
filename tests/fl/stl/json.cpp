@@ -1021,7 +1021,7 @@ FL_TEST_CASE("json Float Data Parsing") {
         json doc = json::parse(jsonStr);
         
         // Print the type for debugging
-        FASTLED_WARN("JSON type: " << (doc.is_floats() ? "floats" : 
+        FL_WARN("JSON type: " << (doc.is_floats() ? "floats" : 
                       doc.is_audio() ? "audio" : 
                       doc.is_bytes() ? "bytes" : 
                       doc.is_array() ? "array" : "other"));
@@ -1109,7 +1109,7 @@ FL_TEST_CASE("json Float Data Parsing") {
         json doc = json::parse(jsonStr);
         
         // Print the type for debugging
-        FASTLED_WARN("JSON type: " << (doc.is_floats() ? "floats" : 
+        FL_WARN("JSON type: " << (doc.is_floats() ? "floats" : 
                       doc.is_audio() ? "audio" : 
                       doc.is_bytes() ? "bytes" : 
                       doc.is_array() ? "array" : "other"));

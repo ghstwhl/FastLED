@@ -4,7 +4,7 @@
 #include "fl/system/log.h"
 #include "fl/stl/noexcept.h"
 
-#define DBG FASTLED_DBG
+#define DBG FL_DBG
 
 namespace fl {
 
@@ -20,7 +20,7 @@ float TimeWarp::scale() const { return mTimeScale; }
 
 void TimeWarp::pause(fl::u32 now) {
     if (mPauseTime) {
-        FASTLED_WARN("TimeWarp::pause: already paused");
+        FL_WARN("TimeWarp::pause: already paused");
         return;
     }
     mPauseTime = now;
@@ -52,7 +52,7 @@ void TimeWarp::reset(fl::u32 realTimeNow) {
 void TimeWarp::applyExact(fl::u32 timeNow) {
     // Handle time going backwards - reset if this happens
     if (timeNow < mLastRealTime) {
-        FASTLED_WARN("TimeWarp::applyExact: time went backwards, resetting");
+        FL_WARN("TimeWarp::applyExact: time went backwards, resetting");
         reset(timeNow);
         return;
     }

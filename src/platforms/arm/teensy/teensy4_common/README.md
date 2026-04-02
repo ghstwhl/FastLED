@@ -66,7 +66,7 @@ The Teensy 4.x LPSPI drivers (`spi_hw_2_mxrt1062.cpp` and `spi_hw_4_mxrt1062.cpp
 **Hardware Testing Needed**:
 1. Connect LED strips to pins 11 and 12 (with shared clock on pin 13)
 2. Use a logic analyzer to verify both pins output data
-3. Define `FASTLED_LOG_SPI_ENABLED` to see debug output
+3. Define `FL_LOG_SPI_ENABLED` to see debug output
 
 **Previous Workaround** (if fix doesn't work): Use separate SPI buses:
 ```cpp

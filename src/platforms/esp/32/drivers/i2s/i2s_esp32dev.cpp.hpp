@@ -7,12 +7,13 @@
 
 #include "sdkconfig.h"
 #include "platforms/esp/esp_version.h"
+#include "platforms/esp/32/feature_flags/enabled.h"
 #include "fl/system/log.h"  // For FL_WARN_ONCE in IDF6 stub
 
-// I2S parallel mode driver is disabled on ESP-IDF 6.0+ because
-// PERIPH_I2S1_MODULE was removed from periph_defs.h. The I2S peripheral
-// clock management changed to use the LL API. Re-enable when ported.
-#if !ESP_IDF_VERSION_6_OR_HIGHER
+// I2S parallel mode driver is disabled when FASTLED_ESP32_HAS_I2S=0 or on
+// ESP-IDF 6.0+ (PERIPH_I2S1_MODULE removed, needs LL API port).
+// Users can disable with -D FASTLED_ESP32_HAS_I2S=0
+#if FASTLED_ESP32_HAS_I2S
 
 // CONFIG_IDF_TARGET_ESP32 was introduced in ESP-IDF v4.0
 // For v3.x (where the macro doesn't exist), compile for all ESP32 chips
@@ -574,17 +575,17 @@ void i2s_transpose_and_encode(int channel, u32 has_data_mask,
 }  // namespace fl
 #endif // !ESP_IDF_VERSION_4_OR_HIGHER || CONFIG_IDF_TARGET_ESP32
 
-#else  // ESP_IDF_VERSION_6_OR_HIGHER
+#else  // !FASTLED_ESP32_HAS_I2S
 
-// Stub: I2S driver not yet ported to ESP-IDF 6.0+
+// Stub: I2S driver disabled (user override or unsupported platform/IDF version)
 namespace fl {
 bool i2s_is_initialized() FL_NOEXCEPT { return false; }
 void i2s_init(int) FL_NOEXCEPT {
-    FL_WARN_ONCE("I2S parallel driver is not yet implemented for ESP-IDF 6.0+. "
+    FL_WARN_ONCE("I2S parallel driver is disabled. "
                  "Falling back to RMT/SPI driver.");
 }
 }  // namespace fl
 
-#endif // !ESP_IDF_VERSION_6_OR_HIGHER
+#endif // FASTLED_ESP32_HAS_I2S
 
 #endif // ifdef FL_IS_ESP32

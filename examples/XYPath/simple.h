@@ -64,7 +64,7 @@ void loop() {
     fl::clear(leds);
     triggered = button.clicked();
     if (triggered) {
-        FASTLED_WARN("Triggered");
+        FL_WARN("Triggered");
     }
     x = pointX.as_int();
     y = pointY.as_int();

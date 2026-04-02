@@ -35,7 +35,7 @@ FL_TEST_CASE("UIAudio URL constructor serializes url field") {
 
         // Must have captured something
         FL_REQUIRE(!capturedJson.empty());
-        FASTLED_WARN("Captured JSON: " << capturedJson.c_str());
+        FL_WARN("Captured JSON: " << capturedJson.c_str());
 
         // Parse the JSON array
         fl::json parsed = fl::json::parse(capturedJson.c_str());
@@ -60,7 +60,7 @@ FL_TEST_CASE("UIAudio URL constructor serializes url field") {
                 FL_CHECK_EQ(url, fl::string(
                     "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"));
 
-                FASTLED_WARN("Audio URL field present: " << url.c_str());
+                FL_WARN("Audio URL field present: " << url.c_str());
                 break;
             }
         }
@@ -94,7 +94,7 @@ FL_TEST_CASE("UIAudio without URL does not emit url field") {
             if (type == "audio") {
                 // Verify url field is NOT present when no URL given
                 FL_CHECK_FALSE(component.contains("url"));
-                FASTLED_WARN("Audio element without URL - no url field (correct)");
+                FL_WARN("Audio element without URL - no url field (correct)");
                 break;
             }
         }
@@ -122,7 +122,7 @@ FL_TEST_CASE("JsonUiAudioInternal URL constructor stores url") {
     fl::string name = json["name"].as_or(fl::string(""));
     FL_CHECK_EQ(name, fl::string("TestAudio"));
 
-    FASTLED_WARN("JsonUiAudioInternal toJson: " << json.to_string().c_str());
+    FL_WARN("JsonUiAudioInternal toJson: " << json.to_string().c_str());
 }
 
 FL_TEST_CASE("JsonUiAudioInternal without URL has empty url") {

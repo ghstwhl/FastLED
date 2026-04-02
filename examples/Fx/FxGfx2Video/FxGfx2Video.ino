@@ -45,18 +45,18 @@ void write_one_frame(fl::memorybufPtr memoryStream) {
     //memoryStream->seek(0);  // Reset to the beginning of the stream
     uint32_t total_bytes_written = 0;
     bool toggle = (fl::millis() / 500) % 2 == 0;
-    FASTLED_DBG("Writing frame data, toggle = " << toggle);
+    FL_DBG("Writing frame data, toggle = " << toggle);
     for (uint32_t i = 0; i < NUM_LEDS; ++i) {
         fl::CRGB color = (toggle ^ i%2) ? fl::CRGB::Black : fl::CRGB::Red;
         size_t bytes_written = memoryStream->writeCRGB(&color, 1);
         if (bytes_written != 1) {
-            FASTLED_DBG("Failed to write frame data, wrote " << bytes_written << " bytes");
+            FL_DBG("Failed to write frame data, wrote " << bytes_written << " bytes");
             break;
         }
         total_bytes_written += bytes_written;
     }
     if (total_bytes_written) {
-        FASTLED_DBG("Frame written, total bytes: " << total_bytes_written);
+        FL_DBG("Frame written, total bytes: " << total_bytes_written);
     }
 }
 

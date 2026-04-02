@@ -12,6 +12,8 @@ clang-tool-chain is not installed).
 
 import sys
 
+from ci.util.global_interrupt_handler import handle_keyboard_interrupt
+
 
 def main() -> None:
     try:
@@ -21,8 +23,6 @@ def main() -> None:
         for p in paths:
             print(p)
     except KeyboardInterrupt as ki:
-        from ci.util.global_interrupt_handler import handle_keyboard_interrupt
-
         handle_keyboard_interrupt(ki)
     except ImportError:
         # clang-tool-chain not installed — nothing to output

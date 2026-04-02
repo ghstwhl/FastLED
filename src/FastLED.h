@@ -1468,7 +1468,7 @@ extern CFastLED FastLED;
 #include "fl/math/math.h"  // fl::clamp, fl::map_range, fl::min, fl::max, etc.
 
 #include "fl/system/log.h"
-#include "fl/system/log.h"  // FASTLED_WARN("time now: " << millis()), FASTLED_WARN_IF(condition, "time now: " << millis());"
+#include "fl/system/log.h"  // FL_WARN("time now: " << millis()), FL_WARN_IF(condition, "time now: " << millis());"
 #include "fl/system/log.h"  // FL_PRINT("message" << value), FL_LOG_*() category-specific logging
 #include "fl/system/serial.h"  // Arduino-compatible Serial API: fl::Serial.print(), fl::Serial.read(), etc.
 #include "fl/stl/assert.h"  // FASTLED_ASSERT(condition, "message");
@@ -1545,7 +1545,7 @@ using fl_string = fl::string;
 // #define FASTLED_LOOP_RUNS_ASYNC 1
 // #include "FastLED.h"
 // void loop() {
-//     FASTLED_WARN("async will run in the loop");
+//     FL_WARN("async will run in the loop");
 //     delay(500);
 // }
 

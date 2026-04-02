@@ -130,7 +130,7 @@ fl::ScreenMap makeScreenMap(corkscrew_args args = corkscrew_args()) {
         points[i] = vec2f(x, y);
     }
 
-    FASTLED_WARN("Creating fl::ScreenMap with:\n" << points);
+    FL_WARN("Creating fl::ScreenMap with:\n" << points);
 
     // Create a fl::ScreenMap from the points
     fl::ScreenMap screenMap(points.data(), num_leds, .5);
@@ -179,9 +179,9 @@ void setup() {
         // This function is called when the button is pressed
         // If the button is pressed, show the generative pattern
         if (but.isPressed()) {
-            FASTLED_WARN("Button pressed");
+            FL_WARN("Button pressed");
         } else {
-            FASTLED_WARN("NOT Button pressed");
+            FL_WARN("NOT Button pressed");
         }
     });
 

@@ -425,7 +425,7 @@ endif
 # relative -I paths to consumer targets (tests, examples), which breaks
 # #pragma once across PCH boundaries on Windows.
 crash_handler_abs_include_args = [
-  '-I' + meson.project_source_root(),
+  '-I' + meson.project_source_root() / '.',
   '-I' + meson.project_source_root() / 'tests',
   '-I' + meson.project_source_root() / 'src',
 ]

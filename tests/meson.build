@@ -18,9 +18,15 @@ uv = find_program('uv')
 # uses project_source_root() which produces *absolute* -I flags.  Mixing the two
 # makes clang (especially on Windows) treat the same header as two different
 # files, breaking #pragma once across PCH boundaries.
+# On Windows, meson.project_source_root() returns native backslash paths
+# (e.g. C:\Users\...) but the '/' operator normalizes to forward slashes
+# (e.g. C:/Users/.../src). Mixing separators in -I flags breaks #pragma once
+# across PCH boundaries because clang treats them as different files.
+# Force all -I paths through the '/' operator to normalize to forward slashes.
+_project_root_fwd = meson.project_source_root() / '.'
 test_abs_include_args = [
-  '-I' + meson.project_source_root(),  # For test includes.
-  '-I' + meson.project_source_root() / 'src',  # for library.
+  '-I' + _project_root_fwd,          # For test includes (normalized).
+  '-I' + _project_root_fwd / 'src',  # for library.
 ]
 
 # Build precompiled header from test_pch.h (contains FastLED.h + doctest + common headers)

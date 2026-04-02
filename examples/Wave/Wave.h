@@ -85,7 +85,7 @@ void loop() {
         x = random(NUM_LEDS);
     }
     if (button.isPressed()) {
-        FASTLED_WARN("Button is pressed at " << x);
+        FL_WARN("Button is pressed at " << x);
         triggerRipple(waveSim, x);
     }
     waveSim.update();

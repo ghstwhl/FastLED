@@ -226,19 +226,19 @@ FL_TEST_CASE("CqOctave frequency sweep (64 bins 20-11025 Hz)") {
             correctBins++;
         } else {
             if (firstBadBin < 0) firstBadBin = targetBin;
-            FASTLED_WARN("  Bin " << targetBin << " (center="
+            FL_WARN("  Bin " << targetBin << " (center="
                          << centerFreq << " Hz): peak at bin " << peakBin
                          << " (off by " << diff << "), peakVal=" << peakVal);
         }
     }
 
-    FASTLED_WARN("CQ sweep (64 bins, 20-11025 Hz): " << correctBins << "/"
+    FL_WARN("CQ sweep (64 bins, 20-11025 Hz): " << correctBins << "/"
                  << totalTested << " bins correct (within +/-3)");
     if (firstBadBin >= 0) {
         float badFreq = fmin * fl::expf(logRatio * static_cast<float>(firstBadBin) /
                                          static_cast<float>(bands - 1));
         int minWindow = static_cast<int>(512.0f * fmin / badFreq);
-        FASTLED_WARN("First bad bin: " << firstBadBin << " (center="
+        FL_WARN("First bad bin: " << firstBadBin << " (center="
                      << badFreq << " Hz, CQ window=" << minWindow << " samples)");
     }
 
@@ -282,13 +282,13 @@ FL_TEST_CASE("CQ frequency sweep - default config (16 bins 90-14080 Hz)") {
         if (diff <= 1) {
             correctBins++;
         } else {
-            FASTLED_WARN("  Bin " << targetBin << " (center="
+            FL_WARN("  Bin " << targetBin << " (center="
                          << centerFreq << " Hz): peak at bin " << peakBin
                          << " (off by " << diff << ")");
         }
     }
 
-    FASTLED_WARN("CQ sweep (16 bins, default): " << correctBins << "/"
+    FL_WARN("CQ sweep (16 bins, default): " << correctBins << "/"
                  << totalTested << " bins correct (within +/-1)");
 
     // Default config should work well
@@ -337,13 +337,13 @@ FL_TEST_CASE("CQ frequency sweep - Equalizer config (16 bins 60-5120 Hz)") {
             correctBins++;
         } else {
             float window = 512.0f * fmin / centerFreq;
-            FASTLED_WARN("  Bin " << targetBin << " (center="
+            FL_WARN("  Bin " << targetBin << " (center="
                          << centerFreq << " Hz, window=" << window
                          << "): peak at bin " << peakBin);
         }
     }
 
-    FASTLED_WARN("CQ sweep (16 bins, 60-5120 Hz): " << correctBins << "/"
+    FL_WARN("CQ sweep (16 bins, 60-5120 Hz): " << correctBins << "/"
                  << totalTested << " bins correct (within +/-3)");
     // Q ≈ 0.70 limits accuracy. Require >50% correct; band-summing
     // detector (like EqualizerDetector) still work at this resolution.
@@ -391,13 +391,13 @@ FL_TEST_CASE("LogRebin frequency sweep - wide range (64 bins 20-11025 Hz)") {
         if (diff <= 2) {
             correctBins++;
         } else {
-            FASTLED_WARN("  LogRebin bin " << targetBin << " (center="
+            FL_WARN("  LogRebin bin " << targetBin << " (center="
                          << centerFreq << " Hz): peak at bin " << peakBin
                          << " (off by " << diff << ")");
         }
     }
 
-    FASTLED_WARN("LogRebin sweep (64 bins, 20-11025 Hz): " << correctBins << "/"
+    FL_WARN("LogRebin sweep (64 bins, 20-11025 Hz): " << correctBins << "/"
                  << totalTested << " bins correct (within +/-2)");
 
     float correctPct = static_cast<float>(correctBins) / static_cast<float>(totalTested);
@@ -444,12 +444,12 @@ FL_TEST_CASE("Linear bins frequency sweep - wide range (20-11025 Hz)") {
         if (diff <= 1) {
             correctBins++;
         } else {
-            FASTLED_WARN("  Linear bin " << targetBin << " (center="
+            FL_WARN("  Linear bin " << targetBin << " (center="
                          << centerFreq << " Hz): peak at bin " << peakBin);
         }
     }
 
-    FASTLED_WARN("Linear sweep (64 bins, 20-11025 Hz): " << correctBins << "/"
+    FL_WARN("Linear sweep (64 bins, 20-11025 Hz): " << correctBins << "/"
                  << totalTested << " bins correct (within +/-1)");
 
     // Linear bins should always work correctly
@@ -487,17 +487,17 @@ FL_TEST_CASE("FFT sweep - LOG_REBIN 16 bins continuous diagnostic") {
     float worstConc = worstConcentration(frames);
     int maxActive = maxActiveBins(frames);
 
-    FASTLED_WARN("=== FFT Sweep Diagnostic (LOG_REBIN, " << bands << " bins, "
+    FL_WARN("=== FFT Sweep Diagnostic (LOG_REBIN, " << bands << " bins, "
                  << numFrames << " frames) ===");
-    FASTLED_WARN("Non-monotonic steps: " << nonMonotonic << " / "
+    FL_WARN("Non-monotonic steps: " << nonMonotonic << " / "
                  << (numFrames - 1));
-    FASTLED_WARN("Jitter events (A->B->A): " << jitterCount);
-    FASTLED_WARN("Misplaced peaks (>1 bin off): " << misplaced << " / "
+    FL_WARN("Jitter events (A->B->A): " << jitterCount);
+    FL_WARN("Misplaced peaks (>1 bin off): " << misplaced << " / "
                  << numFrames);
-    FASTLED_WARN("Avg energy concentration: " << avgConc);
-    FASTLED_WARN("Worst energy concentration: " << worstConc);
-    FASTLED_WARN("Avg active bins per frame: " << avgActive);
-    FASTLED_WARN("Max active bins in any frame: " << maxActive);
+    FL_WARN("Avg energy concentration: " << avgConc);
+    FL_WARN("Worst energy concentration: " << worstConc);
+    FL_WARN("Avg active bins per frame: " << avgActive);
+    FL_WARN("Max active bins in any frame: " << maxActive);
 
     // Print sample frames for inspection
     int sampleIndices[] = {0,
@@ -508,7 +508,7 @@ FL_TEST_CASE("FFT sweep - LOG_REBIN 16 bins continuous diagnostic") {
                            numFrames - 1};
     for (int idx : sampleIndices) {
         const auto &fr = frames[idx];
-        FASTLED_WARN("  Frame " << idx << ": freq=" << fr.frequency
+        FL_WARN("  Frame " << idx << ": freq=" << fr.frequency
                      << "Hz peak_bin=" << fr.peakBin
                      << " expected=" << fr.expectedBin
                      << " conc=" << fr.concentration
@@ -519,17 +519,17 @@ FL_TEST_CASE("FFT sweep - LOG_REBIN 16 bins continuous diagnostic") {
 
     float nonMonotonicRate =
         static_cast<float>(nonMonotonic) / static_cast<float>(numFrames - 1);
-    FASTLED_WARN("Non-monotonic rate: " << nonMonotonicRate);
+    FL_WARN("Non-monotonic rate: " << nonMonotonicRate);
     FL_CHECK_LT(nonMonotonicRate, 0.05f);
 
     float jitterRate =
         static_cast<float>(jitterCount) / static_cast<float>(numFrames - 2);
-    FASTLED_WARN("Jitter rate: " << jitterRate);
+    FL_WARN("Jitter rate: " << jitterRate);
     FL_CHECK_LT(jitterRate, 0.03f);
 
     float misplacedRate =
         static_cast<float>(misplaced) / static_cast<float>(numFrames);
-    FASTLED_WARN("Misplaced peak rate: " << misplacedRate);
+    FL_WARN("Misplaced peak rate: " << misplacedRate);
     FL_CHECK_LT(misplacedRate, 0.05f);
 
     FL_CHECK_GT(avgConc, 0.40f);
@@ -602,10 +602,10 @@ FL_TEST_CASE("FFT sweep - low frequency jitter detection") {
 
     float changeRate =
         static_cast<float>(peakBinChanges) / static_cast<float>(numFrames - 1);
-    FASTLED_WARN("Low-freq sweep (174-350Hz): peak bin changed "
+    FL_WARN("Low-freq sweep (174-350Hz): peak bin changed "
                  << peakBinChanges << " times in " << numFrames
                  << " frames (rate=" << changeRate << ")");
-    FASTLED_WARN("Max consecutive frames on same bin: "
+    FL_WARN("Max consecutive frames on same bin: "
                  << maxConsecutiveSameBin);
 
     // Over ~2 output bins, expect ~1-2 clean transitions.
@@ -658,7 +658,7 @@ FL_TEST_CASE("FFT sweep - single tone leakage LOG_REBIN") {
             }
         }
 
-        FASTLED_WARN("Tone " << freq << "Hz: peak_bin=" << peakBin
+        FL_WARN("Tone " << freq << "Hz: peak_bin=" << peakBin
                      << " expected=" << expectedBin << " conc=" << concentration
                      << " significant_bins=" << significantBins);
 
@@ -705,7 +705,7 @@ FL_TEST_CASE("FFT sweep - bin 0 anomaly") {
         }
     }
 
-    FASTLED_WARN("Bin 0 test: freq=" << bin0CenterFreq << "Hz bin0="
+    FL_WARN("Bin 0 test: freq=" << bin0CenterFreq << "Hz bin0="
                  << bin0Energy << " total=" << totalEnergy
                  << " max_other=" << maxOtherBin);
 
@@ -727,7 +727,7 @@ FL_TEST_CASE("FFT sweep - bin 0 anomaly") {
     }
 
     float bin0LeakFraction = highToneBin0 / highToneTotal;
-    FASTLED_WARN("High tone (2000Hz): bin0_fraction=" << bin0LeakFraction);
+    FL_WARN("High tone (2000Hz): bin0_fraction=" << bin0LeakFraction);
 
     FL_CHECK_LT(bin0LeakFraction, 0.05f);
 }
@@ -757,18 +757,18 @@ FL_TEST_CASE("FFT sweep - LOG_REBIN vs CQ_OCTAVE quality comparison") {
     float logActive = averageActiveBins(logFrames);
     float cqActive = averageActiveBins(cqFrames);
 
-    FASTLED_WARN("=== LOG_REBIN vs CQ_OCTAVE (" << numFrames
+    FL_WARN("=== LOG_REBIN vs CQ_OCTAVE (" << numFrames
                  << " frames) ===");
-    FASTLED_WARN("  Avg concentration: LOG=" << logConc << " CQ=" << cqConc);
-    FASTLED_WARN("  Jitter events:     LOG=" << logJitter << " CQ=" << cqJitter);
-    FASTLED_WARN("  Misplaced peaks:   LOG=" << logMisplaced
+    FL_WARN("  Avg concentration: LOG=" << logConc << " CQ=" << cqConc);
+    FL_WARN("  Jitter events:     LOG=" << logJitter << " CQ=" << cqJitter);
+    FL_WARN("  Misplaced peaks:   LOG=" << logMisplaced
                  << " CQ=" << cqMisplaced);
-    FASTLED_WARN("  Avg active bins:   LOG=" << logActive << " CQ=" << cqActive);
+    FL_WARN("  Avg active bins:   LOG=" << logActive << " CQ=" << cqActive);
 
     // LOG_REBIN concentration should be at least 60% of CQ_OCTAVE
     if (cqConc > 0.0f) {
         float concRatio = logConc / cqConc;
-        FASTLED_WARN("  Concentration ratio (LOG/CQ): " << concRatio);
+        FL_WARN("  Concentration ratio (LOG/CQ): " << concRatio);
         FL_CHECK_GT(concRatio, 0.60f);
     }
 
@@ -815,7 +815,7 @@ FL_TEST_CASE("FFT sweep - two-tone separation LOG_REBIN") {
     int expectedLow = bins.freqToBin(freqLow);
     int expectedHigh = bins.freqToBin(freqHigh);
 
-    FASTLED_WARN("Two-tone test: freqLow=" << freqLow << "Hz (bin "
+    FL_WARN("Two-tone test: freqLow=" << freqLow << "Hz (bin "
                  << expectedLow << "), freqHigh=" << freqHigh << "Hz (bin "
                  << expectedHigh << ")");
 
@@ -839,9 +839,9 @@ FL_TEST_CASE("FFT sweep - two-tone separation LOG_REBIN") {
     int peakSeparation = peak1Bin - peak2Bin;
     if (peakSeparation < 0) peakSeparation = -peakSeparation;
 
-    FASTLED_WARN("  Peak 1: bin " << peak1Bin << " energy=" << peak1Val);
-    FASTLED_WARN("  Peak 2: bin " << peak2Bin << " energy=" << peak2Val);
-    FASTLED_WARN("  Separation: " << peakSeparation << " bins");
+    FL_WARN("  Peak 1: bin " << peak1Bin << " energy=" << peak1Val);
+    FL_WARN("  Peak 2: bin " << peak2Bin << " energy=" << peak2Val);
+    FL_WARN("  Separation: " << peakSeparation << " bins");
 
     FL_CHECK_GE(peakSeparation, 2);
 
@@ -917,11 +917,11 @@ FL_TEST_CASE("FFT sweep - band independence bass+treble") {
     float midFrac = midEnergy / totalEnergy;
     float trebleFrac = trebleEnergy / totalEnergy;
 
-    FASTLED_WARN("Band independence test (bass=" << bassToneFreq
+    FL_WARN("Band independence test (bass=" << bassToneFreq
                  << "Hz + treble=" << trebleToneFreq << "Hz):");
-    FASTLED_WARN("  Bass fraction:   " << bassFrac);
-    FASTLED_WARN("  Mid fraction:    " << midFrac);
-    FASTLED_WARN("  Treble fraction: " << trebleFrac);
+    FL_WARN("  Bass fraction:   " << bassFrac);
+    FL_WARN("  Mid fraction:    " << midFrac);
+    FL_WARN("  Treble fraction: " << trebleFrac);
 
     // Bass and treble should each have significant energy
     FL_CHECK_GT(bassFrac, 0.15f);
@@ -951,8 +951,8 @@ FL_TEST_CASE("FFT sweep - high-band aliasing diagnostic (Equalizer config)") {
 
     // Print bin info table
     float logRatio = fl::logf(fmax / fmin);
-    FASTLED_WARN("=== Equalizer config bin info (16 bins, 60-5120 Hz) ===");
-    FASTLED_WARN("FFT bin width: " << fftBinHz << " Hz");
+    FL_WARN("=== Equalizer config bin info (16 bins, 60-5120 Hz) ===");
+    FL_WARN("FFT bin width: " << fftBinHz << " Hz");
     for (int i = 0; i < bands; ++i) {
         float center = fmin * fl::expf(logRatio * static_cast<float>(i) /
                                         static_cast<float>(bands - 1));
@@ -962,7 +962,7 @@ FL_TEST_CASE("FFT sweep - high-band aliasing diagnostic (Equalizer config)") {
                                                                (2.0f * static_cast<float>(bands - 1)));
         float width = hi - lo;
         float fftBins = width / fftBinHz;
-        FASTLED_WARN("  Bin " << i << ": center=" << center << "Hz width="
+        FL_WARN("  Bin " << i << ": center=" << center << "Hz width="
                      << width << "Hz mapped_fft_bins=" << fftBins);
     }
 
@@ -1033,10 +1033,10 @@ FL_TEST_CASE("FFT sweep - high-band aliasing diagnostic (Equalizer config)") {
     }
 
     float correctRate = static_cast<float>(correctPeaks) / static_cast<float>(totalSteps);
-    FASTLED_WARN("=== High-band aliasing results ===");
-    FASTLED_WARN("Correct peaks (within +/-1): " << correctPeaks << "/" << totalSteps
+    FL_WARN("=== High-band aliasing results ===");
+    FL_WARN("Correct peaks (within +/-1): " << correctPeaks << "/" << totalSteps
                  << " (" << correctRate << ")");
-    FASTLED_WARN("Worst alias metric: " << worstAliasMetric << " at bin " << worstAliasBin);
+    FL_WARN("Worst alias metric: " << worstAliasMetric << " at bin " << worstAliasBin);
 
     // Assertions: aliasing metric < 0.30 (30% max leakage to non-adjacent bins)
     FL_CHECK_LT(worstAliasMetric, 0.30f);
@@ -1086,7 +1086,7 @@ FL_TEST_CASE("FFT sweep - amplitude linearity LOG_REBIN") {
 
     // Magnitude ratio should be close to the amplitude ratio (2.0)
     float ratio = peakValHigh / peakValLow;
-    FASTLED_WARN("Amplitude linearity: amp_ratio=2.0 mag_ratio=" << ratio);
+    FL_WARN("Amplitude linearity: amp_ratio=2.0 mag_ratio=" << ratio);
 
     // Allow 10% tolerance: ratio should be between 1.8 and 2.2
     FL_CHECK_GT(ratio, 1.8f);
@@ -1178,7 +1178,7 @@ FL_TEST_CASE("FFT adversarial - high-bin spectral leakage (all modes)") {
             }
             float distantLeakage = (totalEnergy > 0.0f) ? distantEnergy / totalEnergy : 0.0f;
 
-            FASTLED_WARN(advModeName(mode) << " bin " << targetBin
+            FL_WARN(advModeName(mode) << " bin " << targetBin
                          << " (freq=" << centerFreq << "Hz): conc=" << concentration
                          << " distant_leak=" << distantLeakage
                          << " peak_bin=" << peakBin);
@@ -1231,7 +1231,7 @@ FL_TEST_CASE("FFT adversarial - near-Nyquist aliasing") {
 
         float bottomFrac = (totalEnergy > 0.0f) ? bottomHalfEnergy / totalEnergy : 0.0f;
 
-        FASTLED_WARN("Near-Nyquist " << freq << "Hz: peak_bin=" << peakBin
+        FL_WARN("Near-Nyquist " << freq << "Hz: peak_bin=" << peakBin
                      << " bottom_half_frac=" << bottomFrac
                      << " total_energy=" << totalEnergy);
 
@@ -1261,7 +1261,7 @@ FL_TEST_CASE("FFT adversarial - near-Nyquist aliasing") {
         }
 
         float bottomFrac = (totalEnergy > 0.0f) ? bottomHalfEnergy / totalEnergy : 0.0f;
-        FASTLED_WARN("Nyquist " << nyquistFreq << "Hz: bottom_half_frac=" << bottomFrac
+        FL_WARN("Nyquist " << nyquistFreq << "Hz: bottom_half_frac=" << bottomFrac
                      << " total_energy=" << totalEnergy);
 
         // Nyquist sine samples to zero; aliasing check only if there's energy
@@ -1321,9 +1321,9 @@ FL_TEST_CASE("FFT adversarial - white noise normalization flatness") {
 
     float rawRatio = (rawMin > 0.0f) ? rawMax / rawMin : 0.0f;
 
-    FASTLED_WARN("White noise: normCV=" << normCV << " rawMax/rawMin=" << rawRatio);
+    FL_WARN("White noise: normCV=" << normCV << " rawMax/rawMin=" << rawRatio);
     for (int i = 0; i < bands; ++i) {
-        FASTLED_WARN("  bin " << i << ": raw=" << rawBins[i]
+        FL_WARN("  bin " << i << ": raw=" << rawBins[i]
                      << " norm=" << normBins[i]);
     }
 
@@ -1396,13 +1396,13 @@ FL_TEST_CASE("FFT adversarial - top-quartile vs mid-range concentration") {
         float topAvg = topConcSum / static_cast<float>(topFrames);
         float midAvg = midConcSum / static_cast<float>(midFrames);
 
-        FASTLED_WARN(advModeName(mode) << ": top_quartile_avg_conc=" << topAvg
+        FL_WARN(advModeName(mode) << ": top_quartile_avg_conc=" << topAvg
                      << " mid_range_avg_conc=" << midAvg);
 
         FL_CHECK_GT(topAvg, 0.35f);
         if (midAvg > 0.0f) {
             float ratio = topAvg / midAvg;
-            FASTLED_WARN(advModeName(mode) << ": high/mid ratio=" << ratio);
+            FL_WARN(advModeName(mode) << ": high/mid ratio=" << ratio);
             FL_CHECK_GT(ratio, 0.70f);
         }
     }
@@ -1451,7 +1451,7 @@ FL_TEST_CASE("FFT adversarial - high-bin boundary energy split") {
             float minE = (eA < eB) ? eA : eB;
             float splitRatio = (eSum > 0.0f) ? minE / eSum : 0.0f;
 
-            FASTLED_WARN(advModeName(mode) << " boundary " << binA << "-" << binB
+            FL_WARN(advModeName(mode) << " boundary " << binA << "-" << binB
                          << " (freq=" << boundaryFreq << "Hz): eA=" << eA
                          << " eB=" << eB << " split=" << splitRatio);
 
@@ -1459,7 +1459,7 @@ FL_TEST_CASE("FFT adversarial - high-bin boundary energy split") {
             // bins when the frequency range is wide. Skip the topmost
             // boundary check for CQ_NAIVE.
             if (mode == fl::audio::fft::Mode::CQ_NAIVE && binB == bands - 1) {
-                FASTLED_WARN("  (skipping CQ_NAIVE top boundary - kernel degeneration)");
+                FL_WARN("  (skipping CQ_NAIVE top boundary - kernel degeneration)");
                 continue;
             }
             FL_CHECK_GT(splitRatio, 0.15f);
@@ -1522,7 +1522,7 @@ FL_TEST_CASE("FFT adversarial - CQ_HYBRID tier boundary continuity") {
             prevPeakBin = peakBin;
         }
 
-        FASTLED_WARN("CQ_HYBRID tier boundary ~" << boundary
+        FL_WARN("CQ_HYBRID tier boundary ~" << boundary
                      << "Hz: maxJumpRatio=" << maxJumpRatio
                      << " backwardTransitions=" << backwardTransitions);
 
@@ -1570,7 +1570,7 @@ FL_TEST_CASE("FFT adversarial - CQ_OCTAVE decimation boundary aliasing") {
 
         float bottomFrac = (totalEnergy > 0.0f) ? bottomHalfEnergy / totalEnergy : 0.0f;
 
-        FASTLED_WARN("CQ_OCTAVE " << freq << "Hz: peak_bin=" << peakBin
+        FL_WARN("CQ_OCTAVE " << freq << "Hz: peak_bin=" << peakBin
                      << " bottom_half_frac=" << bottomFrac
                      << " total_energy=" << totalEnergy);
 
@@ -1619,13 +1619,13 @@ FL_TEST_CASE("FFT adversarial - high vs low bin concentration symmetry") {
     float lowConc = (lowTotal > 0.0f) ? lowPeak / lowTotal : 0.0f;
     float highConc = (highTotal > 0.0f) ? highPeak / highTotal : 0.0f;
 
-    FASTLED_WARN("Concentration symmetry: low_bin1=" << lowConc
+    FL_WARN("Concentration symmetry: low_bin1=" << lowConc
                  << " (freq=" << lowFreq << "Hz)"
                  << " high_bin14=" << highConc
                  << " (freq=" << highFreq << "Hz)");
 
     float ratio = (lowConc > 0.0f) ? highConc / lowConc : 0.0f;
-    FASTLED_WARN("  high/low ratio=" << ratio);
+    FL_WARN("  high/low ratio=" << ratio);
     FL_CHECK_GT(ratio, 0.65f);
 }
 
@@ -1670,7 +1670,7 @@ FL_TEST_CASE("FFT adversarial - all-mode high-bin peak agreement") {
             peakBins[modeIdx++] = peakBin;
         }
 
-        FASTLED_WARN("Peak agreement " << freq << "Hz: LOG=" << peakBins[0]
+        FL_WARN("Peak agreement " << freq << "Hz: LOG=" << peakBins[0]
                      << " NAIVE=" << peakBins[1] << " OCTAVE=" << peakBins[2]
                      << " HYBRID=" << peakBins[3]);
 
@@ -1754,7 +1754,7 @@ FL_TEST_CASE("FFT adversarial - systematic top-half sweep (all modes)") {
                           static_cast<float>(numFrames);
         float avgConc = concSum / static_cast<float>(numFrames);
 
-        FASTLED_WARN(advModeName(mode) << " top-half sweep: accuracy=" << accuracy
+        FL_WARN(advModeName(mode) << " top-half sweep: accuracy=" << accuracy
                      << " avgConc=" << avgConc << " maxActive=" << maxActive);
 
         FL_CHECK_GT(accuracy, 0.85f);
@@ -1829,7 +1829,7 @@ FL_TEST_CASE("FFT adversarial - zero leakage at distance 3 (LOG_REBIN)") {
 
         // Skip bins where BH main lobe extends 3+ output bins
         if (binWidth < minBinWidth) {
-            FASTLED_WARN("  Bin " << targetBin << ": SKIP (width=" << binWidth
+            FL_WARN("  Bin " << targetBin << ": SKIP (width=" << binWidth
                          << "Hz < " << minBinWidth << "Hz)");
             continue;
         }
@@ -1857,7 +1857,7 @@ FL_TEST_CASE("FFT adversarial - zero leakage at distance 3 (LOG_REBIN)") {
             int dist = i - peakBin;
             if (dist < 0) dist = -dist;
             if (dist >= 3 && bins.raw()[i] >= noiseFloor) {
-                FASTLED_WARN("  Bin " << targetBin << " (center=" << centerFreq
+                FL_WARN("  Bin " << targetBin << " (center=" << centerFreq
                              << "Hz, width=" << binWidth << "Hz): LEAK at output bin "
                              << i << " (dist=" << dist << ") energy=" << bins.raw()[i]);
                 binPassed = false;
@@ -1866,12 +1866,12 @@ FL_TEST_CASE("FFT adversarial - zero leakage at distance 3 (LOG_REBIN)") {
 
         if (binPassed) {
             passedBins++;
-            FASTLED_WARN("  Bin " << targetBin << " (center=" << centerFreq
+            FL_WARN("  Bin " << targetBin << " (center=" << centerFreq
                          << "Hz, width=" << binWidth << "Hz): PASS (peak=" << peakBin << ")");
         }
     }
 
-    FASTLED_WARN("Zero-leakage test: " << passedBins << "/" << testedBins
+    FL_WARN("Zero-leakage test: " << passedBins << "/" << testedBins
                  << " bins passed (bins with width >= " << minBinWidth << "Hz)");
 
     // All tested bins must pass

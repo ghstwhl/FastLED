@@ -145,7 +145,7 @@ class WasmFileHandle : public fl::filebuf {
             return false;
         }
         if (!mData->ready(mPos)) {
-            FASTLED_WARN("File is not ready yet. This is a major error because "
+            FL_WARN("File is not ready yet. This is a major error because "
                          "FastLED-wasm does not support async yet, the file "
                          "will fail to read.");
             return false;
@@ -170,7 +170,7 @@ class WasmFileHandle : public fl::filebuf {
             bytesToRead = mData->capacity() - mPos;
         }
         if (!mData->ready(mPos)) {
-            FASTLED_WARN("File is not ready yet. This is a major error because "
+            FL_WARN("File is not ready yet. This is a major error because "
                          "FastLED-wasm does not support async yet, the file "
                          "will fail to read.");
             return 0;
@@ -224,7 +224,7 @@ class FsImplWasm : public fl::FsImpl {
     void end() override {}
 
     fl::filebuf_ptr openRead(const char *_path) override {
-        // FASTLED_DBG("Opening file: " << _path);
+        // FL_DBG("Opening file: " << _path);
         string path(_path);
         filebuf_ptr out;
         {
@@ -234,10 +234,10 @@ class FsImplWasm : public fl::FsImpl {
             if (it != reg.files.end()) {
                 auto &data = it->second;
                 out = fl::make_shared<WasmFileHandle>(path, data);
-                // FASTLED_DBG("Opened file: " << _path);
+                // FL_DBG("Opened file: " << _path);
             } else {
                 out = fl::filebuf_ptr();
-                FASTLED_DBG("File not found: " << _path);
+                FL_DBG("File not found: " << _path);
             }
         }
         return out;
@@ -287,7 +287,7 @@ EMSCRIPTEN_KEEPALIVE bool jsInjectFile(const char *path, const fl::u8 *data,
 
     auto inserted = fl::_createIfNotExists(fl::string(path), len);
     if (!inserted) {
-        FASTLED_WARN("File can only be injected once.");
+        FL_WARN("File can only be injected once.");
         return false;
     }
     inserted->append(data, len);
@@ -298,7 +298,7 @@ EMSCRIPTEN_KEEPALIVE bool jsAppendFile(const char *path, const fl::u8 *data,
                                        size_t len) {
     auto entry = fl::_findIfExists(fl::string(path));
     if (!entry) {
-        FASTLED_WARN("File must be declared before it can be appended.");
+        FL_WARN("File must be declared before it can be appended.");
         return false;
     }
     entry->append(data, len);
@@ -309,7 +309,7 @@ EMSCRIPTEN_KEEPALIVE bool jsDeclareFile(const char *path, size_t len) {
     // declare a file and it's length. But don't fill it in yet
     auto inserted = fl::_createIfNotExists(fl::string(path), len);
     if (!inserted) {
-        FASTLED_WARN("File can only be declared once.");
+        FL_WARN("File can only be declared once.");
         return false;
     }
     return true;

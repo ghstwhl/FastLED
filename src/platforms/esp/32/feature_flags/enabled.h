@@ -135,4 +135,17 @@ FL_EXTERN_C_END
 #endif
 #endif
 
+// I2S parallel mode driver availability
+// I2S parallel mode is only available on original ESP32 and ESP32-S2.
+// Other variants (S3, C2, C3, C5, C6, H2, P4) have completely different I2S architecture.
+// Also disabled on ESP-IDF 6.0+ (PERIPH_I2S1_MODULE removed, needs LL API port).
+// Users can override with -D FASTLED_ESP32_HAS_I2S=0 to disable.
+#if !defined(FASTLED_ESP32_HAS_I2S)
+#if defined(FL_IS_ESP32) && !defined(FL_IS_ESP_32S3) && !defined(FL_IS_ESP_32C2) && !defined(FL_IS_ESP_32C3) && !defined(FL_IS_ESP_32C5) && !defined(FL_IS_ESP_32C6) && !defined(FL_IS_ESP_32H2) && !defined(FL_IS_ESP_32P4) && !ESP_IDF_VERSION_6_OR_HIGHER
+#define FASTLED_ESP32_HAS_I2S 1
+#else
+#define FASTLED_ESP32_HAS_I2S 0
+#endif
+#endif
+
 #endif  // FL_IS_ESP32

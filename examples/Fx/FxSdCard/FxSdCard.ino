@@ -70,13 +70,13 @@ void setup() {
     // Open video files from the SD card
     video = filesystem.openVideo("data/video.rgb", NUM_LEDS, FPS, 2);
     if (!video) {
-      FASTLED_WARN("Failed to instantiate video");
+      FL_WARN("Failed to instantiate video");
       gError = true;
       return;
     }
     video2 = filesystem.openVideo("data/color_line_bubbles.rgb", NUM_LEDS, FPS, 2);
     if (!video2) {
-      FASTLED_WARN("Failed to instantiate video2");
+      FL_WARN("Failed to instantiate video2");
       gError = true;
       return;
     }
@@ -107,7 +107,7 @@ void loop() {
     if (gError) {
       // If an error occurred, print a warning every second
       EVERY_N_SECONDS(1) {
-        FASTLED_WARN("No loop because an error occured.");
+        FL_WARN("No loop because an error occured.");
       }
       return;
     }

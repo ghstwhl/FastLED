@@ -164,7 +164,7 @@ class XYRasterU8Sparse {
     static const int kMaxCacheSize = 8; // Max size for tiny cache.
 
     void write(const vec2<u16> &pt, u8 value) {
-        // FASTLED_WARN("write: " << pt.x << "," << pt.y << " value: " <<
+        // FL_WARN("write: " << pt.x << "," << pt.y << " value: " <<
         // value); mSparseGrid.insert(pt, value);
 
         u8 **cached = mCache.find_value(pt);
@@ -179,7 +179,7 @@ class XYRasterU8Sparse {
             // cache it.
             u8 *v = mSparseGrid.find_value(pt);
             if (v == nullptr) {
-                // FASTLED_WARN("write: " << pt.x << "," << pt.y << " value: "
+                // FL_WARN("write: " << pt.x << "," << pt.y << " value: "
                 // << value);
                 if (mSparseGrid.needs_rehash()) {
                     // mSparseGrid is about to rehash, so we need to clear the

@@ -240,12 +240,12 @@ class UIAudioImpl {
     ~UIAudioImpl() FL_NOEXCEPT {}
 
     audio::Sample next() {
-        FASTLED_WARN("Audio sample not implemented");
+        FL_WARN("Audio sample not implemented");
         return audio::Sample();
     }
 
     bool hasNext() {
-        FASTLED_WARN("Audio sample not implemented");
+        FL_WARN("Audio sample not implemented");
         return false;
     }
 

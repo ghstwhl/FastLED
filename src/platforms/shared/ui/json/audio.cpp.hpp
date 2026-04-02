@@ -72,14 +72,14 @@ void JsonAudioImpl::Updater::onPlatformPreLoop2() {}
 audio::Sample JsonAudioImpl::next() {
     audio::SampleImplPtr out;
     if (mInternal->audioSamples().empty()) {
-        // FASTLED_WARN("No audio samples available");
+        // FL_WARN("No audio samples available");
         return out;
     }
     // auto sample = mInternal->audioSamples().back();
     // mInternal->audioSamples().pop_back();
     out = mInternal->audioSamples().front();
     mInternal->audioSamples().erase(mInternal->audioSamples().begin());
-    // FASTLED_WARN("Returning audio sample of size " << out->pcm().size());
+    // FL_WARN("Returning audio sample of size " << out->pcm().size());
     return audio::Sample(out);
 }
 

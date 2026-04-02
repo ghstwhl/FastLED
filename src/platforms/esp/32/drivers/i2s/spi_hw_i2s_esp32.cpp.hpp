@@ -16,8 +16,10 @@
 // ESP32-S3: Use LCD_CAM peripheral instead (see lcd_driver_i80.h in FastLED)
 // ESP32-C3, C2, C5, C6, H2, P4: Have completely different I2S peripheral architecture (no parallel mode)
 // Also disabled on ESP-IDF 6.0+ (PERIPH_I2S1_MODULE removed, needs LL API port)
+// Users can disable with -D FASTLED_ESP32_HAS_I2S=0
 #include "platforms/esp/esp_version.h"
-#if defined(FL_IS_ESP32) && !defined(FL_IS_ESP_32S3) && !defined(FL_IS_ESP_32C2) && !defined(FL_IS_ESP_32C3) && !defined(FL_IS_ESP_32C5) && !defined(FL_IS_ESP_32C6) && !defined(FL_IS_ESP_32H2) && !defined(FL_IS_ESP_32P4) && !ESP_IDF_VERSION_6_OR_HIGHER
+#include "platforms/esp/32/feature_flags/enabled.h"
+#if FASTLED_ESP32_HAS_I2S
 
 // Compatibility for ESP-IDF 3.3: heap_caps_aligned_alloc was added in IDF 4.1
 #if defined(ESP_IDF_VERSION_MAJOR) && ESP_IDF_VERSION_MAJOR <= 3
@@ -400,4 +402,4 @@ fl::vector<int> SpiHwI2SESP32::extract_data_pins(const Config& config) FL_NOEXCE
 
 } // namespace fl
 
-#endif // defined(FL_IS_ESP32) && !defined(FL_IS_ESP_32S3) && !defined(FL_IS_ESP_32C2) etc.
+#endif // FASTLED_ESP32_HAS_I2S

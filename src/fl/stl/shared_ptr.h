@@ -235,7 +235,7 @@ public:
     
     // Destructor
     ~shared_ptr() FL_NOEXCEPT {
-        //FASTLED_WARN("shared_ptr destructor called, mPtr=" << mPtr 
+        //FL_WARN("shared_ptr destructor called, mPtr=" << mPtr 
         //          << ", mControlBlock=" << mControlBlock);
         reset();
     }
@@ -284,15 +284,15 @@ public:
     
     // Modifiers
     void reset() FL_NOEXCEPT {
-        //FASTLED_WARN("shared_ptr::reset() called: mPtr=" << mPtr 
+        //FL_WARN("shared_ptr::reset() called: mPtr=" << mPtr 
         //          << ", mControlBlock=" << mControlBlock);
         if (mControlBlock) {
-            //FASTLED_WARN("control_block exists, calling remove_shared_ref()");
+            //FL_WARN("control_block exists, calling remove_shared_ref()");
             if (mControlBlock->remove_shared_ref()) {
-                //FASTLED_WARN("mControlBlock->remove_shared_ref() returned true, destroying object");
+                //FL_WARN("mControlBlock->remove_shared_ref() returned true, destroying object");
                 mControlBlock->destroy_object();
                 if (--mControlBlock->weak_count == 0) {
-                    //FASTLED_WARN("weak_count reached 0, destroying control block");
+                    //FL_WARN("weak_count reached 0, destroying control block");
                     mControlBlock->destroy_control_block();
                 }
             }

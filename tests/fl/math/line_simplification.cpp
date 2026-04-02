@@ -196,7 +196,7 @@ FL_TEST_CASE("Known bad") {
 
 //             for (size_t i = 0; i < points.size(); ++i) {
 //                 auto p = points[i];
-//                 FASTLED_WARN("Input point " << i << ": " << p);
+//                 FL_WARN("Input point " << i << ": " << p);
 //             }
 
 //             // Assert

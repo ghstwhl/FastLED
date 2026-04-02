@@ -1,3 +1,3 @@
-// Audio detector tests — vibe detector (FFT-intensive)
+// Audio detector tests — vibe detector (computationally intensive)
 // ok cpp include
 #include "tests/fl/audio/detector/vibe.hpp"

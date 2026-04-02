@@ -73,12 +73,12 @@ void Frame::drawXY(fl::span<CRGB> leds, const XYMap &xyMap, DrawMode draw_mode) 
             fl::u32 in_idx = xyMap(w, h);
             fl::u32 out_idx = count++;
             if (in_idx >= mPixelsCount) {
-                FASTLED_WARN(
+                FL_WARN(
                     "Frame::drawXY: in index out of range: " << in_idx);
                 continue;
             }
             if (out_idx >= mPixelsCount) {
-                FASTLED_WARN(
+                FL_WARN(
                     "Frame::drawXY: out index out of range: " << out_idx);
                 continue;
             }
@@ -127,7 +127,7 @@ void Frame::interpolate(const Frame &frame1, const Frame &frame2,
 void Frame::interpolate(const Frame &frame1, const Frame &frame2,
                         u8 amountOfFrame2) {
     if (frame1.size() != frame2.size() || frame1.size() != mPixelsCount) {
-        FASTLED_DBG("Frames must have the same size");
+        FL_DBG("Frames must have the same size");
         return; // Frames must have the same size
     }
     interpolate(frame1, frame2, amountOfFrame2, rgb());
