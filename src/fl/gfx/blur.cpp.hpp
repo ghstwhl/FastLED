@@ -846,12 +846,11 @@ template <> struct simd_hconv_dispatch<1> {
 };
 
 template <> struct simd_hconv_dispatch<2> {
-    static void apply(const u8 *pb, int S, u8 *ob, int nbytes, u8 *temp, int w) {
-        // Cascaded R=1: [1,4,6,4,1] = [1,2,1]⊗[1,2,1].
-        // Two avg_epu8 passes ≈ 2.5x fewer SIMD ops than maddubs.
-        // Max ±1 rounding per pass (imperceptible for blur).
-        simd_conv_121(pb, pb + S, pb + 2*S, temp, (w + 2) * S);
-        simd_conv_121(temp, temp + S, temp + 2*S, ob, nbytes);
+    static void apply(const u8 *pb, int S, u8 *ob, int nbytes, u8 *, int) {
+        // Direct [1,4,6,4,1] kernel — exact u16 multiply+shift, no cascaded
+        // avg_round rounding. Slightly more SIMD ops than cascaded R=1 but
+        // produces bit-exact results matching the scalar interior_row path.
+        simd_conv_14641(pb, pb+S, pb+2*S, pb+3*S, pb+4*S, ob, nbytes);
     }
 };
 
@@ -1049,9 +1048,6 @@ static void vpass_rowmajor_impl(
 template <int hR, int vR, typename RGB_T>
 static int compute_pad_size(int w, int h) {
     int hPad = 2 * hR + w;
-#if !defined(FL_IS_AVR)
-    if (hR == 2) hPad += (w + 2);  // cascaded R=1 temp
-#endif
 #if defined(FL_IS_AVR)
     int vPad = 2 * vR + h;
 #else
@@ -1112,17 +1108,8 @@ static void vpass_full(RGB_T *pixels, int w, int h, RGB_T *scratch, AlphaT alpha
     }
 #else
     // Non-AVR: row-major vertical pass for cache efficiency.
-    // Cascaded R=1 for R=2 V-pass: [1,4,6,4,1] = [1,2,1]⊗[1,2,1].
-    if (R == 2 && sizeof(typename RGB_T::fp) == 1) {
-        vpass_rowmajor_impl<1, RGB_T, acc_t, false>(
-            pixels, w, h, scratch, alpha_identity<AlphaT>());
-        if (ApplyAlpha)
-            vpass_rowmajor_impl<1, RGB_T, acc_t, true>(
-                pixels, w, h, scratch, alpha);
-        else
-            vpass_rowmajor_impl<1, RGB_T, acc_t, false>(
-                pixels, w, h, scratch, alpha_identity<AlphaT>());
-    } else if (ApplyAlpha) {
+    // Direct R=2 V-pass using exact [1,4,6,4,1] kernel (no cascaded R=1).
+    if (ApplyAlpha) {
         vpass_rowmajor_impl<R, RGB_T, acc_t, true>(
             pixels, w, h, scratch, alpha);
     } else {
@@ -1216,6 +1203,117 @@ void blurGaussian(Canvas<RGB_T> &canvas, alpha16 dimFactor) {
     blurGaussianImpl<hRadius, vRadius>(canvas, dimFactor);
 }
 
+// ── CanvasMapped: XYMap-based Gaussian blur ──────────────────────────────
+// Delegates to the optimized Canvas path when the XYMap is rectangular.
+// Falls back to per-pixel gather/scatter through XYMap otherwise.
+template <int hRadius, int vRadius, typename RGB_T, typename AlphaT>
+FL_OPTIMIZE_FUNCTION
+void blurGaussianMappedImpl(CanvasMapped<RGB_T> &canvas, AlphaT alpha) {
+    const int w = canvas.width;
+    const int h = canvas.height;
+    if (w <= 0 || h <= 0)
+        return;
+
+    // Fast path: rectangular XYMap → delegate to optimized Canvas blur.
+    if (canvas.xymap->isRectangularGrid()) {
+        Canvas<RGB_T> rect(canvas.pixels, w, h);
+        blurGaussianImpl<hRadius, vRadius>(rect, alpha);
+        return;
+    }
+
+    // Slow path: non-rectangular XYMap → per-pixel gather/scatter.
+    using P = blur_detail::pixel_ops<RGB_T>;
+    using acc_t = fl::conditional_t<sizeof(typename RGB_T::fp) == 1, u16, u32>;
+
+    const bool applyAlpha = !(alpha == blur_detail::alpha_identity<AlphaT>());
+
+    // Handle no-blur case.
+    if (hRadius == 0 && vRadius == 0) {
+        if (applyAlpha) {
+            for (int y = 0; y < h; ++y) {
+                for (int x = 0; x < w; ++x) {
+                    RGB_T &p = canvas.at(x, y);
+                    P ops;
+                    p = ops.make(ops.ch(p.r), ops.ch(p.g), ops.ch(p.b), alpha);
+                }
+            }
+        }
+        return;
+    }
+
+    fl::span<RGB_T> padbuf = blur_detail::get_padbuf<RGB_T>(
+        blur_detail::compute_pad_size<hRadius, vRadius, RGB_T>(w, h));
+    RGB_T *pad = padbuf.data();
+
+    // ── Horizontal pass: gather row via XYMap, convolve, scatter back ──
+    if (hRadius > 0) {
+        FL_BUILTIN_MEMSET(pad, 0, hRadius * sizeof(RGB_T));
+        FL_BUILTIN_MEMSET(pad + hRadius + w, 0, hRadius * sizeof(RGB_T));
+
+        for (int y = 0; y < h; ++y) {
+            for (int x = 0; x < w; ++x)
+                pad[hRadius + x] = canvas.at(x, y);
+
+            constexpr int shift = 2 * hRadius;
+            for (int x = 0; x < w; ++x) {
+                acc_t r, g, b;
+                blur_detail::interior_row<hRadius, RGB_T, acc_t>::apply(pad, hRadius + x, r, g, b);
+                RGB_T result;
+                if (vRadius == 0 && applyAlpha)
+                    result = P().make(static_cast<acc_t>(r >> shift),
+                                     static_cast<acc_t>(g >> shift),
+                                     static_cast<acc_t>(b >> shift), alpha);
+                else
+                    result = P().make(static_cast<acc_t>(r >> shift),
+                                     static_cast<acc_t>(g >> shift),
+                                     static_cast<acc_t>(b >> shift));
+                canvas.at(x, y) = result;
+            }
+        }
+    }
+
+    // ── Vertical pass: gather column via XYMap, convolve, scatter back ──
+    if (vRadius > 0) {
+        FL_BUILTIN_MEMSET(pad, 0, vRadius * sizeof(RGB_T));
+        FL_BUILTIN_MEMSET(pad + vRadius + h, 0, vRadius * sizeof(RGB_T));
+
+        for (int x = 0; x < w; ++x) {
+            for (int y = 0; y < h; ++y)
+                pad[vRadius + y] = canvas.at(x, y);
+
+            constexpr int shift = 2 * vRadius;
+            for (int y = 0; y < h; ++y) {
+                acc_t r, g, b;
+                blur_detail::interior_row<vRadius, RGB_T, acc_t>::apply(pad, vRadius + y, r, g, b);
+                RGB_T result;
+                if (applyAlpha)
+                    result = P().make(static_cast<acc_t>(r >> shift),
+                                     static_cast<acc_t>(g >> shift),
+                                     static_cast<acc_t>(b >> shift), alpha);
+                else
+                    result = P().make(static_cast<acc_t>(r >> shift),
+                                     static_cast<acc_t>(g >> shift),
+                                     static_cast<acc_t>(b >> shift));
+                canvas.at(x, y) = result;
+            }
+        }
+    }
+}
+
+// ── CanvasMapped alpha8 overload ─────────────────────────────────────────
+
+template <int hRadius, int vRadius, typename RGB_T>
+void blurGaussian(CanvasMapped<RGB_T> &canvas, alpha8 dimFactor) {
+    blurGaussianMappedImpl<hRadius, vRadius>(canvas, dimFactor);
+}
+
+// ── CanvasMapped alpha16 overload ────────────────────────────────────────
+
+template <int hRadius, int vRadius, typename RGB_T>
+void blurGaussian(CanvasMapped<RGB_T> &canvas, alpha16 dimFactor) {
+    blurGaussianMappedImpl<hRadius, vRadius>(canvas, dimFactor);
+}
+
 // ── Explicit instantiations: alpha8 overload ─────────────────────────────
 
 #define BLUR_INST_F8(H, V, T) \
@@ -1269,6 +1367,56 @@ BLUR_INST_F16(1, 2, CRGB16)  BLUR_INST_F16(2, 1, CRGB16)
 #endif
 
 #undef BLUR_INST_F16
+
+// ── Explicit instantiations: CanvasMapped alpha8 ─────────────────────────
+
+#define BLUR_MAPPED_INST_F8(H, V, T) \
+    template void blurGaussian<H, V, T>(CanvasMapped<T> &, alpha8);
+
+BLUR_MAPPED_INST_F8(0, 0, CRGB)  BLUR_MAPPED_INST_F8(1, 1, CRGB)
+BLUR_MAPPED_INST_F8(2, 2, CRGB)  BLUR_MAPPED_INST_F8(3, 3, CRGB)  BLUR_MAPPED_INST_F8(4, 4, CRGB)
+BLUR_MAPPED_INST_F8(1, 0, CRGB)  BLUR_MAPPED_INST_F8(2, 0, CRGB)
+BLUR_MAPPED_INST_F8(3, 0, CRGB)  BLUR_MAPPED_INST_F8(4, 0, CRGB)
+BLUR_MAPPED_INST_F8(0, 1, CRGB)  BLUR_MAPPED_INST_F8(0, 2, CRGB)
+BLUR_MAPPED_INST_F8(0, 3, CRGB)  BLUR_MAPPED_INST_F8(0, 4, CRGB)
+BLUR_MAPPED_INST_F8(1, 2, CRGB)  BLUR_MAPPED_INST_F8(2, 1, CRGB)
+
+#if !defined(FL_IS_AVR)
+BLUR_MAPPED_INST_F8(0, 0, CRGB16)  BLUR_MAPPED_INST_F8(1, 1, CRGB16)
+BLUR_MAPPED_INST_F8(2, 2, CRGB16)  BLUR_MAPPED_INST_F8(3, 3, CRGB16)  BLUR_MAPPED_INST_F8(4, 4, CRGB16)
+BLUR_MAPPED_INST_F8(1, 0, CRGB16)  BLUR_MAPPED_INST_F8(2, 0, CRGB16)
+BLUR_MAPPED_INST_F8(3, 0, CRGB16)  BLUR_MAPPED_INST_F8(4, 0, CRGB16)
+BLUR_MAPPED_INST_F8(0, 1, CRGB16)  BLUR_MAPPED_INST_F8(0, 2, CRGB16)
+BLUR_MAPPED_INST_F8(0, 3, CRGB16)  BLUR_MAPPED_INST_F8(0, 4, CRGB16)
+BLUR_MAPPED_INST_F8(1, 2, CRGB16)  BLUR_MAPPED_INST_F8(2, 1, CRGB16)
+#endif
+
+#undef BLUR_MAPPED_INST_F8
+
+// ── Explicit instantiations: CanvasMapped alpha16 ────────────────────────
+
+#define BLUR_MAPPED_INST_F16(H, V, T) \
+    template void blurGaussian<H, V, T>(CanvasMapped<T> &, alpha16);
+
+BLUR_MAPPED_INST_F16(0, 0, CRGB)  BLUR_MAPPED_INST_F16(1, 1, CRGB)
+BLUR_MAPPED_INST_F16(2, 2, CRGB)  BLUR_MAPPED_INST_F16(3, 3, CRGB)  BLUR_MAPPED_INST_F16(4, 4, CRGB)
+BLUR_MAPPED_INST_F16(1, 0, CRGB)  BLUR_MAPPED_INST_F16(2, 0, CRGB)
+BLUR_MAPPED_INST_F16(3, 0, CRGB)  BLUR_MAPPED_INST_F16(4, 0, CRGB)
+BLUR_MAPPED_INST_F16(0, 1, CRGB)  BLUR_MAPPED_INST_F16(0, 2, CRGB)
+BLUR_MAPPED_INST_F16(0, 3, CRGB)  BLUR_MAPPED_INST_F16(0, 4, CRGB)
+BLUR_MAPPED_INST_F16(1, 2, CRGB)  BLUR_MAPPED_INST_F16(2, 1, CRGB)
+
+#if !defined(FL_IS_AVR)
+BLUR_MAPPED_INST_F16(0, 0, CRGB16)  BLUR_MAPPED_INST_F16(1, 1, CRGB16)
+BLUR_MAPPED_INST_F16(2, 2, CRGB16)  BLUR_MAPPED_INST_F16(3, 3, CRGB16)  BLUR_MAPPED_INST_F16(4, 4, CRGB16)
+BLUR_MAPPED_INST_F16(1, 0, CRGB16)  BLUR_MAPPED_INST_F16(2, 0, CRGB16)
+BLUR_MAPPED_INST_F16(3, 0, CRGB16)  BLUR_MAPPED_INST_F16(4, 0, CRGB16)
+BLUR_MAPPED_INST_F16(0, 1, CRGB16)  BLUR_MAPPED_INST_F16(0, 2, CRGB16)
+BLUR_MAPPED_INST_F16(0, 3, CRGB16)  BLUR_MAPPED_INST_F16(0, 4, CRGB16)
+BLUR_MAPPED_INST_F16(1, 2, CRGB16)  BLUR_MAPPED_INST_F16(2, 1, CRGB16)
+#endif
+
+#undef BLUR_MAPPED_INST_F16
 
 } // namespace gfx
 } // namespace fl

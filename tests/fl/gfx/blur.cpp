@@ -599,6 +599,319 @@ FL_TEST_CASE("blur2d with rectangular XYMap matches Canvas path") {
     }
 }
 
+// ── CanvasMapped tests: verify identical results to Canvas ──────────────
+
+// Helper: fill pixel arrays with deterministic test data.
+static void fill_deterministic(CRGB *pixels, int n) {
+    for (int i = 0; i < n; ++i) {
+        pixels[i] = CRGB(static_cast<uint8_t>((i * 37 + 17) & 0xFF),
+                         static_cast<uint8_t>((i * 59 + 31) & 0xFF),
+                         static_cast<uint8_t>((i * 83 + 47) & 0xFF));
+    }
+}
+
+FL_TEST_CASE("CanvasMapped 3x3 - uniform interior unchanged") {
+    const int W = 5, H = 5;
+    CRGB pixels[W * H];
+    for (int i = 0; i < W * H; ++i)
+        pixels[i] = CRGB(100, 100, 100);
+
+    XYMap rectMap = XYMap::constructRectangularGrid(W, H);
+    gfx::CanvasMapped<CRGB> canvas(fl::span<CRGB>(pixels, W * H), rectMap);
+    gfx::blurGaussian<1, 1>(canvas);
+
+    for (int y = 1; y < H - 1; ++y) {
+        for (int x = 1; x < W - 1; ++x) {
+            FL_CHECK_EQ(pixels[y * W + x].r, 100);
+            FL_CHECK_EQ(pixels[y * W + x].g, 100);
+            FL_CHECK_EQ(pixels[y * W + x].b, 100);
+        }
+    }
+}
+
+FL_TEST_CASE("CanvasMapped 3x3 - single bright pixel spreads") {
+    const int W = 5, H = 5;
+    CRGB pixels[W * H];
+    for (int i = 0; i < W * H; ++i)
+        pixels[i] = CRGB(0, 0, 0);
+    pixels[2 * W + 2] = CRGB(255, 0, 0);
+
+    XYMap rectMap = XYMap::constructRectangularGrid(W, H);
+    gfx::CanvasMapped<CRGB> canvas(fl::span<CRGB>(pixels, W * H), rectMap);
+    gfx::blurGaussian<1, 1>(canvas);
+
+    int cx = 2 * W + 2;
+    FL_CHECK(pixels[cx].r < 255);
+    FL_CHECK(pixels[cx].r > 0);
+    FL_CHECK(pixels[1 * W + 2].r > 0);
+    FL_CHECK(pixels[2 * W + 1].r > 0);
+    FL_CHECK(pixels[2 * W + 3].r > 0);
+    FL_CHECK(pixels[3 * W + 2].r > 0);
+
+    for (int i = 0; i < W * H; ++i) {
+        FL_CHECK_EQ(pixels[i].g, 0);
+        FL_CHECK_EQ(pixels[i].b, 0);
+    }
+}
+
+FL_TEST_CASE("CanvasMapped matches Canvas - blurGaussian R1") {
+    const int W = 8, H = 8, N = W * H;
+    CRGB canvas_px[N], mapped_px[N];
+    fill_deterministic(canvas_px, N);
+    FL_BUILTIN_MEMCPY(mapped_px, canvas_px, sizeof(canvas_px));
+
+    gfx::Canvas<CRGB> canvas(fl::span<CRGB>(canvas_px, N), W, H);
+    gfx::blurGaussian<1, 1>(canvas);
+
+    XYMap rectMap = XYMap::constructRectangularGrid(W, H);
+    gfx::CanvasMapped<CRGB> mapped(fl::span<CRGB>(mapped_px, N), rectMap);
+    gfx::blurGaussian<1, 1>(mapped);
+
+    for (int i = 0; i < N; ++i) {
+        FL_CHECK_EQ(canvas_px[i].r, mapped_px[i].r);
+        FL_CHECK_EQ(canvas_px[i].g, mapped_px[i].g);
+        FL_CHECK_EQ(canvas_px[i].b, mapped_px[i].b);
+    }
+}
+
+FL_TEST_CASE("CanvasMapped matches Canvas - blurGaussian R2") {
+    const int W = 9, H = 9, N = W * H;
+    CRGB canvas_px[N], mapped_px[N];
+    fill_deterministic(canvas_px, N);
+    FL_BUILTIN_MEMCPY(mapped_px, canvas_px, sizeof(canvas_px));
+
+    gfx::Canvas<CRGB> canvas(fl::span<CRGB>(canvas_px, N), W, H);
+    gfx::blurGaussian<2, 2>(canvas);
+
+    XYMap rectMap = XYMap::constructRectangularGrid(W, H);
+    gfx::CanvasMapped<CRGB> mapped(fl::span<CRGB>(mapped_px, N), rectMap);
+    gfx::blurGaussian<2, 2>(mapped);
+
+    for (int i = 0; i < N; ++i) {
+        FL_CHECK_EQ(canvas_px[i].r, mapped_px[i].r);
+        FL_CHECK_EQ(canvas_px[i].g, mapped_px[i].g);
+        FL_CHECK_EQ(canvas_px[i].b, mapped_px[i].b);
+    }
+}
+
+FL_TEST_CASE("CanvasMapped matches Canvas - blurGaussian R3") {
+    const int W = 12, H = 12, N = W * H;
+    CRGB canvas_px[N], mapped_px[N];
+    fill_deterministic(canvas_px, N);
+    FL_BUILTIN_MEMCPY(mapped_px, canvas_px, sizeof(canvas_px));
+
+    gfx::Canvas<CRGB> canvas(fl::span<CRGB>(canvas_px, N), W, H);
+    gfx::blurGaussian<3, 3>(canvas);
+
+    XYMap rectMap = XYMap::constructRectangularGrid(W, H);
+    gfx::CanvasMapped<CRGB> mapped(fl::span<CRGB>(mapped_px, N), rectMap);
+    gfx::blurGaussian<3, 3>(mapped);
+
+    for (int i = 0; i < N; ++i) {
+        FL_CHECK_EQ(canvas_px[i].r, mapped_px[i].r);
+        FL_CHECK_EQ(canvas_px[i].g, mapped_px[i].g);
+        FL_CHECK_EQ(canvas_px[i].b, mapped_px[i].b);
+    }
+}
+
+FL_TEST_CASE("CanvasMapped matches Canvas - blurGaussian R4") {
+    const int W = 16, H = 16, N = W * H;
+    CRGB canvas_px[N], mapped_px[N];
+    fill_deterministic(canvas_px, N);
+    FL_BUILTIN_MEMCPY(mapped_px, canvas_px, sizeof(canvas_px));
+
+    gfx::Canvas<CRGB> canvas(fl::span<CRGB>(canvas_px, N), W, H);
+    gfx::blurGaussian<4, 4>(canvas);
+
+    XYMap rectMap = XYMap::constructRectangularGrid(W, H);
+    gfx::CanvasMapped<CRGB> mapped(fl::span<CRGB>(mapped_px, N), rectMap);
+    gfx::blurGaussian<4, 4>(mapped);
+
+    for (int i = 0; i < N; ++i) {
+        FL_CHECK_EQ(canvas_px[i].r, mapped_px[i].r);
+        FL_CHECK_EQ(canvas_px[i].g, mapped_px[i].g);
+        FL_CHECK_EQ(canvas_px[i].b, mapped_px[i].b);
+    }
+}
+
+FL_TEST_CASE("CanvasMapped matches Canvas - horizontal only") {
+    const int W = 8, H = 8, N = W * H;
+    CRGB canvas_px[N], mapped_px[N];
+    fill_deterministic(canvas_px, N);
+    FL_BUILTIN_MEMCPY(mapped_px, canvas_px, sizeof(canvas_px));
+
+    gfx::Canvas<CRGB> canvas(fl::span<CRGB>(canvas_px, N), W, H);
+    gfx::blurGaussian<2, 0>(canvas);
+
+    XYMap rectMap = XYMap::constructRectangularGrid(W, H);
+    gfx::CanvasMapped<CRGB> mapped(fl::span<CRGB>(mapped_px, N), rectMap);
+    gfx::blurGaussian<2, 0>(mapped);
+
+    for (int i = 0; i < N; ++i) {
+        FL_CHECK_EQ(canvas_px[i].r, mapped_px[i].r);
+        FL_CHECK_EQ(canvas_px[i].g, mapped_px[i].g);
+        FL_CHECK_EQ(canvas_px[i].b, mapped_px[i].b);
+    }
+}
+
+FL_TEST_CASE("CanvasMapped matches Canvas - vertical only") {
+    const int W = 8, H = 8, N = W * H;
+    CRGB canvas_px[N], mapped_px[N];
+    fill_deterministic(canvas_px, N);
+    FL_BUILTIN_MEMCPY(mapped_px, canvas_px, sizeof(canvas_px));
+
+    gfx::Canvas<CRGB> canvas(fl::span<CRGB>(canvas_px, N), W, H);
+    gfx::blurGaussian<0, 2>(canvas);
+
+    XYMap rectMap = XYMap::constructRectangularGrid(W, H);
+    gfx::CanvasMapped<CRGB> mapped(fl::span<CRGB>(mapped_px, N), rectMap);
+    gfx::blurGaussian<0, 2>(mapped);
+
+    for (int i = 0; i < N; ++i) {
+        FL_CHECK_EQ(canvas_px[i].r, mapped_px[i].r);
+        FL_CHECK_EQ(canvas_px[i].g, mapped_px[i].g);
+        FL_CHECK_EQ(canvas_px[i].b, mapped_px[i].b);
+    }
+}
+
+FL_TEST_CASE("CanvasMapped matches Canvas - with alpha8 dim") {
+    const int W = 8, H = 8, N = W * H;
+    CRGB canvas_px[N], mapped_px[N];
+    fill_deterministic(canvas_px, N);
+    FL_BUILTIN_MEMCPY(mapped_px, canvas_px, sizeof(canvas_px));
+
+    gfx::Canvas<CRGB> canvas(fl::span<CRGB>(canvas_px, N), W, H);
+    gfx::blurGaussian<1, 1>(canvas, alpha8(128));
+
+    XYMap rectMap = XYMap::constructRectangularGrid(W, H);
+    gfx::CanvasMapped<CRGB> mapped(fl::span<CRGB>(mapped_px, N), rectMap);
+    gfx::blurGaussian<1, 1>(mapped, alpha8(128));
+
+    for (int i = 0; i < N; ++i) {
+        FL_CHECK_EQ(canvas_px[i].r, mapped_px[i].r);
+        FL_CHECK_EQ(canvas_px[i].g, mapped_px[i].g);
+        FL_CHECK_EQ(canvas_px[i].b, mapped_px[i].b);
+    }
+}
+
+FL_TEST_CASE("CanvasMapped matches Canvas - asymmetric radii") {
+    const int W = 10, H = 10, N = W * H;
+    CRGB canvas_px[N], mapped_px[N];
+    fill_deterministic(canvas_px, N);
+    FL_BUILTIN_MEMCPY(mapped_px, canvas_px, sizeof(canvas_px));
+
+    gfx::Canvas<CRGB> canvas(fl::span<CRGB>(canvas_px, N), W, H);
+    gfx::blurGaussian<1, 2>(canvas);
+
+    XYMap rectMap = XYMap::constructRectangularGrid(W, H);
+    gfx::CanvasMapped<CRGB> mapped(fl::span<CRGB>(mapped_px, N), rectMap);
+    gfx::blurGaussian<1, 2>(mapped);
+
+    for (int i = 0; i < N; ++i) {
+        FL_CHECK_EQ(canvas_px[i].r, mapped_px[i].r);
+        FL_CHECK_EQ(canvas_px[i].g, mapped_px[i].g);
+        FL_CHECK_EQ(canvas_px[i].b, mapped_px[i].b);
+    }
+}
+
+// ── CanvasMapped non-optimized path tests (non-rectangular XYMap) ────────
+
+// Identity XYMap via user function — forces the non-optimized gather/scatter path.
+static fl::u16 identity_xy(fl::u16 x, fl::u16 y, fl::u16 w, fl::u16 h) {
+    (void)h;
+    return static_cast<fl::u16>(y * w + x);
+}
+
+// Helper: check two pixel values are within ±tolerance per channel.
+static bool near_eq(uint8_t a, uint8_t b, int tol = 1) {
+    return (a >= b ? a - b : b - a) <= tol;
+}
+
+FL_TEST_CASE("CanvasMapped non-rect matches Canvas within 1 LSB - R1") {
+    const int W = 8, H = 8, N = W * H;
+    CRGB canvas_px[N], mapped_px[N];
+    fill_deterministic(canvas_px, N);
+    FL_BUILTIN_MEMCPY(mapped_px, canvas_px, sizeof(canvas_px));
+
+    gfx::Canvas<CRGB> canvas(fl::span<CRGB>(canvas_px, N), W, H);
+    gfx::blurGaussian<1, 1>(canvas);
+
+    // Use identity user function — NOT rectangular, so non-optimized path runs.
+    XYMap idMap = XYMap::constructWithUserFunction(W, H, identity_xy);
+    gfx::CanvasMapped<CRGB> mapped(fl::span<CRGB>(mapped_px, N), idMap);
+    gfx::blurGaussian<1, 1>(mapped);
+
+    // SIMD avg_round introduces ±1 per pass; H+V can compound to ±1 per component.
+    for (int i = 0; i < N; ++i) {
+        FL_CHECK(near_eq(canvas_px[i].r, mapped_px[i].r));
+        FL_CHECK(near_eq(canvas_px[i].g, mapped_px[i].g));
+        FL_CHECK(near_eq(canvas_px[i].b, mapped_px[i].b));
+    }
+}
+
+FL_TEST_CASE("CanvasMapped non-rect matches Canvas within tolerance - R2") {
+    const int W = 9, H = 9, N = W * H;
+    CRGB canvas_px[N], mapped_px[N];
+    fill_deterministic(canvas_px, N);
+    FL_BUILTIN_MEMCPY(mapped_px, canvas_px, sizeof(canvas_px));
+
+    gfx::Canvas<CRGB> canvas(fl::span<CRGB>(canvas_px, N), W, H);
+    gfx::blurGaussian<2, 2>(canvas);
+
+    XYMap idMap = XYMap::constructWithUserFunction(W, H, identity_xy);
+    gfx::CanvasMapped<CRGB> mapped(fl::span<CRGB>(mapped_px, N), idMap);
+    gfx::blurGaussian<2, 2>(mapped);
+
+    // R=2 now uses exact [1,4,6,4,1] SIMD kernel (no cascaded avg_round).
+    for (int i = 0; i < N; ++i) {
+        FL_CHECK(near_eq(canvas_px[i].r, mapped_px[i].r));
+        FL_CHECK(near_eq(canvas_px[i].g, mapped_px[i].g));
+        FL_CHECK(near_eq(canvas_px[i].b, mapped_px[i].b));
+    }
+}
+
+FL_TEST_CASE("CanvasMapped non-rect matches Canvas within 1 LSB - R3") {
+    const int W = 12, H = 12, N = W * H;
+    CRGB canvas_px[N], mapped_px[N];
+    fill_deterministic(canvas_px, N);
+    FL_BUILTIN_MEMCPY(mapped_px, canvas_px, sizeof(canvas_px));
+
+    gfx::Canvas<CRGB> canvas(fl::span<CRGB>(canvas_px, N), W, H);
+    gfx::blurGaussian<3, 3>(canvas);
+
+    XYMap idMap = XYMap::constructWithUserFunction(W, H, identity_xy);
+    gfx::CanvasMapped<CRGB> mapped(fl::span<CRGB>(mapped_px, N), idMap);
+    gfx::blurGaussian<3, 3>(mapped);
+
+    // R=3 uses exact SIMD weights (no cascaded avg_round).
+    for (int i = 0; i < N; ++i) {
+        FL_CHECK(near_eq(canvas_px[i].r, mapped_px[i].r));
+        FL_CHECK(near_eq(canvas_px[i].g, mapped_px[i].g));
+        FL_CHECK(near_eq(canvas_px[i].b, mapped_px[i].b));
+    }
+}
+
+FL_TEST_CASE("CanvasMapped non-rect matches Canvas within 1 LSB - R4") {
+    const int W = 16, H = 16, N = W * H;
+    CRGB canvas_px[N], mapped_px[N];
+    fill_deterministic(canvas_px, N);
+    FL_BUILTIN_MEMCPY(mapped_px, canvas_px, sizeof(canvas_px));
+
+    gfx::Canvas<CRGB> canvas(fl::span<CRGB>(canvas_px, N), W, H);
+    gfx::blurGaussian<4, 4>(canvas);
+
+    XYMap idMap = XYMap::constructWithUserFunction(W, H, identity_xy);
+    gfx::CanvasMapped<CRGB> mapped(fl::span<CRGB>(mapped_px, N), idMap);
+    gfx::blurGaussian<4, 4>(mapped);
+
+    // R=4 uses exact SIMD weights (no cascaded avg_round).
+    for (int i = 0; i < N; ++i) {
+        FL_CHECK(near_eq(canvas_px[i].r, mapped_px[i].r));
+        FL_CHECK(near_eq(canvas_px[i].g, mapped_px[i].g));
+        FL_CHECK(near_eq(canvas_px[i].b, mapped_px[i].b));
+    }
+}
+
 FL_TEST_FILE(FL_FILEPATH) {
 
 } // FL_TEST_FILE

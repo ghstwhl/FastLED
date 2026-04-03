@@ -131,6 +131,19 @@ inline void blurGaussian(Canvas<RGB_T> &canvas) FL_NOEXCEPT {
     blurGaussian<hRadius, vRadius>(canvas, alpha8(255));
 }
 
+/// @brief XYMap-backed Gaussian blur (non-optimized, per-pixel path).
+/// @tparam hRadius Horizontal blur radius (0–4).
+/// @tparam vRadius Vertical blur radius (0–4).
+/// @tparam RGB_T Pixel type.
+/// @param canvas The CanvasMapped to blur in-place.
+/// @param dimFactor UNORM8 brightness scale.
+template <int hRadius, int vRadius, typename RGB_T>
+void blurGaussian(CanvasMapped<RGB_T> &canvas, alpha8 dimFactor) FL_NOEXCEPT;
+
+/// @brief Higher-precision dim overload for CanvasMapped (UNORM16).
+template <int hRadius, int vRadius, typename RGB_T>
+void blurGaussian(CanvasMapped<RGB_T> &canvas, alpha16 dimFactor) FL_NOEXCEPT;
+
 } // namespace gfx
 
 // Span-based bindings — forward fl::blur* to fl::gfx::blur*
