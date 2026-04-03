@@ -145,10 +145,10 @@ public:
         }
 
         // Handle channel selection for mono output
-        if (mConfig.mAudioChannel == Channel::Left || mConfig.mAudioChannel == Channel::Right) {
+        if (mConfig.mAudioChannel == audio::AudioChannel::Left || mConfig.mAudioChannel == audio::AudioChannel::Right) {
             // For stereo input with single channel selection, extract the desired channel
             size_t mono_samples = samples_read / 2;
-            size_t channel_offset = (mConfig.mAudioChannel == Channel::Right) ? 1 : 0;
+            size_t channel_offset = (mConfig.mAudioChannel == audio::AudioChannel::Right) ? 1 : 0;
 
             for (size_t i = 0; i < mono_samples; i++) {
                 buffer[i] = buffer[i * 2 + channel_offset];
@@ -180,15 +180,15 @@ private:
     bool mInitialized;
     u64 mTotalSamplesRead;
 
-    int convertCommFormatToMode(I2SCommFormat format) {
+    int convertCommFormatToMode(audio::I2SCommFormat format) {
         // Map FastLED I2S formats to Arduino I2S modes
         switch (format) {
-            case I2SCommFormat::Philips:
+            case audio::I2SCommFormat::Philips:
                 return I2S_PHILIPS_MODE;
-            case I2SCommFormat::MSB:
+            case audio::I2SCommFormat::MSB:
                 return I2S_LEFT_JUSTIFIED_MODE;
-            case I2SCommFormat::PCMShort:
-            case I2SCommFormat::PCMLong:
+            case audio::I2SCommFormat::PCMShort:
+            case audio::I2SCommFormat::PCMLong:
                 return I2S_RIGHT_JUSTIFIED_MODE;
             default:
                 return I2S_PHILIPS_MODE;  // Default to Philips standard
