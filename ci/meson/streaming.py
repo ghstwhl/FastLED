@@ -62,6 +62,7 @@ def stream_compile_only(
     compile_timeout: int = 600,
     build_optimizer: Optional[BuildOptimizer] = None,
     build_timer=None,
+    on_test_compiled: Optional[Callable[[Path], None]] = None,
 ) -> CompileOnlyResult:
     """
     Stream compilation only - collect all compiled test paths without running them.
@@ -345,6 +346,8 @@ def stream_compile_only(
                             if verbose:
                                 _ts_print(f"[MESON] Test built: {test_path.name}")
                             compiled_tests.append(test_path)
+                            if on_test_compiled is not None:
+                                on_test_compiled(test_path)
 
             # Check compilation result
             returncode = proc.wait()
@@ -451,11 +454,11 @@ def stream_compile_and_run_tests(
     max_failures: int = 10,
 ) -> StreamingResult:
     """
-    Stream test compilation and then execution sequentially.
+    Stream test compilation and execution with overlap.
 
-    First compiles all tests, then runs them after compilation completes.
-    This provides clearer timing breakdown and prevents tests from running
-    during ongoing compilation.
+    Tests start executing as soon as they finish linking, while remaining
+    tests continue compiling. This reduces total wall-clock time compared
+    to a sequential compile-then-run approach.
 
     Args:
         build_dir: Meson build directory
@@ -467,61 +470,18 @@ def stream_compile_and_run_tests(
         build_optimizer: Optional BuildOptimizer for DLL relink suppression.
         test_file_filter: Optional .hpp filename to filter test execution (e.g., "backbeat.hpp")
         build_timer: Optional BuildTimer for recording test_execution_done checkpoint.
+        max_failures: Maximum number of test failures before halting (default: 10, 0 = unlimited).
     """
-    # Phase 1: Compile only
-    cr = stream_compile_only(
-        build_dir=build_dir,
-        target=target,
-        verbose=verbose,
-        compile_timeout=compile_timeout,
-        build_optimizer=build_optimizer,
-    )
-
-    if not cr.success:
-        # Compilation failed, return immediately
-        return StreamingResult(
-            success=False,
-            compile_output=cr.compile_output,
-            compile_sub_phases=cr.compile_sub_phases,
-        )
-
-    # Phase 2: Run tests after compilation completes
-    # Only run tests if test_file_filter is set or all tests should be run
-    num_passed = 0
-    num_failed = 0
-    failed_names: list[str] = []
-
-    # Filter tests if test_file_filter is specified
-    if test_file_filter and cr.compiled_tests:
-        # Convert filter (e.g., "backbeat.hpp") to match test paths
-        filtered_tests = [
-            t
-            for t in cr.compiled_tests
-            if test_file_filter.replace(".hpp", "") in t.name.lower()
-        ]
-    else:
-        filtered_tests = cr.compiled_tests
-
-    if not filtered_tests:
-        # No tests found during compilation (build was fully cached).
-        # Return empty result - caller will fall back to Meson test runner.
-        return StreamingResult(
-            success=True,
-            compile_output=cr.compile_output,
-            compile_sub_phases=cr.compile_sub_phases,
-        )
-
-    total = len(filtered_tests)
-    max_workers = min(os.cpu_count() or 4, total, 16)
-    _ts_print(f"[MESON] Running {total} tests ({max_workers} parallel workers)...")
-
     # Pass test file filter to the callback via an attribute so it can
     # inject it into the subprocess environment (os.environ is stale after
     # _streaming_env was copied).
     if test_file_filter:
         test_callback._test_file_filter = test_file_filter  # type: ignore[attr-defined]
 
-    tests_completed = 0
+    # Prepare concurrent test execution infrastructure.
+    # Tests are submitted to the executor as they finish linking (during
+    # compilation), overlapping test execution with ongoing compilation.
+    max_workers = min(os.cpu_count() or 4, 16)
     halt_event = threading.Event()
     _kill_all = getattr(test_callback, "kill_all", None)
 
@@ -550,11 +510,83 @@ def stream_compile_and_run_tests(
     # finishes, making Ctrl+C unresponsive for up to 600s per test.
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
     futures: list[concurrent.futures.Future[_WorkerResult]] = []
+    futures_lock = threading.Lock()
+
+    # Prepare filter for test_file_filter
+    filter_needle = (
+        test_file_filter.replace(".hpp", "").lower() if test_file_filter else None
+    )
+
+    def _on_test_compiled(test_path: Path) -> None:
+        """Submit a newly compiled test for execution immediately.
+
+        Called from the Ninja producer thread as each test finishes linking,
+        allowing test execution to overlap with ongoing compilation.
+        """
+        if halt_event.is_set():
+            return
+        if filter_needle and filter_needle not in test_path.name.lower():
+            return
+        future = executor.submit(_run_one_test, test_path)
+        with futures_lock:
+            futures.append(future)
+
+    # Compile and run tests with overlap — tests start executing as soon
+    # as they finish linking while remaining tests continue compiling.
+    cr = stream_compile_only(
+        build_dir=build_dir,
+        target=target,
+        verbose=verbose,
+        compile_timeout=compile_timeout,
+        build_optimizer=build_optimizer,
+        build_timer=build_timer,
+        on_test_compiled=_on_test_compiled,
+    )
+
+    if not cr.success:
+        # Compilation failed — cancel pending tests and shutdown
+        halt_event.set()
+        if _kill_all:
+            _kill_all()
+        with futures_lock:
+            for f in futures:
+                f.cancel()
+        executor.shutdown(wait=False, cancel_futures=True)
+        return StreamingResult(
+            success=False,
+            compile_output=cr.compile_output,
+            compile_sub_phases=cr.compile_sub_phases,
+        )
+
+    # Take snapshot of futures (no more will be added after compile returns)
+    with futures_lock:
+        all_futures = list(futures)
+
+    if not all_futures:
+        # No tests found during compilation (build was fully cached).
+        # Return empty result - caller will fall back to Meson test runner.
+        executor.shutdown(wait=False)
+        return StreamingResult(
+            success=True,
+            compile_output=cr.compile_output,
+            compile_sub_phases=cr.compile_sub_phases,
+        )
+
+    total = len(all_futures)
+    _ts_print(
+        f"[MESON] Collecting {total} test results ({max_workers} parallel workers)..."
+    )
+
+    num_passed = 0
+    num_failed = 0
+    failed_names: list[str] = []
+    tests_completed = 0
+
     try:
-        futures = [executor.submit(_run_one_test, tp) for tp in filtered_tests]
         # Wait sequentially so output order matches submission order
         # (tests still execute in parallel across worker threads).
-        for future in futures:
+        # Many tests will have already completed during compilation.
+        for future in all_futures:
             if halt_event.is_set():
                 break
             wr = future.result()
@@ -591,14 +623,14 @@ def stream_compile_and_run_tests(
                     halt_event.set()
                     if _kill_all:
                         _kill_all()
-                    for f in futures:
+                    for f in all_futures:
                         f.cancel()
                     break
     except KeyboardInterrupt as ki:
         halt_event.set()
         if _kill_all:
             _kill_all()
-        for f in futures:
+        for f in all_futures:
             f.cancel()
         handle_keyboard_interrupt(ki)
         raise
