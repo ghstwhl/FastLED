@@ -86,9 +86,8 @@ void blur1d(fl::span<CRGB> leds, fract8 blur_amount) {
 
 void blur2d(fl::span<CRGB> leds, fl::u8 width, fl::u8 height,
             fract8 blur_amount, const XYMap &xymap) {
-    FASTLED_UNUSED(xymap);
-    Canvas<CRGB> canvas(leds, width, height);
-    gfx::blur2d(canvas, alpha8(blur_amount));
+    gfx::blurRows(leds, width, height, blur_amount, xymap);
+    gfx::blurColumns(leds, width, height, blur_amount, xymap);
 }
 
 void blur2d(CRGB *leds, fl::u8 width, fl::u8 height, fract8 blur_amount) {
@@ -133,16 +132,79 @@ void blur2d(CRGB *leds, fl::u8 width, fl::u8 height, fract8 blur_amount) {
 
 void blurRows(fl::span<CRGB> leds, fl::u8 width, fl::u8 height,
               fract8 blur_amount, const XYMap &xyMap) {
-    FASTLED_UNUSED(xyMap);
-    Canvas<CRGB> canvas(leds, width, height);
-    gfx::blurRows(canvas, alpha8(blur_amount));
+    CRGB *pixels = leds.data();
+    fl::u8 keep = 255 - blur_amount;
+    fl::u8 seep = blur_amount >> 1;
+    if (xyMap.isRectangularGrid()) {
+        for (fl::u8 row = 0; row < height; ++row) {
+            CRGB carryover = CRGB::Black;
+            CRGB *rowBase = pixels + row * width;
+            for (fl::u8 col = 0; col < width; ++col) {
+                CRGB cur = rowBase[col];
+                CRGB part = cur;
+                part.nscale8(seep);
+                cur.nscale8(keep);
+                cur += carryover;
+                if (col)
+                    rowBase[col - 1] += part;
+                rowBase[col] = cur;
+                carryover = part;
+            }
+        }
+        return;
+    }
+    for (fl::u8 row = 0; row < height; ++row) {
+        CRGB carryover = CRGB::Black;
+        for (fl::u8 i = 0; i < width; ++i) {
+            CRGB cur = leds[xyMap.mapToIndex(i, row)];
+            CRGB part = cur;
+            part.nscale8(seep);
+            cur.nscale8(keep);
+            cur += carryover;
+            if (i)
+                leds[xyMap.mapToIndex(i - 1, row)] += part;
+            leds[xyMap.mapToIndex(i, row)] = cur;
+            carryover = part;
+        }
+    }
 }
 
 void blurColumns(fl::span<CRGB> leds, fl::u8 width, fl::u8 height,
                  fract8 blur_amount, const XYMap &xyMap) {
-    FASTLED_UNUSED(xyMap);
-    Canvas<CRGB> canvas(leds, width, height);
-    gfx::blurColumns(canvas, alpha8(blur_amount));
+    CRGB *pixels = leds.data();
+    fl::u8 keep = 255 - blur_amount;
+    fl::u8 seep = blur_amount >> 1;
+    if (xyMap.isRectangularGrid()) {
+        for (fl::u8 col = 0; col < width; ++col) {
+            CRGB carryover = CRGB::Black;
+            for (fl::u8 row = 0; row < height; ++row) {
+                CRGB cur = pixels[row * width + col];
+                CRGB part = cur;
+                part.nscale8(seep);
+                cur.nscale8(keep);
+                cur += carryover;
+                if (row)
+                    pixels[(row - 1) * width + col] += part;
+                pixels[row * width + col] = cur;
+                carryover = part;
+            }
+        }
+        return;
+    }
+    for (fl::u8 col = 0; col < width; ++col) {
+        CRGB carryover = CRGB::Black;
+        for (fl::u8 i = 0; i < height; ++i) {
+            CRGB cur = leds[xyMap.mapToIndex(col, i)];
+            CRGB part = cur;
+            part.nscale8(seep);
+            cur.nscale8(keep);
+            cur += carryover;
+            if (i)
+                leds[xyMap.mapToIndex(col, i - 1)] += part;
+            leds[xyMap.mapToIndex(col, i)] = cur;
+            carryover = part;
+        }
+    }
 }
 
 void blurRows(Canvas<CRGB> &canvas, alpha8 blur_amount) {

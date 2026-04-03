@@ -6,6 +6,7 @@
 #include "fl/gfx/blur.h"
 #include "fl/gfx/crgb.h"
 #include "fl/gfx/crgb16.h"
+#include "fl/math/xymap.h"
 #include "fl/stl/chrono.h"
 #include "fl/stl/cstdio.h"
 #include "fl/stl/stdio.h"
@@ -455,6 +456,147 @@ FL_TEST_CASE("blur benchmark") {
     }
 
     fl::println("");
+}
+
+// ── XYMap-aware blur tests ──────────────────────────────────────────────
+
+FL_TEST_CASE("blur2d with serpentine XYMap produces different result") {
+    // Verify that blur2d actually uses the XYMap when it's non-trivial.
+    // A serpentine layout reverses every other row, so blurring with
+    // serpentine vs rectangular should produce different pixel values
+    // when the source data is asymmetric.
+    const fl::u8 W = 4, H = 4;
+    const int N = W * H;
+
+    // Create asymmetric test data: a gradient along columns.
+    CRGB rect_pixels[N];
+    CRGB serp_pixels[N];
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            fl::u8 val = static_cast<fl::u8>(x * 60 + y * 10);
+            rect_pixels[y * W + x] = CRGB(val, 0, 0);
+            serp_pixels[y * W + x] = CRGB(val, 0, 0);
+        }
+    }
+
+    XYMap rectMap = XYMap::constructRectangularGrid(W, H);
+    XYMap serpMap = XYMap::constructSerpentine(W, H);
+
+    fl::gfx::blur2d(fl::span<CRGB>(rect_pixels, N), W, H, 128, rectMap);
+    fl::gfx::blur2d(fl::span<CRGB>(serp_pixels, N), W, H, 128, serpMap);
+
+    // At least some pixels must differ between rectangular and serpentine.
+    bool any_diff = false;
+    for (int i = 0; i < N; ++i) {
+        if (rect_pixels[i].r != serp_pixels[i].r ||
+            rect_pixels[i].g != serp_pixels[i].g ||
+            rect_pixels[i].b != serp_pixels[i].b) {
+            any_diff = true;
+            break;
+        }
+    }
+    FL_CHECK(any_diff);
+}
+
+FL_TEST_CASE("blurRows with custom XYMap uses mapping") {
+    // Use a custom XYFunction that interleaves logical row members across
+    // physical positions to verify that blurRows uses the XYMap. When a
+    // logical row's pixels are scattered in physical memory, the blur
+    // reads different physical data than the rectangular case.
+    const fl::u8 W = 4, H = 2;
+    const int N = W * H;
+
+    // Interleaved mapping: logical (x, y) → physical index 2*x + y.
+    // Row 0 maps to even physical indices: 0, 2, 4, 6.
+    // Row 1 maps to odd physical indices: 1, 3, 5, 7.
+    auto interleave = [](fl::u16 x, fl::u16 y, fl::u16 w, fl::u16 h) -> fl::u16 {
+        (void)w; (void)h;
+        return static_cast<fl::u16>(2 * x + y);
+    };
+
+    CRGB rect_pixels[N];
+    CRGB inter_pixels[N];
+    // Fill physical pixels with unique ascending values.
+    for (int i = 0; i < N; ++i) {
+        fl::u8 val = static_cast<fl::u8>(i * 30 + 10);
+        rect_pixels[i] = CRGB(val, 0, 0);
+        inter_pixels[i] = CRGB(val, 0, 0);
+    }
+
+    XYMap rectMap = XYMap::constructRectangularGrid(W, H);
+    XYMap interMap = XYMap::constructWithUserFunction(W, H, interleave);
+
+    fl::gfx::blurRows(fl::span<CRGB>(rect_pixels, N), W, H, 128, rectMap);
+    fl::gfx::blurRows(fl::span<CRGB>(inter_pixels, N), W, H, 128, interMap);
+
+    // With rectangular: row 0 blurs phys[0..3], row 1 blurs phys[4..7].
+    // With interleaved: row 0 blurs phys[0,2,4,6], row 1 blurs phys[1,3,5,7].
+    // These access different physical pixels so the results must differ.
+    bool any_diff = false;
+    for (int i = 0; i < N; ++i) {
+        if (rect_pixels[i].r != inter_pixels[i].r) {
+            any_diff = true;
+            break;
+        }
+    }
+    FL_CHECK(any_diff);
+}
+
+FL_TEST_CASE("blurColumns with serpentine XYMap uses mapping") {
+    const fl::u8 W = 4, H = 4;
+    const int N = W * H;
+
+    CRGB rect_pixels[N];
+    CRGB serp_pixels[N];
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            fl::u8 val = static_cast<fl::u8>(x * 60 + y * 10);
+            rect_pixels[y * W + x] = CRGB(val, 0, 0);
+            serp_pixels[y * W + x] = CRGB(val, 0, 0);
+        }
+    }
+
+    XYMap rectMap = XYMap::constructRectangularGrid(W, H);
+    XYMap serpMap = XYMap::constructSerpentine(W, H);
+
+    fl::gfx::blurColumns(fl::span<CRGB>(rect_pixels, N), W, H, 128, rectMap);
+    fl::gfx::blurColumns(fl::span<CRGB>(serp_pixels, N), W, H, 128, serpMap);
+
+    bool any_diff = false;
+    for (int i = 0; i < N; ++i) {
+        if (rect_pixels[i].r != serp_pixels[i].r) {
+            any_diff = true;
+            break;
+        }
+    }
+    FL_CHECK(any_diff);
+}
+
+FL_TEST_CASE("blur2d with rectangular XYMap matches Canvas path") {
+    // Verify backward compatibility: rectangular XYMap should produce
+    // the same result as the Canvas-based path.
+    const fl::u8 W = 8, H = 8;
+    const int N = W * H;
+
+    CRGB xymap_pixels[N];
+    CRGB canvas_pixels[N];
+    for (int i = 0; i < N; ++i) {
+        fl::u8 val = static_cast<fl::u8>((i * 37 + 17) & 0xFF);
+        xymap_pixels[i] = CRGB(val, val, val);
+        canvas_pixels[i] = CRGB(val, val, val);
+    }
+
+    XYMap rectMap = XYMap::constructRectangularGrid(W, H);
+    fl::gfx::blur2d(fl::span<CRGB>(xymap_pixels, N), W, H, 128, rectMap);
+
+    gfx::Canvas<CRGB> canvas(fl::span<CRGB>(canvas_pixels, N), W, H);
+    fl::gfx::blur2d(canvas, alpha8(128));
+
+    for (int i = 0; i < N; ++i) {
+        FL_CHECK_EQ(xymap_pixels[i].r, canvas_pixels[i].r);
+        FL_CHECK_EQ(xymap_pixels[i].g, canvas_pixels[i].g);
+        FL_CHECK_EQ(xymap_pixels[i].b, canvas_pixels[i].b);
+    }
 }
 
 FL_TEST_FILE(FL_FILEPATH) {
