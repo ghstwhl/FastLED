@@ -3,7 +3,7 @@
 /// @file lcd_rgb_peripheral_mock.cpp
 /// @brief Mock LCD RGB peripheral implementation for unit testing
 
-// This mock is only for host testing (uses std::thread which is not available on embedded platforms)
+// Synchronous mock for host testing — no background thread, no wall-clock timing.
 // Compile for stub platform testing OR non-Arduino host platforms
 #include "platforms/is_platform.h"
 #if defined(FASTLED_STUB_IMPL) || (!defined(ARDUINO) && (defined(FL_IS_LINUX) || defined(FL_IS_APPLE) || defined(FL_IS_WIN)))
@@ -13,24 +13,11 @@
 #include "fl/stl/allocator.h"
 #include "fl/stl/cstring.h"
 #include "fl/stl/singleton.h"
-#include "fl/stl/atomic.h"
 #include "fl/stl/noexcept.h"
 
 // IWYU pragma: begin_keep
-#include "fl/stl/thread.h"  // ok include
-#include "fl/stl/chrono.h"  // ok include
-#include "fl/stl/mutex.h"   // ok include
-#include "fl/stl/condition_variable.h"  // ok include
 #include "fl/stl/cstdlib.h" // ok include for aligned_alloc on POSIX
 // IWYU pragma: end_keep
-
-#ifdef ARDUINO
-// IWYU pragma: begin_keep
-#include "fl/system/arduino.h"
-// IWYU pragma: end_keep
-#else
-#include "platforms/stub/time_stub.h"  // For fl::micros() and delay() on host tests
-#endif
 
 namespace fl {
 namespace detail {
@@ -111,21 +98,14 @@ private:
     // Pending draw state
     size_t mPendingDraws;
 
-    // Per-draw tracking for simulation thread
-    struct PendingDraw {
-        u64 completion_time_us;
-    };
-    fl::vector<PendingDraw> mPendingQueue;
+    // Simulated time (advances only via delay calls — deterministic, no wall-clock jitter)
+    u64 mSimulatedTimeUs;
+    bool mFiringCallbacks;  // Re-entrancy guard
+    size_t mDeferredCallbackCount;  // Count of pending callbacks to fire
 
-    // Thread synchronization
-    fl::mutex mMutex;
-    fl::condition_variable mCondVar;
-    fl::atomic<bool> mCallbackExecuting{false};
-
-    // Simulation thread
-    void simulationThreadFunc() FL_NOEXCEPT;
-    fl::unique_ptr<fl::thread> mSimulationThread;
-    fl::atomic<bool> mSimulationThreadShouldStop;
+    // Synchronous callback pumping (matches I2S mock pattern)
+    void pumpDeferredCallbacks() FL_NOEXCEPT;
+    void fireCallback() FL_NOEXCEPT;
 };
 
 //=============================================================================
@@ -153,23 +133,12 @@ LcdRgbPeripheralMockImpl::LcdRgbPeripheralMockImpl() FL_NOEXCEPT
       mShouldFailDraw(false),
       mHistory(),
       mPendingDraws(0),
-      mPendingQueue(),
-      mMutex(),
-      mCondVar(),
-      mCallbackExecuting(false),
-      mSimulationThread(),
-      mSimulationThreadShouldStop(false) {
-    // Start simulation thread after all members initialized
-    mSimulationThread = fl::make_unique<fl::thread>([this]() FL_NOEXCEPT { simulationThreadFunc(); });
+      mSimulatedTimeUs(0),
+      mFiringCallbacks(false),
+      mDeferredCallbackCount(0) {
 }
 
 LcdRgbPeripheralMockImpl::~LcdRgbPeripheralMockImpl() {
-    // Stop simulation thread
-    mSimulationThreadShouldStop = true;
-    mCondVar.notify_one();
-    if (mSimulationThread && mSimulationThread->joinable()) {
-        mSimulationThread->join();
-    }
 }
 
 //=============================================================================
@@ -190,12 +159,11 @@ bool LcdRgbPeripheralMockImpl::initialize(const LcdRgbPeripheralConfig& config) 
 }
 
 void LcdRgbPeripheralMockImpl::deinitialize() FL_NOEXCEPT {
-    fl::lock_guard<fl::mutex> lock(mMutex);
     mInitialized = false;
     mEnabled = false;
     mBusy = false;
     mPendingDraws = 0;
-    mPendingQueue.clear();
+    mDeferredCallbackCount = 0;
 }
 
 bool LcdRgbPeripheralMockImpl::isInitialized() const FL_NOEXCEPT {
@@ -270,25 +238,18 @@ bool LcdRgbPeripheralMockImpl::drawFrame(const u16* buffer, size_t size_bytes) F
     record.buffer_copy.resize(word_count);
     fl::memcpy(record.buffer_copy.data(), buffer, size_bytes);
     record.size_bytes = size_bytes;
-    record.timestamp_us = fl::micros();
+    record.timestamp_us = mSimulatedTimeUs;
 
     mHistory.push_back(fl::move(record));
 
-    // Update state with mutex protection
-    {
-        fl::lock_guard<fl::mutex> lock(mMutex);
-        mDrawCount++;
-        mBusy = true;
-        mPendingDraws++;
+    // Queue deferred callback — will be fired synchronously via pumpDeferredCallbacks
+    mDrawCount++;
+    mBusy = true;
+    mPendingDraws++;
+    mDeferredCallbackCount++;
 
-        // Enqueue for simulation thread
-        PendingDraw pending;
-        pending.completion_time_us = fl::micros() + draw_delay_us;
-        mPendingQueue.push_back(pending);
-    }
-
-    // Wake simulation thread
-    mCondVar.notify_one();
+    // If we're not already inside a callback chain, pump now
+    pumpDeferredCallbacks();
 
     return true;
 }
@@ -298,38 +259,15 @@ bool LcdRgbPeripheralMockImpl::waitFrameDone(u32 timeout_ms) FL_NOEXCEPT {
         return false;
     }
 
-    // Check if already complete
-    {
-        fl::lock_guard<fl::mutex> lock(mMutex);
-        if (mPendingDraws == 0) {
-            mBusy = false;
-            return true;
-        }
+    // In the synchronous mock, everything completes immediately when drawFrame() is called.
+    // waitFrameDone just returns the completion status.
+    (void)timeout_ms;  // timeout not used in synchronous mock
+    if (mPendingDraws == 0) {
+        mBusy = false;
+        return true;
     }
 
-    if (timeout_ms == 0) {
-        return false;  // Non-blocking poll, still pending
-    }
-
-    // Wait for completion
-    u32 start_us = fl::micros();
-    u32 timeout_us = timeout_ms * 1000;
-
-    while (true) {
-        {
-            fl::lock_guard<fl::mutex> lock(mMutex);
-            if (mPendingDraws == 0) {
-                mBusy = false;
-                return true;
-            }
-        }
-
-        if ((fl::micros() - start_us) >= timeout_us) {
-            return false;  // Timeout
-        }
-
-        fl::this_thread::sleep_for(fl::chrono::microseconds(10));  // ok sleep for
-    }
+    return false;
 }
 
 bool LcdRgbPeripheralMockImpl::isBusy() const FL_NOEXCEPT {
@@ -345,7 +283,6 @@ bool LcdRgbPeripheralMockImpl::registerDrawCallback(void* callback, void* user_c
         return false;
     }
 
-    fl::lock_guard<fl::mutex> lock(mMutex);
     mCallback = callback;
     mUserCtx = user_ctx;
     return true;
@@ -360,11 +297,11 @@ const LcdRgbPeripheralConfig& LcdRgbPeripheralMockImpl::getConfig() const FL_NOE
 }
 
 u64 LcdRgbPeripheralMockImpl::getMicroseconds() FL_NOEXCEPT {
-    return fl::micros();
+    return mSimulatedTimeUs;
 }
 
 void LcdRgbPeripheralMockImpl::delay(u32 ms) FL_NOEXCEPT {
-    fl::delay(ms);
+    mSimulatedTimeUs += static_cast<u64>(ms) * 1000;
 }
 
 //=============================================================================
@@ -376,18 +313,8 @@ void LcdRgbPeripheralMockImpl::simulateDrawComplete() FL_NOEXCEPT {
         return;
     }
 
-    mPendingDraws--;
-
-    if (mPendingDraws == 0) {
-        mBusy = false;
-    }
-
-    // Fire callback
-    if (mCallback != nullptr) {
-        using CallbackType = bool (*)(void*, const void*, void*);
-        auto callback_fn = reinterpret_cast<CallbackType>(mCallback); // ok reinterpret cast
-        callback_fn(nullptr, nullptr, mUserCtx);
-    }
+    // Manually complete one pending draw and fire its callback
+    fireCallback();
 }
 
 void LcdRgbPeripheralMockImpl::setDrawFailure(bool should_fail) FL_NOEXCEPT {
@@ -404,9 +331,9 @@ const fl::vector<LcdRgbPeripheralMock::FrameRecord>& LcdRgbPeripheralMockImpl::g
 }
 
 void LcdRgbPeripheralMockImpl::clearFrameHistory() FL_NOEXCEPT {
-    fl::lock_guard<fl::mutex> lock(mMutex);
     mHistory.clear();
     mPendingDraws = 0;
+    mDeferredCallbackCount = 0;
     mBusy = false;
 }
 
@@ -426,26 +353,6 @@ size_t LcdRgbPeripheralMockImpl::getDrawCount() const FL_NOEXCEPT {
 }
 
 void LcdRgbPeripheralMockImpl::reset() FL_NOEXCEPT {
-    // Clear queue first
-    {
-        fl::lock_guard<fl::mutex> lock(mMutex);
-        mPendingQueue.clear();
-        mPendingDraws = 0;
-        mBusy = false;
-    }
-
-    mCondVar.notify_one();
-
-    // Wait for callback to finish
-    while (mCallbackExecuting.load(fl::memory_order_acquire)) {
-        fl::this_thread::sleep_for(fl::chrono::microseconds(10));  // ok sleep for
-    }
-
-    fl::this_thread::sleep_for(fl::chrono::microseconds(100));  // ok sleep for
-
-    // Reset all state
-    fl::lock_guard<fl::mutex> lock(mMutex);
-
     mInitialized = false;
     mEnabled = false;
     mBusy = false;
@@ -458,60 +365,47 @@ void LcdRgbPeripheralMockImpl::reset() FL_NOEXCEPT {
     mShouldFailDraw = false;
     mHistory.clear();
     mPendingDraws = 0;
-    mPendingQueue.clear();
+    mSimulatedTimeUs = 0;
+    mFiringCallbacks = false;
+    mDeferredCallbackCount = 0;
 }
 
 //=============================================================================
-// Simulation Thread
+// Synchronous Callback Pumping
 //=============================================================================
 
-void LcdRgbPeripheralMockImpl::simulationThreadFunc() FL_NOEXCEPT {
-    while (!mSimulationThreadShouldStop) {
-        fl::unique_lock<fl::mutex> lock(mMutex);
+void LcdRgbPeripheralMockImpl::pumpDeferredCallbacks() FL_NOEXCEPT {
+    // Re-entrancy guard: if we're already firing callbacks (from within
+    // a callback that called drawFrame()), just let the outer loop handle it.
+    if (mFiringCallbacks) {
+        return;
+    }
+    mFiringCallbacks = true;
 
-        // Wait when queue is empty
-        if (mPendingQueue.empty()) {
-            mCondVar.wait_for(lock, std::chrono::milliseconds(10));  // okay std namespace (std::condition_variable requires std::chrono)
-            continue;
-        }
+    // Process all deferred callbacks. Each callback may trigger more
+    // drawFrame() calls which queue more callbacks, so loop until empty.
+    while (mDeferredCallbackCount > 0) {
+        mDeferredCallbackCount--;
+        fireCallback();
+    }
 
-        // Check if first draw has completed
-        u64 now_us = fl::micros();
+    mFiringCallbacks = false;
+}
 
-        if (now_us >= mPendingQueue[0].completion_time_us) {
-            // Remove from queue
-            mPendingQueue.erase(mPendingQueue.begin());
+void LcdRgbPeripheralMockImpl::fireCallback() FL_NOEXCEPT {
+    if (mPendingDraws > 0) {
+        mPendingDraws--;
+    }
 
-            if (mPendingDraws > 0) {
-                mPendingDraws--;
-            }
+    if (mPendingDraws == 0) {
+        mBusy = false;
+    }
 
-            if (mPendingDraws == 0) {
-                mBusy = false;
-            }
-
-            // Get callback info
-            auto callback = mCallback;
-            auto user_ctx = mUserCtx;
-
-            mCallbackExecuting.store(true, fl::memory_order_release);
-
-            lock.unlock();
-
-            // Call callback
-            if (callback) {
-                using CallbackType = bool (*)(void*, const void*, void*);
-                auto callback_fn = reinterpret_cast<CallbackType>(callback); // ok reinterpret cast
-                callback_fn(nullptr, nullptr, user_ctx);
-            }
-
-            lock.lock();
-            mCallbackExecuting.store(false, fl::memory_order_release);
-        } else {
-            // Wait until next completion time
-            u64 wait_us = mPendingQueue[0].completion_time_us - now_us;
-            mCondVar.wait_for(lock, std::chrono::microseconds(wait_us));  // okay std namespace (std::condition_variable requires std::chrono)
-        }
+    // Call the callback if registered
+    if (mCallback != nullptr) {
+        using CallbackType = bool (*)(void*, const void*, void*);
+        auto callback_fn = reinterpret_cast<CallbackType>(mCallback); // ok reinterpret cast
+        callback_fn(nullptr, nullptr, mUserCtx);
     }
 }
 
