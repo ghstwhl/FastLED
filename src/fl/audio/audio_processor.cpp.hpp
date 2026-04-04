@@ -71,6 +71,17 @@ void Processor::update(const Sample& sample) {
     }
 }
 
+void Processor::updateFromContext(shared_ptr<Context> externalContext) {
+    // Use externally-provided context (FFT already cached, signal already conditioned).
+    // This avoids recomputing FFT when Reactive has already done it.
+    for (auto& d : mActiveDetectors) {
+        d->update(externalContext);
+    }
+    for (auto& d : mActiveDetectors) {
+        d->fireCallbacks();
+    }
+}
+
 void Processor::onBeat(function<void()> callback) {
     auto detector = getBeatDetector();
     detector->onBeat.add(callback);

@@ -62,6 +62,10 @@ public:
     // ----- Main Update -----
     void update(const Sample& sample) FL_NOEXCEPT;
 
+    // Update detectors using an externally-provided Context (FFT already cached).
+    // Skips signal conditioning and setSample — caller is responsible for those.
+    void updateFromContext(shared_ptr<Context> externalContext) FL_NOEXCEPT;
+
     // ----- Beat Detection Events -----
     void onBeat(function<void()> callback) FL_NOEXCEPT;
     void onBeatPhase(function<void(float phase)> callback) FL_NOEXCEPT;

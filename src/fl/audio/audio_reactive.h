@@ -3,11 +3,13 @@
 #include "fl/audio/fft/fft.h"
 #include "fl/stl/int.h"
 #include "fl/audio/audio.h"  // IWYU pragma: keep
+#include "fl/audio/audio_context.h"
 #include "fl/audio/signal_conditioner.h"
 #include "fl/audio/noise_floor_tracker.h"
 #include "fl/audio/frequency_bin_mapper.h"
 #include "fl/audio/spectral_equalizer.h"
 #include "fl/stl/array.h"
+#include "fl/stl/shared_ptr.h"
 #include "fl/stl/unique_ptr.h"
 #include "fl/system/sketch_macros.h"
 #include "fl/gfx/colorutils.h"  // IWYU pragma: keep
@@ -236,7 +238,8 @@ private:
     // Configuration
     ReactiveConfig mConfig;
     
-    // FFT processing
+    // FFT processing (via shared Context for caching)
+    shared_ptr<Context> mContext;
     fft::Bins mFFTBins;
     
     // Audio data  

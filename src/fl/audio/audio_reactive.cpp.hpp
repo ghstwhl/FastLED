@@ -13,7 +13,7 @@ namespace fl {
 namespace audio {
 
 Reactive::Reactive()
-    : mConfig{}, mFFTBins(16)  // Initialize with 16 frequency bins
+    : mConfig{}, mContext(fl::make_shared<Context>(Sample())), mFFTBins(16)  // Initialize with 16 frequency bins
 {
     // Initialize enhanced beat detection components
     mSpectralFluxDetector = fl::make_unique<SpectralFluxDetector>();
@@ -129,6 +129,9 @@ void Reactive::begin(const ReactiveConfig& config) {
         mPreviousMagnitudes[i] = 0.0f;
     }
 
+    // Update Context sample rate
+    mContext->setSampleRate(config.sampleRate);
+
     // Reset internal Processor if it exists
     if (mAudioProcessor) {
         mAudioProcessor->setSampleRate(config.sampleRate);
@@ -165,6 +168,9 @@ void Reactive::processSample(const Sample& sample) {
         mNoiseFloorTracker.update(rms);
     }
 
+    // Set conditioned sample on shared Context (clears per-frame FFT cache)
+    mContext->setSample(processedSample);
+
     // Process the conditioned Sample - timing is gated by sample availability
     processFFT(processedSample);
     updateVolumeAndPeak(processedSample);
@@ -196,9 +202,10 @@ void Reactive::processSample(const Sample& sample) {
 
     mCurrentData.timestamp = currentTimeMs;
 
-    // Forward to internal Processor for detector-based polling getters
+    // Forward to internal Processor for detector-based polling getters.
+    // Share our Context so Processor's detectors reuse the cached FFT.
     if (mAudioProcessor) {
-        mAudioProcessor->update(sample);
+        mAudioProcessor->updateFromContext(mContext);
     }
 }
 
@@ -213,10 +220,11 @@ void Reactive::processFFT(const Sample& sample) {
     // Get PCM data from Sample
     const auto& pcmData = sample.pcm();
     if (pcmData.empty()) return;
-    
-    // Use Sample's built-in fft::FFT capability
-    sample.fft(&mFFTBins);
-    
+
+    // Use shared Context for cached FFT (avoids recomputation if Processor also needs it)
+    auto cachedBins = mContext->getFFT16();
+    mFFTBins = *cachedBins;
+
     // Map fft::FFT bins to frequency channels using WLED-compatible mapping
     mapFFTBinsToFrequencyChannels();
 }
