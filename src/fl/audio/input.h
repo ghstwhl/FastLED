@@ -160,6 +160,30 @@ class Config : public fl::variant<ConfigI2S, ConfigPdm> {
         return out;
     }
 
+    // ICS-43434 I2S MEMS microphone (TDK InvenSense).
+    static Config CreateIcs43434(int pin_ws, int pin_sd, int pin_clk,
+                                 AudioChannel channel,
+                                 u16 sample_rate = 44100ul,
+                                 int i2s_num = 0) FL_NOEXCEPT {
+        ConfigI2S config(pin_ws, pin_sd, pin_clk, i2s_num, channel, sample_rate,
+                         16);
+        Config out(config);
+        out.setMicProfile(MicProfile::ICS43434);
+        return out;
+    }
+
+    // Generic I2S MEMS microphone (applies average MEMS correction).
+    static Config CreateGenericMEMS(int pin_ws, int pin_sd, int pin_clk,
+                                    AudioChannel channel,
+                                    u16 sample_rate = 44100ul,
+                                    int i2s_num = 0) FL_NOEXCEPT {
+        ConfigI2S config(pin_ws, pin_sd, pin_clk, i2s_num, channel, sample_rate,
+                         16);
+        Config out(config);
+        out.setMicProfile(MicProfile::GenericMEMS);
+        return out;
+    }
+
     // Factory method for Teensy I2S microphones (INMP441, ICS43432,
     // SPH0645LM4H, etc.) Teensy uses fixed hardware pins - see TeensyI2S
     // namespace for pin assignments. Example: auto config =
@@ -168,7 +192,8 @@ class Config : public fl::variant<ConfigI2S, ConfigPdm> {
         TeensyI2S::I2SPort port = TeensyI2S::I2SPort::I2S1,
         AudioChannel channel = AudioChannel::Right,
         u16 sample_rate = AUDIO_DEFAULT_SAMPLE_RATE,
-        u8 bit_resolution = AUDIO_DEFAULT_BIT_RESOLUTION) FL_NOEXCEPT {
+        u8 bit_resolution = AUDIO_DEFAULT_BIT_RESOLUTION,
+        MicProfile profile = MicProfile::GenericMEMS) FL_NOEXCEPT {
         ConfigI2S config(
             TeensyI2S::getPinWS(port),  // pin_ws (LRCLK)
             TeensyI2S::getPinSD(port),  // pin_sd (RX)
@@ -178,16 +203,31 @@ class Config : public fl::variant<ConfigI2S, ConfigPdm> {
             I2SCommFormat::Philips, // comm_format (Teensy uses I2S Philips)
             false                   // invert
         );
-        return Config(config);
+        Config out(config);
+        out.setMicProfile(profile);
+        return out;
+    }
+
+    // SPM1423 PDM microphone (Knowles, common on ESP32-S3 Sense boards).
+    static Config CreateSpm1423Pdm(int pin_din, int pin_clk,
+                                   u16 sample_rate = AUDIO_DEFAULT_SAMPLE_RATE,
+                                   int i2s_num = 0,
+                                   bool invert = false) FL_NOEXCEPT {
+        Config out(ConfigPdm(pin_din, pin_clk, i2s_num, sample_rate, invert));
+        out.setMicProfile(MicProfile::SPM1423);
+        return out;
     }
 
     // Generic PDM microphone factory method.
     // pin_din: PDM data in pin, pin_clk: PDM clock pin.
     static Config CreatePdm(int pin_din, int pin_clk,
                             u16 sample_rate = AUDIO_DEFAULT_SAMPLE_RATE,
-                            int i2s_num = 0, bool invert = false) FL_NOEXCEPT {
-        return Config(
+                            int i2s_num = 0, bool invert = false,
+                            MicProfile profile = MicProfile::None) FL_NOEXCEPT {
+        Config out(
             ConfigPdm(pin_din, pin_clk, i2s_num, sample_rate, invert));
+        out.setMicProfile(profile);
+        return out;
     }
 
     Config(const ConfigI2S &config) FL_NOEXCEPT
