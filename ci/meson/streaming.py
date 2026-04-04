@@ -143,6 +143,13 @@ def stream_compile_only(
     # Track compile sub-phase timestamps
     compile_sub_phases: dict[str, float] = {}
 
+    # Gate test execution until the DLL touch thread completes.
+    # On Windows, os.utime() opens files with FILE_WRITE_ATTRIBUTES which
+    # can conflict with LoadLibrary's SEC_IMAGE mapping of the same DLL,
+    # causing intermittent error 126 (module not found) during parallel runs.
+    dll_touch_done = threading.Event()
+    dll_touch_done.set()  # Initially set (no touch pending)
+
     def producer_thread() -> None:
         """Parse Ninja output and collect compiled test executables"""
         nonlocal compilation_failed, compilation_output, shown_tests_stage
@@ -265,13 +272,19 @@ def stream_compile_only(
                                 _bdir = build_dir
 
                                 def _touch_dlls_bg() -> None:
-                                    touched = _opt.touch_dlls_if_lib_unchanged(_bdir)
-                                    if touched > 0:
-                                        _ts_print(
-                                            f"[BUILD] ⚡ Suppressed {touched} DLL relinks"
-                                            f" (fastled shared lib content unchanged)"
+                                    try:
+                                        touched = _opt.touch_dlls_if_lib_unchanged(
+                                            _bdir
                                         )
+                                        if touched > 0:
+                                            _ts_print(
+                                                f"[BUILD] ⚡ Suppressed {touched} DLL relinks"
+                                                f" (fastled shared lib content unchanged)"
+                                            )
+                                    finally:
+                                        dll_touch_done.set()
 
+                                dll_touch_done.clear()
                                 threading.Thread(
                                     target=_touch_dlls_bg,
                                     daemon=True,
@@ -348,6 +361,10 @@ def stream_compile_only(
                                 _ts_print(f"[MESON] Test built: {test_path.name}")
                             compiled_tests.append(test_path)
                             if on_test_compiled is not None:
+                                # Wait for DLL touch thread to finish before
+                                # submitting tests — os.utime() on Windows
+                                # conflicts with LoadLibrary (error 126).
+                                dll_touch_done.wait()
                                 on_test_compiled(test_path)
 
             # Check compilation result
