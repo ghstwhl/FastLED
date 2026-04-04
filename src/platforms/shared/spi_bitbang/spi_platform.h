@@ -19,6 +19,7 @@
 
 #include "fl/stl/stdint.h"
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 /* Auto-enable host simulation mode on stub platform */
 #if (defined(STUB_PLATFORM) || defined(FASTLED_STUB_IMPL)) && !defined(FASTLED_SPI_HOST_SIMULATION)
@@ -33,8 +34,8 @@ FL_EXTERN_C_BEGIN
 
 #ifdef FASTLED_SPI_HOST_SIMULATION
     /* Host simulation - capture events to ring buffer */
-    void fl_gpio_sim_write_set(fl::u32 mask);
-    void fl_gpio_sim_write_clear(fl::u32 mask);
+    void fl_gpio_sim_write_set(fl::u32 mask) FL_NOEXCEPT;
+    void fl_gpio_sim_write_clear(fl::u32 mask) FL_NOEXCEPT;
 
     #define FL_GPIO_WRITE_SET(mask)   fl_gpio_sim_write_set(mask)
     #define FL_GPIO_WRITE_CLEAR(mask) fl_gpio_sim_write_clear(mask)

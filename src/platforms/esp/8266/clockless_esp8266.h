@@ -8,6 +8,7 @@
 #include "fl/chipsets/timing_traits.h"
 #include "fastled_delay.h"
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 FL_DISABLE_WARNING_PUSH
 FL_DISABLE_WARNING_DEPRECATED_REGISTER
@@ -20,7 +21,7 @@ extern u32 _retry_cnt;
 // Info on reading cycle counter from https://github.com/kbeckmann/nodemcu-firmware/blob/ws2812-dual/app/modules/ws2812.c
 __attribute__ ((always_inline)) inline static u32 __clock_cycles() {
   u32 cyc;
-  __asm__ __volatile__ ("rsr %0,ccount":"=a" (cyc));
+  __asm__ __volatile__ ("rsr %0,ccount":"=a" (cyc)) FL_NOEXCEPT;
   return cyc;
 }
 
@@ -46,7 +47,7 @@ class ClocklessController : public CPixelLEDController<RGB_ORDER> {
 	data_ptr_t mPort;
 	CMinWait<WAIT_TIME> mWait;
 public:
-	virtual void init() {
+	virtual void init() FL_NOEXCEPT {
 		FastPin<DATA_PIN>::setOutput();
 		mPinMask = FastPin<DATA_PIN>::mask();
 		mPort = FastPin<DATA_PIN>::port();
@@ -56,7 +57,7 @@ public:
 
 protected:
 
-	virtual void showPixels(PixelController<RGB_ORDER> & pixels) {
+	virtual void showPixels(PixelController<RGB_ORDER> & pixels) FL_NOEXCEPT {
     mWait.wait();
 		int cnt = FASTLED_INTERRUPT_RETRY_COUNT;
     while((showRGBInternal(pixels)==0) && cnt--) {
@@ -71,7 +72,7 @@ protected:
 #define _ESP_ADJ (0)
 #define _ESP_ADJ2 (0)
 
-	template<int BITS> __attribute__ ((always_inline)) inline static bool writeBits(FASTLED_REGISTER u32 & last_mark, FASTLED_REGISTER u32 b)  {
+	template<int BITS> __attribute__ ((always_inline)) FL_NOEXCEPT inline static bool writeBits(FASTLED_REGISTER u32 & last_mark, FASTLED_REGISTER u32 b)  {
     b <<= 24; b = ~b;
     for(FASTLED_REGISTER u32 i = BITS; i > 0; --i) {
       while((__clock_cycles() - last_mark) < (T1+T2+T3)) {
@@ -104,7 +105,7 @@ protected:
 	}
 
 
-	static u32 FL_IRAM showRGBInternal(PixelController<RGB_ORDER> pixels) {
+	static u32 FL_IRAM showRGBInternal(PixelController<RGB_ORDER> pixels) FL_NOEXCEPT {
 		// Setup the pixel controller and load/scale the first byte
 		pixels.preStepFirstByteDithering();
 		FASTLED_REGISTER u32 b = pixels.loadAndScale0();
@@ -116,16 +117,16 @@ protected:
 		// of how we exit the function.  It also has methods for manually
 		// unlocking and relocking interrupts temporarily.
 		struct InterruptLock {
-			InterruptLock() {
+			InterruptLock() FL_NOEXCEPT {
 				os_intr_lock();
 			}
 			~InterruptLock() {
 				os_intr_unlock();
 			}
-			void Unlock() {
+			void Unlock() FL_NOEXCEPT {
 				os_intr_unlock();
 			}
-			void Lock() {
+			void Lock() FL_NOEXCEPT {
 				os_intr_lock();
 			}
 		};

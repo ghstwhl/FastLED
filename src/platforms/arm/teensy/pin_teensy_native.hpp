@@ -25,6 +25,7 @@
     // These are defined in the Teensy core's core_pins.h
     // IWYU pragma: begin_keep
     #include <core_pins.h>
+#include "fl/stl/noexcept.h"
     // IWYU pragma: end_keep
 #else
     // Fallback: Define basic pin constants if Teensy core not available
@@ -61,7 +62,7 @@ namespace platforms {
 // Pin mode control
 // ============================================================================
 
-inline void pinMode(int pin, fl::PinMode mode) {
+inline void pinMode(int pin, fl::PinMode mode) FL_NOEXCEPT {
 #if defined(FL_IS_TEENSY)
     // Translate PinMode to Teensy core constants
     // PinMode::Input=0, Output=1, InputPullup=2, InputPulldown=3
@@ -97,7 +98,7 @@ inline void pinMode(int pin, fl::PinMode mode) {
 // Digital I/O
 // ============================================================================
 
-inline void digitalWrite(int pin, fl::PinValue val) {
+inline void digitalWrite(int pin, fl::PinValue val) FL_NOEXCEPT {
 #if defined(FL_IS_TEENSY)
     ::digitalWrite(pin, static_cast<int>(val));  // PinValue::Low=0, High=1
 #else
@@ -107,7 +108,7 @@ inline void digitalWrite(int pin, fl::PinValue val) {
 #endif
 }
 
-inline fl::PinValue digitalRead(int pin) {
+inline fl::PinValue digitalRead(int pin) FL_NOEXCEPT {
 #if defined(FL_IS_TEENSY)
     return ::digitalRead(pin) ? fl::PinValue::High : fl::PinValue::Low;
 #else
@@ -121,7 +122,7 @@ inline fl::PinValue digitalRead(int pin) {
 // Analog I/O
 // ============================================================================
 
-inline u16 analogRead(int pin) {
+inline u16 analogRead(int pin) FL_NOEXCEPT {
 #if defined(FL_IS_TEENSY)
     return static_cast<u16>(::analogRead(pin));
 #else
@@ -131,7 +132,7 @@ inline u16 analogRead(int pin) {
 #endif
 }
 
-inline void analogWrite(int pin, u16 val) {
+inline void analogWrite(int pin, u16 val) FL_NOEXCEPT {
 #if defined(FL_IS_TEENSY)
     ::analogWrite(pin, val);
 #else
@@ -141,7 +142,7 @@ inline void analogWrite(int pin, u16 val) {
 #endif
 }
 
-inline void setPwm16(int pin, u16 val) {
+inline void setPwm16(int pin, u16 val) FL_NOEXCEPT {
 #if defined(FL_IS_TEENSY)
     // Teensy native path: Use analogWriteResolution for 16-bit PWM
     analogWriteResolution(16);
@@ -153,7 +154,7 @@ inline void setPwm16(int pin, u16 val) {
 #endif
 }
 
-inline void setAdcRange(fl::AdcRange range) {
+inline void setAdcRange(fl::AdcRange range) FL_NOEXCEPT {
 #if defined(FL_IS_TEENSY)
     // Translate AdcRange to Teensy analogReference() constants
     // Teensy supports: DEFAULT, INTERNAL, EXTERNAL
@@ -192,7 +193,7 @@ namespace {
         u32 freq_hz;
     };
     constexpr int MAX_TEENSY_PWM_PINS = 40;
-    inline TeensyPwmFreq* getTeensyPwmTable() {
+    inline TeensyPwmFreq* getTeensyPwmTable() FL_NOEXCEPT {
         static TeensyPwmFreq table[MAX_TEENSY_PWM_PINS] = {
             {-1,0},{-1,0},{-1,0},{-1,0},{-1,0},{-1,0},{-1,0},{-1,0},
             {-1,0},{-1,0},{-1,0},{-1,0},{-1,0},{-1,0},{-1,0},{-1,0},
@@ -212,7 +213,7 @@ inline bool needsPwmIsrFallback(int /*pin*/, u32 frequency_hz) {
     return true;
 }
 
-inline int setPwmFrequencyNative(int pin, u32 frequency_hz) {
+inline int setPwmFrequencyNative(int pin, u32 frequency_hz) FL_NOEXCEPT {
     ::analogWriteFrequency(pin, frequency_hz);
     // Track the frequency per pin
     TeensyPwmFreq* table = getTeensyPwmTable();
@@ -235,7 +236,7 @@ inline int setPwmFrequencyNative(int pin, u32 frequency_hz) {
     return -4;
 }
 
-inline u32 getPwmFrequencyNative(int pin) {
+inline u32 getPwmFrequencyNative(int pin) FL_NOEXCEPT {
     TeensyPwmFreq* table = getTeensyPwmTable();
     for (int i = 0; i < MAX_TEENSY_PWM_PINS; ++i) {
         if (table[i].pin == pin) {

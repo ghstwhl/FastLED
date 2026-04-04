@@ -12,6 +12,7 @@
 #include "fl/system/fastpin_base.h"
 #include "fl/stl/compiler_control.h"
 #include "fl/system/pin.h"  // For PinMode, PinValue enums and pinMode/digitalWrite/digitalRead functions
+#include "fl/stl/noexcept.h"
 
 FL_DISABLE_WARNING_PUSH
 FL_DISABLE_WARNING_DEPRECATED_REGISTER
@@ -27,7 +28,7 @@ class Pin : public Selectable {
 
 	/// Initialize the class by retrieving the register
 	/// pointers and bitmask.
-	void _init() {
+	void _init() FL_NOEXCEPT {
 		#if defined(digitalPinToBitMask) && defined(portOutputRegister) && defined(portInputRegister)
 		// Use PINMAP functions if available
 		mPinMask = digitalPinToBitMask(mPin);
@@ -64,12 +65,12 @@ public:
 	FL_DISABLE_WARNING_PUSH
 	FL_DISABLE_WARNING_NULL_DEREFERENCE
 	FL_DISABLE_WARNING_VOLATILE
-	inline void hi() __attribute__ ((always_inline)) {
+	inline void hi() FL_NOEXCEPT __attribute__ ((always_inline)) {
 		if (mPort) { *mPort |= mPinMask; }
 		else { digitalWrite(mPin, PinValue::High); }
 	}
 	/// Set the pin state to `LOW`
-	inline void lo() __attribute__ ((always_inline)) {
+	inline void lo() FL_NOEXCEPT __attribute__ ((always_inline)) {
 		if (mPort) { *mPort &= ~mPinMask; }
 		else { digitalWrite(mPin, PinValue::Low); }
 	}
@@ -79,7 +80,7 @@ public:
 	inline void strobe() __attribute__ ((always_inline)) { toggle(); toggle(); }
 	/// Toggle the pin.
 	/// If the pin was high, set it low. If was low, set it high.
-	inline void toggle() __attribute__ ((always_inline)) {
+	inline void toggle() FL_NOEXCEPT __attribute__ ((always_inline)) {
 		if (mInPort) { *mInPort = mPinMask; }
 		else {
 			PinValue current = digitalRead(mPin);
@@ -111,7 +112,7 @@ public:
 	/// Gets the state of the port with this pin `HIGH`
 	FL_DISABLE_WARNING_PUSH
 	FL_DISABLE_WARNING_VOLATILE
-	volatile port_t hival() __attribute__ ((always_inline)) {
+	volatile port_t hival() FL_NOEXCEPT __attribute__ ((always_inline)) {
 		if (mPort) { return *mPort | mPinMask; }
 		else { return 1; }  // Return 1 (HIGH equivalent)
 	}
@@ -119,7 +120,7 @@ public:
 	/// Gets the state of the port with this pin `LOW`
 	FL_DISABLE_WARNING_PUSH
 	FL_DISABLE_WARNING_VOLATILE
-	volatile port_t loval() __attribute__ ((always_inline)) {
+	volatile port_t loval() FL_NOEXCEPT __attribute__ ((always_inline)) {
 		if (mPort) { return *mPort & ~mPinMask; }
 		else { return 0; }  // Return 0 (LOW equivalent)
 	}
@@ -138,7 +139,7 @@ public:
 	/// @copydoc Pin::lo()
 	virtual void release() override { lo(); }
 	/// Checks if the pin is currently `HIGH`
-	virtual bool isSelected() override {
+	virtual bool isSelected() FL_NOEXCEPT override {
 		if (mPort) { return (*mPort & mPinMask) == mPinMask; }
 		else { return digitalRead(mPin) == PinValue::High; }
 	}

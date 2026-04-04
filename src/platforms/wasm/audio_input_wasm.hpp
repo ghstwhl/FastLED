@@ -10,6 +10,7 @@
 #include "fl/stl/vector.h"
 #include "fl/stl/shared_ptr.h"
 #include "fl/stl/string.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -21,17 +22,17 @@ public:
     static constexpr int BLOCK_SIZE = 512;
     static constexpr int RING_BUFFER_SLOTS = 16;
 
-    WasmAudioInput();
+    WasmAudioInput() FL_NOEXCEPT;
     ~WasmAudioInput() override;
 
     // audio::IInput interface
-    void start() override;
-    void stop() override;
-    bool error(fl::string* msg = nullptr) override;
-    audio::Sample read() override;
+    void start() FL_NOEXCEPT override;
+    void stop() FL_NOEXCEPT override;
+    bool error(fl::string* msg = nullptr) FL_NOEXCEPT override;
+    audio::Sample read() FL_NOEXCEPT override;
 
     // Called from JavaScript via EMSCRIPTEN_KEEPALIVE
-    void pushSamples(const fl::i16* samples, int count, fl::u32 timestamp);
+    void pushSamples(const fl::i16* samples, int count, fl::u32 timestamp) FL_NOEXCEPT;
 
 private:
     struct AudioBlock {
@@ -57,17 +58,17 @@ private:
     int mAccumPos = 0;
     fl::u32 mAccumTimestamp = 0;
 
-    void flushAccumBuffer();
-    bool isFull() const;
-    bool isEmpty() const;
-    int nextIndex(int index) const;
+    void flushAccumBuffer() FL_NOEXCEPT;
+    bool isFull() const FL_NOEXCEPT;
+    bool isEmpty() const FL_NOEXCEPT;
+    int nextIndex(int index) const FL_NOEXCEPT;
 };
 
 // Factory function for creating WASM audio input
-fl::shared_ptr<audio::IInput> wasm_create_audio_input(const audio::Config& config, fl::string* error_message = nullptr);
+fl::shared_ptr<audio::IInput> wasm_create_audio_input(const audio::Config& config, fl::string* error_message = nullptr) FL_NOEXCEPT;
 
 // Get the global WASM audio input instance (for integration with UIAudio)
-WasmAudioInput* wasm_get_audio_input();
+WasmAudioInput* wasm_get_audio_input() FL_NOEXCEPT;
 
 } // namespace fl
 

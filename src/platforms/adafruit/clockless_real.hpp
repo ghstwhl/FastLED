@@ -15,6 +15,7 @@
 #include "fl/stl/memory.h"
 #include "pixel_iterator.h"
 #include "platforms/adafruit/driver.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -31,14 +32,14 @@ public:
     
     ~AdafruitNeoPixelDriverImpl() override = default;
     
-    void init(int dataPin) override {
+    void init(int dataPin) FL_NOEXCEPT override {
         if (!mInitialized) {
             mDataPin = dataPin;
             mInitialized = true;
         }
     }
     
-    void showPixels(PixelIterator& pixelIterator) override {
+    void showPixels(PixelIterator& pixelIterator) FL_NOEXCEPT override {
         if (!mInitialized) {
             return;
         }
@@ -90,7 +91,7 @@ public:
 };
 
 // Static factory method implementation
-fl::unique_ptr<IAdafruitNeoPixelDriver> IAdafruitNeoPixelDriver::create() {
+fl::unique_ptr<IAdafruitNeoPixelDriver> IAdafruitNeoPixelDriver::create() FL_NOEXCEPT {
     return fl::make_unique<AdafruitNeoPixelDriverImpl>();
 }
 

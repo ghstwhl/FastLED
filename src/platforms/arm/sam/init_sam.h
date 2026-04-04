@@ -1,6 +1,7 @@
 // ok no namespace fl
 // allow-include-after-namespace
 #pragma once
+#include "fl/stl/noexcept.h"
 
 // IWYU pragma: private
 
@@ -17,7 +18,7 @@ namespace platforms {
 ///
 /// SAM platforms (Arduino Due) rely on Arduino core for initialization.
 /// This function is a no-op and exists for API consistency.
-inline void init() {
+inline void init() FL_NOEXCEPT {
     // No-op: SAM platforms rely on Arduino core initialization
 }
 

@@ -21,6 +21,7 @@
 #include "fl/stl/vector.h"
 #include "platforms/shared/active_strip_tracker/active_strip_tracker.h"
 #include "platforms/stub/stub_gpio.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -44,16 +45,16 @@ private:
 
 public:
     ClocklessController()
-    {
+ FL_NOEXCEPT {
         // Create channel data with pin and timing configuration
         ChipsetTimingConfig timing = makeTimingConfig<TIMING>();
         mChannelData = ChannelData::create(DATA_PIN, timing);
     }
 
-    virtual void init() override { }
+    virtual void init() FL_NOEXCEPT override { }
 
 protected:
-    virtual void showPixels(PixelController<RGB_ORDER>& pixels) override
+    virtual void showPixels(PixelController<RGB_ORDER>& pixels) FL_NOEXCEPT override
     {
         // Get driver (lock weak_ptr to shared_ptr)
         fl::shared_ptr<IChannelDriver> driver = mDriver.lock();

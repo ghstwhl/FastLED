@@ -11,6 +11,7 @@
 // IWYU pragma: begin_keep
 #include "platforms/coroutine_runtime.h"
 #include "fl/stl/singleton.h"
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 
 namespace fl {
@@ -18,13 +19,13 @@ namespace platforms {
 
 class CoroutineRuntimeArduino : public ICoroutineRuntime {
 public:
-    void pumpCoroutines(fl::u32 us) override {
+    void pumpCoroutines(fl::u32 us) FL_NOEXCEPT override {
         // Generic Arduino: no background coroutines, nothing to pump.
         (void)us;
     }
 };
 
-ICoroutineRuntime& ICoroutineRuntime::instance() {
+ICoroutineRuntime& ICoroutineRuntime::instance() FL_NOEXCEPT {
     return fl::Singleton<CoroutineRuntimeArduino>::instance();
 }
 

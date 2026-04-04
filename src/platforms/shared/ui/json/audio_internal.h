@@ -9,6 +9,7 @@
 #include "platforms/shared/ui/json/audio_buffer.h"
 #include "fl/stl/vector.h"
 #include "fl/audio/audio.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -19,19 +20,19 @@ private:
 
 public:
     JsonUiAudioInternal(const fl::string& name)
-        : JsonUiInternal(name) {}
+ FL_NOEXCEPT : JsonUiInternal(name) {}
 
     JsonUiAudioInternal(const fl::string& name, const fl::url& url)
-        : JsonUiInternal(name), mUrl(url) {}
+ FL_NOEXCEPT : JsonUiInternal(name), mUrl(url) {}
 
-    void toJson(fl::json& json) const override;
-    void updateInternal(const fl::json& json) override;
+    void toJson(fl::json& json) const FL_NOEXCEPT override;
+    void updateInternal(const fl::json& json) FL_NOEXCEPT override;
 
     // Accessors for audio data
-    fl::vector<audio::SampleImplPtr>& audioSamples() { return mAudioSampleImpls; }
-    const fl::vector<audio::SampleImplPtr>& audioSamples() const { return mAudioSampleImpls; }
+    fl::vector<audio::SampleImplPtr>& audioSamples() FL_NOEXCEPT { return mAudioSampleImpls; }
+    const fl::vector<audio::SampleImplPtr>& audioSamples() const FL_NOEXCEPT { return mAudioSampleImpls; }
 
-    const fl::url& url() const { return mUrl; }
+    const fl::url& url() const FL_NOEXCEPT { return mUrl; }
 
 private:
     fl::url mUrl;

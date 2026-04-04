@@ -8,6 +8,7 @@
 /// Provides GET_CPU_FREQUENCY() macro for compile-time frequency determination
 
 #include "fl/stl/int.h"
+#include "fl/stl/noexcept.h"
 
 // ============================================================================
 // CPU frequency macro for compile-time frequency determination
@@ -62,7 +63,7 @@ namespace fl {
 #if defined(ESP32)
 /// Get the current ESP32 CPU frequency at runtime
 /// @return CPU frequency in Hz
-u32 esp_clk_cpu_freq_impl();
+u32 esp_clk_cpu_freq_impl() FL_NOEXCEPT;
 #endif
 
 } // namespace fl

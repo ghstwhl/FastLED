@@ -13,6 +13,7 @@
 #include "fl/stl/assert.h"
 // IWYU pragma: begin_keep
 #include <mutex>  // ok include - needed for std::unique_lock
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 
 namespace fl {
@@ -48,7 +49,7 @@ private:
     bool mLocked;         // Lock state
 
 public:
-    MutexRP();
+    MutexRP() FL_NOEXCEPT;
     ~MutexRP();
 
     // Non-copyable and non-movable
@@ -57,9 +58,9 @@ public:
     MutexRP(MutexRP&&) = delete;
     MutexRP& operator=(MutexRP&&) = delete;
 
-    void lock();
-    void unlock();
-    bool try_lock();
+    void lock() FL_NOEXCEPT;
+    void unlock() FL_NOEXCEPT;
+    bool try_lock() FL_NOEXCEPT;
 };
 
 // RP2040/RP2350 Pico SDK recursive mutex wrapper
@@ -70,7 +71,7 @@ private:
     u32 mLockCount;  // Recursion depth counter
 
 public:
-    RecursiveMutexRP();
+    RecursiveMutexRP() FL_NOEXCEPT;
     ~RecursiveMutexRP();
 
     // Non-copyable and non-movable
@@ -79,9 +80,9 @@ public:
     RecursiveMutexRP(RecursiveMutexRP&&) = delete;
     RecursiveMutexRP& operator=(RecursiveMutexRP&&) = delete;
 
-    void lock();
-    void unlock();
-    bool try_lock();
+    void lock() FL_NOEXCEPT;
+    void unlock() FL_NOEXCEPT;
+    bool try_lock() FL_NOEXCEPT;
 };
 
 // Define FASTLED_MULTITHREADED for RP2040/RP2350 (has dual-core support)

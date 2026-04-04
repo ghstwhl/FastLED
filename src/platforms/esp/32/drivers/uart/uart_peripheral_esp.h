@@ -56,7 +56,7 @@ namespace fl {
 class UartPeripheralEsp : public IUartPeripheral {
 public:
     /// @brief Constructor
-    UartPeripheralEsp();
+    UartPeripheralEsp() FL_NOEXCEPT;
 
     /// @brief Destructor - cleans up UART driver
     ~UartPeripheralEsp() override;

@@ -13,6 +13,7 @@
 #include <SPI.h>
 // IWYU pragma: end_keep
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 FL_DISABLE_WARNING_PUSH
 FL_DISABLE_WARNING_DEPRECATED_REGISTER
@@ -134,7 +135,7 @@ public:
 	  mPSelect(pSelect) {}
 	void setSelect(Selectable *pSelect) { mPSelect = pSelect; }
 
-	void init() {
+	void init() FL_NOEXCEPT {
 		// set the pins to output and make sure the select is released (which apparently means hi?  This is a bit
 		// confusing to me)
 		mLedSPI.begin(spiClk, spiMiso, spiMosi, spiCs);
@@ -151,17 +152,17 @@ public:
 	void writeByteNoWait(u8 b) __attribute__((always_inline)) { writeByte(b); }
 	void writeBytePostWait(u8 b) __attribute__((always_inline)) { writeByte(b); wait(); }
 
-	void writeWord(u16 w) __attribute__((always_inline)) {
+	void writeWord(u16 w) FL_NOEXCEPT __attribute__((always_inline)) {
 		writeByte(static_cast<u8>(w>>8));
 		writeByte(static_cast<u8>(w&0xFF));
 	}
 
 	// naive writeByte implelentation, simply calls writeBit on the 8 bits in the byte.
-	void writeByte(u8 b) {
+	void writeByte(u8 b) FL_NOEXCEPT {
 		mLedSPI.transfer(b);
 	}
 
-	void writePixelsBulk(const CRGB* pixels, size_t n) {
+	void writePixelsBulk(const CRGB* pixels, size_t n) FL_NOEXCEPT {
 		u8* data = reinterpret_cast<u8*>(const_cast<CRGB*>(pixels)); // ok reinterpret cast - Arduino SPI API requires non-const, const_cast needed
 		size_t n_bytes = n * 3;
 		mLedSPI.writePixels(data, n_bytes);
@@ -171,30 +172,30 @@ public:
 
 	// select the SPI output (TODO: research whether this really means hi or lo.  Alt TODO: move select responsibility out of the SPI classes
 	// entirely, make it up to the caller to remember to lock/select the line?)
-	void select() {
+	void select() FL_NOEXCEPT {
 		mLedSPI.beginTransaction(SPISettings(SPI_SPEED, MSBFIRST, SPI_MODE0));
 		if(mPSelect != nullptr) { mPSelect->select(); }
 	}
 
 	// release the SPI line
-	void release() {
+	void release() FL_NOEXCEPT {
 		if(mPSelect != nullptr) { mPSelect->release(); }
 		mLedSPI.endTransaction();
 	}
 
-	void endTransaction() {
+	void endTransaction() FL_NOEXCEPT {
 		waitFully();
 		release();
 	}
 
 	// Write out len bytes of the given value out over mLedSPI.  Useful for quickly flushing, say, a line of 0's down the line.
-	void writeBytesValue(u8 value, int len) {
+	void writeBytesValue(u8 value, int len) FL_NOEXCEPT {
 		select();
 		writeBytesValueRaw(value, len);
 		release();
 	}
 
-	void writeBytesValueRaw(u8 value, int len) {
+	void writeBytesValueRaw(u8 value, int len) FL_NOEXCEPT {
 		while(len--) {
 			mLedSPI.transfer(value);
 		}
@@ -202,7 +203,7 @@ public:
 
 	// write a block of len uint8_ts out.  Need to type this better so that explicit casts into the call aren't required.
 	// note that this template version takes a class parameter for a per-byte modifier to the data.
-	template <class D> void writeBytes(FASTLED_REGISTER u8 *data, int len) {
+	template <class D> void writeBytes(FASTLED_REGISTER u8 *data, int len) FL_NOEXCEPT {
 		select();
 		u8 *end = data + len;
 		while(data != end) {
@@ -221,7 +222,7 @@ public:
 	static void finalizeTransmission() { }
 
 	// write a single bit out, which bit from the passed in byte is determined by template parameter
-	template <u8 BIT> inline void writeBit(u8 b) {
+	template <u8 BIT> inline void writeBit(u8 b) FL_NOEXCEPT {
 		// Test bit BIT in value b, send 0xFF if set, 0x00 if clear
 		// This matches the behavior of other platforms (AVR, ARM, etc.)
 		mLedSPI.transfer((b & (1 << BIT)) ? 0xFF : 0x00);
@@ -230,7 +231,7 @@ public:
 	// write a block of uint8_ts out in groups of three.  len is the total number of uint8_ts to write out.  The template
 	// parameters indicate how many uint8_ts to skip at the beginning of each grouping, as well as a class specifying a per
 	// byte of data modification to be made.  (See DATA_NOP above)
-	template <u8 FLAGS, class D, EOrder RGB_ORDER>  __attribute__((noinline)) void writePixels(PixelController<RGB_ORDER> pixels, void* context) {
+	template <u8 FLAGS, class D, EOrder RGB_ORDER>  __attribute__((noinline)) FL_NOEXCEPT void writePixels(PixelController<RGB_ORDER> pixels, void* context) {
 		#if FASTLED_ESP32_SPI_BULK_TRANSFER
 		select();
 		int len = pixels.mLen;
@@ -249,7 +250,7 @@ public:
 				D::adjust(pixels.loadAndScale0()),
 				D::adjust(pixels.loadAndScale1()),
 				D::adjust(pixels.loadAndScale2())
-			);
+			) FL_NOEXCEPT;
 			data_block[data_block_index++] = rgb;
 			pixels.advanceData();
 			pixels.stepDithering();

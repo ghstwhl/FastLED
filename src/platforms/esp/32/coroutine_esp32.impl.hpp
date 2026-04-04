@@ -34,6 +34,7 @@ FL_EXTERN_C_BEGIN
 // IWYU pragma: end_keep
 // IWYU pragma: begin_keep
 #include "esp_heap_caps.h"
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 FL_EXTERN_C_END
 
@@ -46,7 +47,7 @@ namespace platforms {
 
 class CoroutineRuntimeEsp32 : public ICoroutineRuntime {
 public:
-    void pumpCoroutines(fl::u32 us) override {
+    void pumpCoroutines(fl::u32 us) FL_NOEXCEPT override {
         // Convert microseconds to ticks. On a 1 kHz tick rate 1 tick ≈ 1 ms;
         // on 100 Hz it's 10 ms.
         const fl::u32 tick_period_us = 1000000u / configTICK_RATE_HZ;
@@ -81,17 +82,17 @@ public:
     static TaskCoroutinePtr create(fl::string name,
                                     TaskFunction function,
                                     size_t stack_size = 4096,
-                                    u8 priority = 5);
+                                    u8 priority = 5) FL_NOEXCEPT;
 
     ~TaskCoroutineESP32() override;
 
-    void stop() override;
-    bool isRunning() const override;
+    void stop() FL_NOEXCEPT override;
+    bool isRunning() const FL_NOEXCEPT override;
 
 private:
     TaskCoroutineESP32() = default;
 
-    static void task_entry(void* param);
+    static void task_entry(void* param) FL_NOEXCEPT;
 
     fl::string mName;
     TaskFunction mFunction;
@@ -106,7 +107,7 @@ private:
 // Coroutine Runtime singleton
 //=============================================================================
 
-ICoroutineRuntime& ICoroutineRuntime::instance() {
+ICoroutineRuntime& ICoroutineRuntime::instance() FL_NOEXCEPT {
     return fl::Singleton<CoroutineRuntimeEsp32>::instance();
 }
 
@@ -114,7 +115,7 @@ ICoroutineRuntime& ICoroutineRuntime::instance() {
 // FreeRTOS task entry — runs user function, marks completed
 //=============================================================================
 
-void TaskCoroutineESP32::task_entry(void* param) {
+void TaskCoroutineESP32::task_entry(void* param) FL_NOEXCEPT {
     auto* self = static_cast<TaskCoroutineESP32*>(param);
     if (self->mFunction) {
         self->mFunction();
@@ -136,12 +137,12 @@ TaskCoroutinePtr TaskCoroutineESP32::create(
         fl::string name,
         TaskFunction function,
         size_t stack_size,
-        u8 priority) {
+        u8 priority) FL_NOEXCEPT {
     if (stack_size < kMinStackSize) {
         stack_size = kMinStackSize;
     }
 
-    TaskCoroutinePtr task(new TaskCoroutineESP32());  // ok bare allocation
+    TaskCoroutinePtr task(new TaskCoroutineESP32()) FL_NOEXCEPT;  // ok bare allocation
     auto* impl = static_cast<TaskCoroutineESP32*>(task.get());
     impl->mName = fl::move(name);
     impl->mFunction = fl::move(function);
@@ -202,7 +203,7 @@ TaskCoroutineESP32::~TaskCoroutineESP32() {
     // mStackBuf and mTaskTcb are freed automatically by unique_ptr destructors
 }
 
-void TaskCoroutineESP32::stop() {
+void TaskCoroutineESP32::stop() FL_NOEXCEPT {
     if (!mTask) return;
     mShouldStop.store(true);
     vTaskDelete(mTask);
@@ -210,7 +211,7 @@ void TaskCoroutineESP32::stop() {
     mCompleted.store(true);
 }
 
-bool TaskCoroutineESP32::isRunning() const {
+bool TaskCoroutineESP32::isRunning() const FL_NOEXCEPT {
     return !mCompleted.load();
 }
 
@@ -222,7 +223,7 @@ TaskCoroutinePtr createTaskCoroutine(fl::string name,
                                       ICoroutineTask::TaskFunction function,
                                       size_t stack_size,
                                       u8 priority,
-                                      int /*core_id*/) {
+                                      int /*core_id*/) FL_NOEXCEPT {
     return TaskCoroutineESP32::create(fl::move(name), fl::move(function),
                                       stack_size, priority);
 }
@@ -231,7 +232,7 @@ TaskCoroutinePtr createTaskCoroutine(fl::string name,
 // Static exitCurrent — delete current FreeRTOS task
 //=============================================================================
 
-void ICoroutineTask::exitCurrent() {
+void ICoroutineTask::exitCurrent() FL_NOEXCEPT {
     vTaskDelete(nullptr);  // Delete the calling task
     while (true) {}        // Should never reach here
 }

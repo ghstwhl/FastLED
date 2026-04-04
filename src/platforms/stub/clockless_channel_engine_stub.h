@@ -15,6 +15,7 @@
 #include "fl/channels/data.h"
 #include "fl/stl/string.h"
 #include "platforms/stub/stub_gpio.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace stub {
@@ -27,12 +28,12 @@ class ClocklessChannelEngineStub : public IChannelDriver {
 public:
     virtual ~ClocklessChannelEngineStub() = default;
 
-    virtual bool canHandle(const ChannelDataPtr& data) const override {
+    virtual bool canHandle(const ChannelDataPtr& data) const FL_NOEXCEPT override {
         // Only handle clockless (WS2812-style) channels
         return data && data->isClockless();
     }
 
-    virtual void enqueue(ChannelDataPtr channelData) override {
+    virtual void enqueue(ChannelDataPtr channelData) FL_NOEXCEPT override {
         if (!channelData || channelData->getData().empty()) return;
         if (!channelData->isClockless()) return;
 
@@ -47,19 +48,19 @@ public:
         );
     }
 
-    virtual void show() override {
+    virtual void show() FL_NOEXCEPT override {
         // No hardware to drive — transmission is synchronous in enqueue()
     }
 
-    virtual DriverState poll() override {
+    virtual DriverState poll() FL_NOEXCEPT override {
         return DriverState(DriverState::READY);
     }
 
-    virtual fl::string getName() const override {
+    virtual fl::string getName() const FL_NOEXCEPT override {
         return fl::string::from_literal("STUB");
     }
 
-    virtual Capabilities getCapabilities() const override {
+    virtual Capabilities getCapabilities() const FL_NOEXCEPT override {
         return Capabilities(true, false);  // Clockless only
     }
 };

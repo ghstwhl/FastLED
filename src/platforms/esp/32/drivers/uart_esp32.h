@@ -350,7 +350,7 @@ public:
      * 4. If not installed, configures and installs driver with all settings from config
      * 5. If installation fails, falls back to ROM UART
      */
-    explicit UartEsp32(const UartConfig& config);
+    explicit UartEsp32(const UartConfig& config) FL_NOEXCEPT;
 
     /**
      * @brief Destructor - deallocates UART from UartManager

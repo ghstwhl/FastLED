@@ -7,6 +7,7 @@
 
 #include "platforms/cycle_type.h"
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 /// @file platforms/esp/delay_cycles_esp32.h
 /// ESP32 platform-specific cycle-accurate delay specializations
@@ -29,7 +30,7 @@
 
 /// Forward declaration
 template<fl::cycle_t CYCLES>
-inline void delaycycles();
+inline void delaycycles() FL_NOEXCEPT;
 
 /// ESP32 specialization for very large cycle counts
 /// This prevents stack overflow on ESP32 with cycles = 4294966398

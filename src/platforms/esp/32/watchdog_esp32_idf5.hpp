@@ -40,6 +40,7 @@
 
 // ROM delay function - works in any context including panic handlers
 #include "esp_rom_sys.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace detail {
@@ -60,7 +61,7 @@ constexpr u32 USB_DISCONNECT_DELAY_US = 150000;
 namespace {
 
 // Performs hardware-level USB disconnect sequence
-void disconnect_usb_hardware() {
+void disconnect_usb_hardware() FL_NOEXCEPT {
 #if HAS_USB_SERIAL_JTAG
     // Clear D+ pullup to signal USB disconnect
     CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_DP_PULLUP);
@@ -76,14 +77,14 @@ void disconnect_usb_hardware() {
 }
 
 // Invokes user callback if registered
-void invoke_user_callback() {
+void invoke_user_callback() FL_NOEXCEPT {
     if (detail::s_user_callback != nullptr) {
         detail::s_user_callback(detail::s_user_data);
     }
 }
 
 // Common reset handler logic
-void handle_system_reset(const char* handler_name) {
+void handle_system_reset(const char* handler_name) FL_NOEXCEPT {
     invoke_user_callback();
 
     FL_DBG("\n[" << handler_name << "] System reset detected - performing safe USB disconnect");
@@ -105,7 +106,7 @@ void handle_system_reset(const char* handler_name) {
 // IMPORTANT: Defined in fl namespace scope so it can be registered with ESP-IDF
 // and can access helper functions from the anonymous namespace above
 namespace {
-static void watchdog_shutdown_handler_v5(void) {
+static void watchdog_shutdown_handler_v5(void) FL_NOEXCEPT {
     handle_system_reset("SHUTDOWN FastLED idfv5");
 }
 } // anonymous namespace
@@ -118,14 +119,14 @@ static void watchdog_shutdown_handler_v5(void) {
 namespace {
 
 // Deinitializes existing watchdog if scheduler is running
-void deinit_existing_watchdog() {
+void deinit_existing_watchdog() FL_NOEXCEPT {
     if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
         esp_task_wdt_deinit();
     }
 }
 
 // Initializes watchdog with specified timeout
-bool init_task_watchdog(u32 timeout_ms) {
+bool init_task_watchdog(u32 timeout_ms) FL_NOEXCEPT {
     esp_task_wdt_config_t config = {
         .timeout_ms = timeout_ms,
         .idle_core_mask = (1 << 0),  // Monitor idle task on core 0 (main loop)
@@ -142,7 +143,7 @@ bool init_task_watchdog(u32 timeout_ms) {
 }
 
 // Logs watchdog configuration status
-void log_watchdog_status(u32 timeout_ms, watchdog_callback_t callback) {
+void log_watchdog_status(u32 timeout_ms, watchdog_callback_t callback) FL_NOEXCEPT {
     FL_DBG("[WATCHDOG] ✓ " << timeout_ms << "ms watchdog active with reset on timeout");
     if (callback != nullptr) {
         FL_DBG("[WATCHDOG] ℹ️  User callback registered");
@@ -155,7 +156,7 @@ void log_watchdog_status(u32 timeout_ms, watchdog_callback_t callback) {
 
 void watchdog_setup(u32 timeout_ms,
                     watchdog_callback_t callback,
-                    void* user_data) {
+                    void* user_data) FL_NOEXCEPT {
     FL_DBG("\n[WATCHDOG] Configuring ESP32 custom " << timeout_ms << "ms watchdog (IDF v5.x)");
 
     // Store callback for reset handlers

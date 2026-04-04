@@ -14,6 +14,7 @@
 #include "pixel_controller.h"
 #include "eorder.h"
 #include "fastspi_types.h"
+#include "fl/stl/noexcept.h"
 
 // Forward declarations - these should be defined by the including header
 // (e.g., chipsets.h includes pixel_iterator.h and eorder.h before this header)
@@ -32,7 +33,7 @@ namespace fl {
 /// @param spi the SPI output device to write bytes to
 /// @param context optional context pointer for post-block callbacks
 template <u8 FLAGS, class D, EOrder RGB_ORDER, class SPI_OUT>
-void writePixelsToSPI(PixelController<RGB_ORDER> pixels, SPI_OUT& spi, void* context = nullptr) {
+void writePixelsToSPI(PixelController<RGB_ORDER> pixels, SPI_OUT& spi, void* context = nullptr) FL_NOEXCEPT {
     spi.select();
     int len = pixels.mLen;
 

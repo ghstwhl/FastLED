@@ -7,6 +7,7 @@
 #include "fl/stl/compiler_control.h"
 #include "fl/stl/stdint.h"
 #include "fl/system/sketch_macros.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -22,7 +23,7 @@ namespace fl {
 /// @{
 
 /// Add one byte to another, saturating at 0xFF (AVR assembly)
-FL_ALWAYS_INLINE u8 qadd8(u8 i, u8 j) {
+FL_ALWAYS_INLINE u8 qadd8(u8 i, u8 j) FL_NOEXCEPT {
     asm volatile(
         /* First, add j to i, conditioning the C flag */
         "add %0, %1    \n\t"
@@ -40,7 +41,7 @@ FL_ALWAYS_INLINE u8 qadd8(u8 i, u8 j) {
 }
 
 /// Add one byte to another, saturating at 0x7F and -0x80 (AVR assembly)
-FL_ALWAYS_INLINE i8 qadd7(i8 i, i8 j) {
+FL_ALWAYS_INLINE i8 qadd7(i8 i, i8 j) FL_NOEXCEPT {
     asm volatile(
         /* First, add j to i, conditioning the V and C flags */
         "add %0, %1    \n\t"
@@ -63,7 +64,7 @@ FL_ALWAYS_INLINE i8 qadd7(i8 i, i8 j) {
 }
 
 /// Subtract one byte from another, saturating at 0x00 (AVR assembly)
-FL_ALWAYS_INLINE u8 qsub8(u8 i, u8 j) {
+FL_ALWAYS_INLINE u8 qsub8(u8 i, u8 j) FL_NOEXCEPT {
     asm volatile(
         /* First, subtract j from i, conditioning the C flag */
         "sub %0, %1    \n\t"
@@ -81,14 +82,14 @@ FL_ALWAYS_INLINE u8 qsub8(u8 i, u8 j) {
 }
 
 /// Add one byte to another, with 8-bit result (AVR assembly)
-FL_ALWAYS_INLINE u8 add8(u8 i, u8 j) {
+FL_ALWAYS_INLINE u8 add8(u8 i, u8 j) FL_NOEXCEPT {
     // Add j to i, period.
-    asm volatile("add %0, %1" : "+r"(i) : "r"(j));
+    asm volatile("add %0, %1" : "+r"(i) : "r"(j)) FL_NOEXCEPT;
     return i;
 }
 
 /// Add one byte to two bytes, with 16-bit result (AVR assembly)
-FL_ALWAYS_INLINE u16 add8to16(u8 i, u16 j) {
+FL_ALWAYS_INLINE u16 add8to16(u8 i, u16 j) FL_NOEXCEPT {
     // Add i(one byte) to j(two bytes)
     asm volatile("add %A[j], %[i]              \n\t"
                  "adc %B[j], __zero_reg__      \n\t"
@@ -98,14 +99,14 @@ FL_ALWAYS_INLINE u16 add8to16(u8 i, u16 j) {
 }
 
 /// Subtract one byte from another, 8-bit result (AVR assembly)
-FL_ALWAYS_INLINE u8 sub8(u8 i, u8 j) {
+FL_ALWAYS_INLINE u8 sub8(u8 i, u8 j) FL_NOEXCEPT {
     // Subtract j from i, period.
-    asm volatile("sub %0, %1" : "+r"(i) : "r"(j));
+    asm volatile("sub %0, %1" : "+r"(i) : "r"(j)) FL_NOEXCEPT;
     return i;
 }
 
 /// Calculate an integer average of two unsigned 8-bit values (AVR assembly)
-FL_ALWAYS_INLINE u8 avg8(u8 i, u8 j) {
+FL_ALWAYS_INLINE u8 avg8(u8 i, u8 j) FL_NOEXCEPT {
     asm volatile(
         /* First, add j to i, 9th bit overflows into C flag */
         "add %0, %1    \n\t"
@@ -117,7 +118,7 @@ FL_ALWAYS_INLINE u8 avg8(u8 i, u8 j) {
 }
 
 /// Calculate an integer average of two unsigned 16-bit values (AVR assembly)
-FL_ALWAYS_INLINE u16 avg16(u16 i, u16 j) {
+FL_ALWAYS_INLINE u16 avg16(u16 i, u16 j) FL_NOEXCEPT {
     asm volatile(
         /* First, add jLo (heh) to iLo, 9th bit overflows into C flag */
         "add %A[i], %A[j]    \n\t"
@@ -134,7 +135,7 @@ FL_ALWAYS_INLINE u16 avg16(u16 i, u16 j) {
 }
 
 /// Calculate an integer average of two unsigned 8-bit values, rounded up (AVR assembly)
-FL_ALWAYS_INLINE u8 avg8r(u8 i, u8 j) {
+FL_ALWAYS_INLINE u8 avg8r(u8 i, u8 j) FL_NOEXCEPT {
     asm volatile(
         /* First, add j to i, 9th bit overflows into C flag */
         "add %0, %1          \n\t"
@@ -148,7 +149,7 @@ FL_ALWAYS_INLINE u8 avg8r(u8 i, u8 j) {
 }
 
 /// Calculate an integer average of two unsigned 16-bit values, rounded up (AVR assembly)
-FL_ALWAYS_INLINE u16 avg16r(u16 i, u16 j) {
+FL_ALWAYS_INLINE u16 avg16r(u16 i, u16 j) FL_NOEXCEPT {
     asm volatile(
         /* First, add jLo (heh) to iLo, 9th bit overflows into C flag */
         "add %A[i], %A[j]    \n\t"
@@ -169,7 +170,7 @@ FL_ALWAYS_INLINE u16 avg16r(u16 i, u16 j) {
 }
 
 /// Calculate an integer average of two signed 7-bit integers (AVR assembly)
-FL_ALWAYS_INLINE i8 avg7(i8 i, i8 j) {
+FL_ALWAYS_INLINE i8 avg7(i8 i, i8 j) FL_NOEXCEPT {
     asm volatile("asr %1        \n\t"
                  "asr %0        \n\t"
                  "adc %0, %1    \n\t"
@@ -179,7 +180,7 @@ FL_ALWAYS_INLINE i8 avg7(i8 i, i8 j) {
 }
 
 /// Calculate an integer average of two signed 15-bit integers (AVR assembly)
-FL_ALWAYS_INLINE i16 avg15(i16 i, i16 j) {
+FL_ALWAYS_INLINE i16 avg15(i16 i, i16 j) FL_NOEXCEPT {
     asm volatile(
         /* first divide j by 2, throwing away lowest bit */
         "asr %B[j]          \n\t"
@@ -196,7 +197,7 @@ FL_ALWAYS_INLINE i16 avg15(i16 i, i16 j) {
 }
 
 /// Take the absolute value of a signed 8-bit int8_t (AVR assembly)
-FL_ALWAYS_INLINE i8 abs8(i8 i) {
+FL_ALWAYS_INLINE i8 abs8(i8 i) FL_NOEXCEPT {
     asm volatile(
         /* First, check the high bit, and prepare to skip if it's clear */
         "sbrc %0, 7 \n"
@@ -220,7 +221,7 @@ FL_ALWAYS_INLINE i8 abs8(i8 i) {
 /// @param a dividend byte
 /// @param m divisor byte
 /// @returns remainder of a / m (i.e. a % m)
-FL_ALWAYS_INLINE u8 mod8(u8 a, u8 m) {
+FL_ALWAYS_INLINE u8 mod8(u8 a, u8 m) FL_NOEXCEPT {
     asm volatile("L_%=:  sub %[a],%[m]    \n\t"
                  "       brcc L_%=        \n\t"
                  "       add %[a],%[m]    \n\t"
@@ -246,7 +247,7 @@ FL_ALWAYS_INLINE u8 mod8(u8 a, u8 m) {
 /// @param m divisor byte
 /// @returns remainder of (a + b) / m
 /// @see mod8() for notes on performance.
-LIB8STATIC u8 addmod8(u8 a, u8 b, u8 m) {
+LIB8STATIC u8 addmod8(u8 a, u8 b, u8 m) FL_NOEXCEPT {
     asm volatile("       add %[a],%[b]    \n\t"
                  "L_%=:  sub %[a],%[m]    \n\t"
                  "       brcc L_%=        \n\t"
@@ -273,7 +274,7 @@ LIB8STATIC u8 addmod8(u8 a, u8 b, u8 m) {
 /// @param m divisor byte
 /// @returns remainder of (a - b) / m
 /// @see mod8() for notes on performance.
-LIB8STATIC u8 submod8(u8 a, u8 b, u8 m) {
+LIB8STATIC u8 submod8(u8 a, u8 b, u8 m) FL_NOEXCEPT {
     asm volatile("       sub %[a],%[b]    \n\t"
                  "L_%=:  sub %[a],%[m]    \n\t"
                  "       brcc L_%=        \n\t"
@@ -286,7 +287,7 @@ LIB8STATIC u8 submod8(u8 a, u8 b, u8 m) {
 /// 8x8 bit multiplication, with 8-bit result (AVR assembly with MUL)
 /// Uses the hardware MUL instruction (2 cycle latency)
 /// ~10 cycles total
-FL_ALWAYS_INLINE u8 mul8(u8 i, u8 j) {
+FL_ALWAYS_INLINE u8 mul8(u8 i, u8 j) FL_NOEXCEPT {
     asm volatile(
         /* Multiply 8-bit i * 8-bit j, giving 16-bit r1,r0 */
         "mul %0, %1          \n\t"
@@ -303,7 +304,7 @@ FL_ALWAYS_INLINE u8 mul8(u8 i, u8 j) {
 /// 8x8 bit multiplication with 8-bit result, saturating at 0xFF (AVR assembly with MUL)
 /// Uses hardware MUL with high-byte test for saturation detection
 /// ~15 cycles
-FL_ALWAYS_INLINE u8 qmul8(u8 i, u8 j) {
+FL_ALWAYS_INLINE u8 qmul8(u8 i, u8 j) FL_NOEXCEPT {
     asm volatile(
         /* Multiply 8-bit i * 8-bit j, giving 16-bit r1,r0 */
         "  mul %0, %1          \n\t"
@@ -326,7 +327,7 @@ FL_ALWAYS_INLINE u8 qmul8(u8 i, u8 j) {
 /// Blend a variable proportion of one byte to another - 8-bit precision (AVR assembly with MUL)
 /// Uses Option 1: result = ((a << 8) + (b - a) * M + 0x80) >> 8
 /// Computes with proper rounding for accurate color interpolation
-LIB8STATIC u8 blend8_8bit(u8 a, u8 b, u8 amountOfB) {
+LIB8STATIC u8 blend8_8bit(u8 a, u8 b, u8 amountOfB) FL_NOEXCEPT {
     u16 partial = 0;
     u8 result;
 
@@ -357,7 +358,7 @@ LIB8STATIC u8 blend8_8bit(u8 a, u8 b, u8 amountOfB) {
 /// Blend a variable proportion of one byte to another - 16-bit precision (AVR C implementation)
 /// Uses Option 2: result = ((a << 16) + (b - a) * M * 257 + 0x8000) >> 16
 /// Falls back to C implementation for AVR as 32-bit assembly would be complex
-LIB8STATIC u8 blend8_16bit(u8 a, u8 b, u8 amountOfB) {
+LIB8STATIC u8 blend8_16bit(u8 a, u8 b, u8 amountOfB) FL_NOEXCEPT {
     u32 partial;
     i16 delta = (i16)b - (i16)a;
 
@@ -372,11 +373,11 @@ LIB8STATIC u8 blend8_16bit(u8 a, u8 b, u8 amountOfB) {
 /// Blend a variable proportion of one byte to another (AVR assembly with MUL)
 /// Automatically selects between 8-bit and 16-bit precision based on available memory
 #if (SKETCH_HAS_LARGE_MEMORY)
-LIB8STATIC u8 blend8(u8 a, u8 b, u8 amountOfB) {
+LIB8STATIC u8 blend8(u8 a, u8 b, u8 amountOfB) FL_NOEXCEPT {
     return blend8_16bit(a, b, amountOfB);
 }
 #else
-LIB8STATIC u8 blend8(u8 a, u8 b, u8 amountOfB) {
+LIB8STATIC u8 blend8(u8 a, u8 b, u8 amountOfB) FL_NOEXCEPT {
     return blend8_8bit(a, b, amountOfB);
 }
 #endif

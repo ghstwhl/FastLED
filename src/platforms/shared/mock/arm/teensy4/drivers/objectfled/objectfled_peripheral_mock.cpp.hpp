@@ -10,11 +10,12 @@
 
 #include "platforms/arm/teensy/teensy4_common/drivers/objectfled/iobjectfled_peripheral.h"
 #include "platforms/shared/mock/arm/teensy4/drivers/objectfled/objectfled_peripheral_mock.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
 // Factory: create mock peripheral on non-Teensy platforms
-fl::shared_ptr<IObjectFLEDPeripheral> IObjectFLEDPeripheral::create() {
+fl::shared_ptr<IObjectFLEDPeripheral> IObjectFLEDPeripheral::create() FL_NOEXCEPT {
     return fl::make_shared<ObjectFLEDPeripheralMock>();
 }
 

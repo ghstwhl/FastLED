@@ -23,6 +23,7 @@
 #include "fl/stl/function.h"
 #include "fl/chipsets/chipset_timing_config.h"
 #include "fl/rx_device.h"  // for fl::EdgeTime
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace stub {
@@ -31,33 +32,33 @@ namespace stub {
 /// Records the state change and appends edge to any armed buffer for this pin.
 /// @param pin Pin number
 /// @param high true = HIGH, false = LOW
-void setPinState(int pin, bool high);
+void setPinState(int pin, bool high) FL_NOEXCEPT;
 
 /// @brief Get current digital pin state (called from fl::platforms::digitalRead)
 /// @param pin Pin number
 /// @return true = HIGH, false = LOW
-bool getPinState(int pin);
+bool getPinState(int pin) FL_NOEXCEPT;
 
 /// @brief Arm edge capture for a pin
 /// After arming, subsequent setPinState() calls for this pin will append EdgeTime entries.
 /// Clears any previously recorded edges for this pin.
 /// @param pin Pin number to arm
-void armPinEdges(int pin);
+void armPinEdges(int pin) FL_NOEXCEPT;
 
 /// @brief Disarm and clear edge capture for a pin
 /// @param pin Pin number
-void clearPinEdges(int pin);
+void clearPinEdges(int pin) FL_NOEXCEPT;
 
 /// @brief Get the number of edges recorded for a pin
 /// @param pin Pin number
 /// @return Number of EdgeTime entries recorded
-size_t getEdgeCount(int pin);
+size_t getEdgeCount(int pin) FL_NOEXCEPT;
 
 /// @brief Get a specific edge entry for a pin
 /// @param pin Pin number
 /// @param index Edge index (0-based)
 /// @return EdgeTime entry, or EdgeTime() if out of range
-fl::EdgeTime getEdge(int pin, size_t index);
+fl::EdgeTime getEdge(int pin, size_t index) FL_NOEXCEPT;
 
 /// @brief Simulate WS2812 GPIO output for a pin, recording edges
 ///
@@ -75,13 +76,13 @@ fl::EdgeTime getEdge(int pin, size_t index);
 /// @param timing Chipset timing configuration
 void simulateWS2812Output(int pin,
                            fl::span<const u8> data,
-                           const fl::ChipsetTimingConfig& timing);
+                           const fl::ChipsetTimingConfig& timing) FL_NOEXCEPT;
 
 /// @brief Inject raw EdgeTime entries into a pin's edge buffer
 /// Appends edges to the buffer. The pin must be armed via armPinEdges() first.
 /// @param pin GPIO pin number
 /// @param edges Span of EdgeTime entries to inject
-void injectEdges(int pin, fl::span<const fl::EdgeTime> edges);
+void injectEdges(int pin, fl::span<const fl::EdgeTime> edges) FL_NOEXCEPT;
 
 // ============================================================================
 // Per-pin edge callbacks (simulates GPIO loopback wire from TX to RX)
@@ -103,13 +104,13 @@ using PinEdgeCallback = fl::function<void(bool high, u32 duration_ns)>;
 ///
 /// @param pin GPIO pin number
 /// @param cb Callback function (use fl::function for value semantics)
-void setPinEdgeCallback(int pin, PinEdgeCallback cb);
+void setPinEdgeCallback(int pin, PinEdgeCallback cb) FL_NOEXCEPT;
 
 /// @brief Clear the edge callback for a pin
 ///
 /// Safe to call even if no callback is set for the pin.
 /// @param pin GPIO pin number
-void clearPinEdgeCallback(int pin);
+void clearPinEdgeCallback(int pin) FL_NOEXCEPT;
 
 }  // namespace stub
 }  // namespace fl

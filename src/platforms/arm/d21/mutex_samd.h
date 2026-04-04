@@ -26,6 +26,7 @@
 #include "fl/system/log.h"
 // IWYU pragma: begin_keep
 #include <mutex>  // ok include - needed for std::unique_lock compatibility
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 
 namespace fl {
@@ -66,7 +67,7 @@ private:
     volatile bool mLocked;  // Lock flag (volatile for ISR safety)
 
 public:
-    MutexSAMD();
+    MutexSAMD() FL_NOEXCEPT;
     ~MutexSAMD() = default;
 
     // Non-copyable and non-movable
@@ -76,14 +77,14 @@ public:
     MutexSAMD& operator=(MutexSAMD&&) = delete;
 
     /// @brief Lock the mutex (warns if already locked)
-    void lock();
+    void lock() FL_NOEXCEPT;
 
     /// @brief Unlock the mutex
-    void unlock();
+    void unlock() FL_NOEXCEPT;
 
     /// @brief Try to lock the mutex without blocking
     /// @return true if lock acquired, false if already locked
-    bool try_lock();
+    bool try_lock() FL_NOEXCEPT;
 };
 
 /// @brief SAMD interrupt-based recursive mutex
@@ -99,7 +100,7 @@ private:
     volatile u32 mLockCount;  // Number of times locked (0 = unlocked)
 
 public:
-    RecursiveMutexSAMD();
+    RecursiveMutexSAMD() FL_NOEXCEPT;
     ~RecursiveMutexSAMD() = default;
 
     // Non-copyable and non-movable
@@ -109,14 +110,14 @@ public:
     RecursiveMutexSAMD& operator=(RecursiveMutexSAMD&&) = delete;
 
     /// @brief Lock the mutex (increments lock count)
-    void lock();
+    void lock() FL_NOEXCEPT;
 
     /// @brief Unlock the mutex (decrements lock count)
-    void unlock();
+    void unlock() FL_NOEXCEPT;
 
     /// @brief Try to lock the mutex without blocking
     /// @return Always true in single-threaded environment
-    bool try_lock();
+    bool try_lock() FL_NOEXCEPT;
 };
 
 // Define FASTLED_MULTITHREADED=0 for SAMD (bare metal, no threading)

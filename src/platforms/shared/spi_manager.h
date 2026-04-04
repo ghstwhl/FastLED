@@ -15,6 +15,7 @@
 #include "platforms/shared/spi_hw_8.h"  // Octal-SPI
 #include "platforms/shared/spi_hw_16.h"  // Hexadeca-SPI
 #include "platforms/shared/spi_transposer.h"
+#include "fl/stl/noexcept.h"
 
 
 
@@ -42,8 +43,8 @@ struct SPIBusHandle {
     u8 lane_id;       ///< Lane ID within bus (0 for single SPI, 0-3 for quad, 0-7 for octo)
     bool is_valid;         ///< Whether this handle is valid
 
-    SPIBusHandle() : bus_id(0xFF), lane_id(0xFF), is_valid(false) {}
-    SPIBusHandle(u8 bid, u8 lid) : bus_id(bid), lane_id(lid), is_valid(true) {}
+    SPIBusHandle() FL_NOEXCEPT : bus_id(0xFF), lane_id(0xFF), is_valid(false) {}
+    SPIBusHandle(u8 bid, u8 lid) FL_NOEXCEPT : bus_id(bid), lane_id(lid), is_valid(true) {}
 };
 
 /// Information about a registered device on an SPI bus
@@ -57,7 +58,7 @@ struct SPIDeviceInfo {
     bool is_allocated;              ///< Whether this slot is currently in use
 
     SPIDeviceInfo()
-        : clock_pin(0xFF), data_pin(0xFF), controller(nullptr),
+ FL_NOEXCEPT : clock_pin(0xFF), data_pin(0xFF), controller(nullptr),
           lane_id(0xFF), requested_speed_hz(0), is_enabled(false), is_allocated(false) {}
 };
 
@@ -77,7 +78,7 @@ struct SPIBusInfo {
     fl::vector<u8> interleaved_buffer;          ///< Transposed output for multi-lane DMA
 
     SPIBusInfo()
-        : clock_pin(0xFF), bus_type(SPIBusType::SOFT_SPI), num_devices(0),
+ FL_NOEXCEPT : clock_pin(0xFF), bus_type(SPIBusType::SOFT_SPI), num_devices(0),
           spi_bus_num(0xFF), hw_controller(nullptr), is_initialized(false),
           error_message(nullptr) {}
 };
@@ -94,7 +95,7 @@ private:
     bool mInitialized;
 
 public:
-    SPIBusManager();
+    SPIBusManager() FL_NOEXCEPT;
     ~SPIBusManager();
 
     /// Register a device (LED strip) with the manager
@@ -104,91 +105,91 @@ public:
     /// @param requested_speed_hz User-requested SPI speed in Hz (from DATA_RATE_MHZ)
     /// @param controller Pointer to controller instance
     /// @returns Handle to use for transmit operations
-    SPIBusHandle registerDevice(u8 clock_pin, u8 data_pin, u32 requested_speed_hz, void* controller);
+    SPIBusHandle registerDevice(u8 clock_pin, u8 data_pin, u32 requested_speed_hz, void* controller) FL_NOEXCEPT;
 
     /// Unregister a device (LED strip) from the manager
     /// Called by LED controller destructors
     /// @param handle Device handle from registerDevice()
     /// @returns true if successful, false if handle invalid
-    bool unregisterDevice(SPIBusHandle handle);
+    bool unregisterDevice(SPIBusHandle handle) FL_NOEXCEPT;
 
     /// Initialize all buses and resolve conflicts
     /// Called on first FastLED.show()
     /// @returns true if all buses initialized successfully
-    bool initialize();
+    bool initialize() FL_NOEXCEPT;
 
     /// Transmit data for a specific device
     /// @param handle Device handle from registerDevice()
     /// @param data Pointer to data buffer
     /// @param length Number of bytes to transmit
-    void transmit(SPIBusHandle handle, const u8* data, size_t length);
+    void transmit(SPIBusHandle handle, const u8* data, size_t length) FL_NOEXCEPT;
 
     /// Wait for transmission to complete
     /// @param handle Device handle from registerDevice()
-    void waitComplete(SPIBusHandle handle);
+    void waitComplete(SPIBusHandle handle) FL_NOEXCEPT;
 
     /// Finalize transmission - flush buffered data for Dual-SPI, Quad-SPI and Octo-SPI
     /// This performs the bit-interleaving and DMA transmission
     /// @param handle Device handle from registerDevice()
-    void finalizeTransmission(SPIBusHandle handle);
+    void finalizeTransmission(SPIBusHandle handle) FL_NOEXCEPT;
 
     /// Check if a device is enabled
     /// @param handle Device handle from registerDevice()
     /// @returns true if device is enabled and can transmit
-    bool isDeviceEnabled(SPIBusHandle handle) const;
+    bool isDeviceEnabled(SPIBusHandle handle) const FL_NOEXCEPT;
 
     /// Clear all registrations (for testing)
-    void reset();
+    void reset() FL_NOEXCEPT;
 
     /// Get the number of buses currently registered
-    u8 getNumBuses() const;
+    u8 getNumBuses() const FL_NOEXCEPT;
 
     /// Get bus info for testing/debugging
-    const SPIBusInfo* getBusInfo(u8 bus_id) const;
+    const SPIBusInfo* getBusInfo(u8 bus_id) const FL_NOEXCEPT;
 
 private:
     /// Find or create bus for a clock pin
     /// @param clock_pin Clock pin number
     /// @returns Pointer to bus, or nullptr if MAX_BUSES exceeded
-    SPIBusInfo* getOrCreateBus(u8 clock_pin);
+    SPIBusInfo* getOrCreateBus(u8 clock_pin) FL_NOEXCEPT;
 
     /// Initialize a specific bus (promotes to multi-SPI if needed)
     /// @param bus Bus to initialize
     /// @returns true if successful
-    bool initializeBus(SPIBusInfo& bus);
+    bool initializeBus(SPIBusInfo& bus) FL_NOEXCEPT;
 
     /// Attempt to promote a bus to multi-line SPI
     /// @param bus Bus to promote
     /// @returns true if promotion succeeded
-    bool promoteToMultiSPI(SPIBusInfo& bus);
+    bool promoteToMultiSPI(SPIBusInfo& bus) FL_NOEXCEPT;
 
     /// Create single-line SPI controller
     /// @param bus Bus to initialize
     /// @returns true if successful
-    bool createSingleSPI(SPIBusInfo& bus);
+    bool createSingleSPI(SPIBusInfo& bus) FL_NOEXCEPT;
 
     /// Disable conflicting devices (keep first, disable others)
     /// @param bus Bus with conflicts
-    void disableConflictingDevices(SPIBusInfo& bus);
+    void disableConflictingDevices(SPIBusInfo& bus) FL_NOEXCEPT;
 
     /// Select appropriate SPI clock speed for a bus
     /// Takes the minimum (slowest) requested speed to ensure all devices work
     /// @param bus Bus to select speed for
     /// @returns Clock speed in Hz
-    u32 selectBusSpeed(const SPIBusInfo& bus);
+    u32 selectBusSpeed(const SPIBusInfo& bus) FL_NOEXCEPT;
 
     /// Get platform-specific default SPI speed
     /// @returns Default speed in Hz
-    u32 getPlatformDefaultSpeed();
+    u32 getPlatformDefaultSpeed() FL_NOEXCEPT;
 
     /// Get platform-specific maximum SPI speed
     /// @returns Maximum safe speed in Hz
-    u32 getPlatformMaxSpeed();
+    u32 getPlatformMaxSpeed() FL_NOEXCEPT;
 
     /// Release hardware resources for a bus
     /// Called when all devices on a bus are unregistered
     /// @param bus Bus to clean up
-    void releaseBusHardware(SPIBusInfo& bus);
+    void releaseBusHardware(SPIBusInfo& bus) FL_NOEXCEPT;
 
     /// Software SPI bit-banging implementation using runtime pins
     /// @param clock_pin Clock pin number
@@ -199,15 +200,15 @@ private:
     /// @note This function is only available when Pin class is fully defined.
     ///       In normal usage (when FastLED.h is included), Pin will be available.
     ///       In test/stub builds or when Pin is not available, this is a no-op.
-    void softwareSPIWrite(u8 clock_pin, u8 data_pin, const u8* data, size_t length);
+    void softwareSPIWrite(u8 clock_pin, u8 data_pin, const u8* data, size_t length) FL_NOEXCEPT;
 
     /// Get maximum supported SPI type for this platform
     /// Uses runtime detection via getAll() - platforms provide via weak linkage
     /// @returns Maximum SPI type supported
-    SPIBusType getMaxSupportedSPIType() const;
+    SPIBusType getMaxSupportedSPIType() const FL_NOEXCEPT;
 };
 
 // Global instance
-SPIBusManager& getSPIBusManager();
+SPIBusManager& getSPIBusManager() FL_NOEXCEPT;
 
 } // namespace fl

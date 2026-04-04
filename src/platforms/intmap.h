@@ -27,6 +27,7 @@
 #include "fl/system/sketch_macros.h"
 #include "fl/stl/type_traits.h"
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace details {
@@ -45,18 +46,18 @@ namespace details {
 /// @{
 
 // Forward declarations for legacy functions (defined below)
-FL_ALWAYS_INLINE u16 map8_to_16(u8 x);
-FL_ALWAYS_INLINE i16 smap8_to_16(i8 x);
-FL_ALWAYS_INLINE u32 map8_to_32(u8 x);
-FL_ALWAYS_INLINE i32 smap8_to_32(i8 x);
-FL_ALWAYS_INLINE u32 map16_to_32(u16 x);
-FL_ALWAYS_INLINE i32 smap16_to_32(i16 x);
-FL_ALWAYS_INLINE u8 map16_to_8(u16 x);
-FL_ALWAYS_INLINE i8 smap16_to_8(i16 x);
-FL_ALWAYS_INLINE u16 map32_to_16(u32 x);
-FL_ALWAYS_INLINE i16 smap32_to_16(i32 x);
-FL_ALWAYS_INLINE u8 map32_to_8(u32 x);
-FL_ALWAYS_INLINE i8 smap32_to_8(i32 x);
+FL_ALWAYS_INLINE u16 map8_to_16(u8 x) FL_NOEXCEPT;
+FL_ALWAYS_INLINE i16 smap8_to_16(i8 x) FL_NOEXCEPT;
+FL_ALWAYS_INLINE u32 map8_to_32(u8 x) FL_NOEXCEPT;
+FL_ALWAYS_INLINE i32 smap8_to_32(i8 x) FL_NOEXCEPT;
+FL_ALWAYS_INLINE u32 map16_to_32(u16 x) FL_NOEXCEPT;
+FL_ALWAYS_INLINE i32 smap16_to_32(i16 x) FL_NOEXCEPT;
+FL_ALWAYS_INLINE u8 map16_to_8(u16 x) FL_NOEXCEPT;
+FL_ALWAYS_INLINE i8 smap16_to_8(i16 x) FL_NOEXCEPT;
+FL_ALWAYS_INLINE u16 map32_to_16(u32 x) FL_NOEXCEPT;
+FL_ALWAYS_INLINE i16 smap32_to_16(i32 x) FL_NOEXCEPT;
+FL_ALWAYS_INLINE u8 map32_to_8(u32 x) FL_NOEXCEPT;
+FL_ALWAYS_INLINE i8 smap32_to_8(i32 x) FL_NOEXCEPT;
 
 // ============================================================================
 // int_scale_impl: C++11-compatible template specializations
@@ -67,7 +68,7 @@ template <typename INT_FROM, typename INT_TO>
 struct int_scale_impl {
     // Provide static_assert error for unsupported conversions
     // This gets overridden by specializations for valid type pairs
-    static INT_TO apply(INT_FROM) {
+    static INT_TO apply(INT_FROM) FL_NOEXCEPT {
         // This will only be instantiated if no specialization matches
         // Use dependent expression to delay assertion until instantiation
         static_assert(fl::is_same<INT_FROM, void>::value, "int_scale: unsupported type conversion pair");
@@ -82,7 +83,7 @@ struct int_scale_impl {
 // uint8_t → uint16_t
 template <>
 struct int_scale_impl<u8, u16> {
-    FL_ALWAYS_INLINE u16 apply(u8 x) {
+    FL_ALWAYS_INLINE u16 apply(u8 x) FL_NOEXCEPT {
         return u16(x) * 0x101;
     }
 };
@@ -90,7 +91,7 @@ struct int_scale_impl<u8, u16> {
 // int8_t → int16_t
 template <>
 struct int_scale_impl<i8, i16> {
-    FL_ALWAYS_INLINE i16 apply(i8 x) {
+    FL_ALWAYS_INLINE i16 apply(i8 x) FL_NOEXCEPT {
         return i16(u16(u8(x)) * 0x101);
     }
 };
@@ -98,7 +99,7 @@ struct int_scale_impl<i8, i16> {
 // uint8_t → int16_t
 template <>
 struct int_scale_impl<u8, i16> {
-    FL_ALWAYS_INLINE i16 apply(u8 x) {
+    FL_ALWAYS_INLINE i16 apply(u8 x) FL_NOEXCEPT {
         return i16(u16(x) * 0x101);
     }
 };
@@ -106,7 +107,7 @@ struct int_scale_impl<u8, i16> {
 // int8_t → uint16_t
 template <>
 struct int_scale_impl<i8, u16> {
-    FL_ALWAYS_INLINE u16 apply(i8 x) {
+    FL_ALWAYS_INLINE u16 apply(i8 x) FL_NOEXCEPT {
         return u16(u8(x)) * 0x101;
     }
 };
@@ -114,7 +115,7 @@ struct int_scale_impl<i8, u16> {
 // uint8_t → uint32_t
 template <>
 struct int_scale_impl<u8, u32> {
-    FL_ALWAYS_INLINE u32 apply(u8 x) {
+    FL_ALWAYS_INLINE u32 apply(u8 x) FL_NOEXCEPT {
         return u32(x) * 0x1010101;
     }
 };
@@ -122,7 +123,7 @@ struct int_scale_impl<u8, u32> {
 // int8_t → int32_t
 template <>
 struct int_scale_impl<i8, i32> {
-    FL_ALWAYS_INLINE i32 apply(i8 x) {
+    FL_ALWAYS_INLINE i32 apply(i8 x) FL_NOEXCEPT {
         return i32(u32(u8(x)) * 0x1010101);
     }
 };
@@ -130,7 +131,7 @@ struct int_scale_impl<i8, i32> {
 // uint8_t → int32_t
 template <>
 struct int_scale_impl<u8, i32> {
-    FL_ALWAYS_INLINE i32 apply(u8 x) {
+    FL_ALWAYS_INLINE i32 apply(u8 x) FL_NOEXCEPT {
         return i32(u32(x) * 0x1010101);
     }
 };
@@ -138,7 +139,7 @@ struct int_scale_impl<u8, i32> {
 // int8_t → uint32_t
 template <>
 struct int_scale_impl<i8, u32> {
-    FL_ALWAYS_INLINE u32 apply(i8 x) {
+    FL_ALWAYS_INLINE u32 apply(i8 x) FL_NOEXCEPT {
         return u32(u8(x)) * 0x1010101;
     }
 };
@@ -146,7 +147,7 @@ struct int_scale_impl<i8, u32> {
 // uint16_t → uint32_t
 template <>
 struct int_scale_impl<u16, u32> {
-    FL_ALWAYS_INLINE u32 apply(u16 x) {
+    FL_ALWAYS_INLINE u32 apply(u16 x) FL_NOEXCEPT {
         return u32(x) * 0x10001;
     }
 };
@@ -154,7 +155,7 @@ struct int_scale_impl<u16, u32> {
 // int16_t → int32_t
 template <>
 struct int_scale_impl<i16, i32> {
-    FL_ALWAYS_INLINE i32 apply(i16 x) {
+    FL_ALWAYS_INLINE i32 apply(i16 x) FL_NOEXCEPT {
         return i32(u32(u16(x)) * 0x10001);
     }
 };
@@ -162,7 +163,7 @@ struct int_scale_impl<i16, i32> {
 // uint16_t → int32_t
 template <>
 struct int_scale_impl<u16, i32> {
-    FL_ALWAYS_INLINE i32 apply(u16 x) {
+    FL_ALWAYS_INLINE i32 apply(u16 x) FL_NOEXCEPT {
         return i32(u32(x) * 0x10001);
     }
 };
@@ -170,7 +171,7 @@ struct int_scale_impl<u16, i32> {
 // int16_t → uint32_t
 template <>
 struct int_scale_impl<i16, u32> {
-    FL_ALWAYS_INLINE u32 apply(i16 x) {
+    FL_ALWAYS_INLINE u32 apply(i16 x) FL_NOEXCEPT {
         return u32(u16(x)) * 0x10001;
     }
 };
@@ -182,7 +183,7 @@ struct int_scale_impl<i16, u32> {
 // uint16_t → uint8_t
 template <>
 struct int_scale_impl<u16, u8> {
-    FL_ALWAYS_INLINE u8 apply(u16 x) {
+    FL_ALWAYS_INLINE u8 apply(u16 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
         if (x >= 0xff00) return 0xff;
         return u8((x + 128) >> 8);
@@ -196,7 +197,7 @@ struct int_scale_impl<u16, u8> {
 // int16_t → int8_t
 template <>
 struct int_scale_impl<i16, i8> {
-    FL_ALWAYS_INLINE i8 apply(i16 x) {
+    FL_ALWAYS_INLINE i8 apply(i16 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
         if (x >= 0x7f80) return 127;
         return i8((x + 128) >> 8);
@@ -210,7 +211,7 @@ struct int_scale_impl<i16, i8> {
 // uint16_t → int8_t
 template <>
 struct int_scale_impl<u16, i8> {
-    FL_ALWAYS_INLINE i8 apply(u16 x) {
+    FL_ALWAYS_INLINE i8 apply(u16 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
         if (x >= 0xff00) return 0xff;
         return i8((x + 128) >> 8);
@@ -224,7 +225,7 @@ struct int_scale_impl<u16, i8> {
 // int16_t → uint8_t
 template <>
 struct int_scale_impl<i16, u8> {
-    FL_ALWAYS_INLINE u8 apply(i16 x) {
+    FL_ALWAYS_INLINE u8 apply(i16 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
         if (x >= 0x7f80) return 255;
         return u8((x + 128) >> 8);
@@ -238,7 +239,7 @@ struct int_scale_impl<i16, u8> {
 // uint32_t → uint16_t
 template <>
 struct int_scale_impl<u32, u16> {
-    FL_ALWAYS_INLINE u16 apply(u32 x) {
+    FL_ALWAYS_INLINE u16 apply(u32 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
         if (x >= 0xffff0000) return 0xffff;
         return u16((x + 32768) >> 16);
@@ -252,7 +253,7 @@ struct int_scale_impl<u32, u16> {
 // int32_t → int16_t
 template <>
 struct int_scale_impl<i32, i16> {
-    FL_ALWAYS_INLINE i16 apply(i32 x) {
+    FL_ALWAYS_INLINE i16 apply(i32 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
         if (x >= 0x7fff8000) return 32767;
         return i16((x + 32768) >> 16);
@@ -266,7 +267,7 @@ struct int_scale_impl<i32, i16> {
 // uint32_t → int16_t
 template <>
 struct int_scale_impl<u32, i16> {
-    FL_ALWAYS_INLINE i16 apply(u32 x) {
+    FL_ALWAYS_INLINE i16 apply(u32 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
         if (x >= 0xffff0000) return 0xffff;
         return i16((x + 32768) >> 16);
@@ -280,7 +281,7 @@ struct int_scale_impl<u32, i16> {
 // int32_t → uint16_t
 template <>
 struct int_scale_impl<i32, u16> {
-    FL_ALWAYS_INLINE u16 apply(i32 x) {
+    FL_ALWAYS_INLINE u16 apply(i32 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
         if (x >= 0x7fff8000) return 0xffff;
         return u16((x + 32768) >> 16);
@@ -294,7 +295,7 @@ struct int_scale_impl<i32, u16> {
 // uint32_t → uint8_t
 template <>
 struct int_scale_impl<u32, u8> {
-    FL_ALWAYS_INLINE u8 apply(u32 x) {
+    FL_ALWAYS_INLINE u8 apply(u32 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
         if (x >= 0xFF000000) return 0xff;
         return u8((x + 0x800000) >> 24);
@@ -308,7 +309,7 @@ struct int_scale_impl<u32, u8> {
 // int32_t → int8_t
 template <>
 struct int_scale_impl<i32, i8> {
-    FL_ALWAYS_INLINE i8 apply(i32 x) {
+    FL_ALWAYS_INLINE i8 apply(i32 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
         if (x >= 0x7F000000) return 127;
         return i8((x + 0x800000) >> 24);
@@ -322,7 +323,7 @@ struct int_scale_impl<i32, i8> {
 // uint32_t → int8_t
 template <>
 struct int_scale_impl<u32, i8> {
-    FL_ALWAYS_INLINE i8 apply(u32 x) {
+    FL_ALWAYS_INLINE i8 apply(u32 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
         if (x >= 0xFF000000) return 0x7f;
         return i8((x + 0x800000) >> 24);
@@ -336,7 +337,7 @@ struct int_scale_impl<u32, i8> {
 // int32_t → uint8_t
 template <>
 struct int_scale_impl<i32, u8> {
-    FL_ALWAYS_INLINE u8 apply(i32 x) {
+    FL_ALWAYS_INLINE u8 apply(i32 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
         if (x >= 0x7F000000) return 0xff;
         return u8((x + 0x800000) >> 24);
@@ -353,7 +354,7 @@ struct int_scale_impl<i32, u8> {
 
 template <typename T>
 struct int_scale_impl<T, T> {
-    FL_ALWAYS_INLINE T apply(T x) {
+    FL_ALWAYS_INLINE T apply(T x) FL_NOEXCEPT {
         return x;
     }
 };
@@ -386,7 +387,7 @@ struct int_scale_impl<T, T> {
 /// uint8_t noop = fl::int_scale<uint8_t, uint8_t>(255);   // Identity: no scaling
 /// ```
 template <typename INT_FROM, typename INT_TO>
-FL_ALWAYS_INLINE INT_TO int_scale(typename fl::identity<INT_FROM>::type x) {
+FL_ALWAYS_INLINE INT_TO int_scale(typename fl::identity<INT_FROM>::type x) FL_NOEXCEPT {
     return int_scale_impl<INT_FROM, INT_TO>::apply(x);
 }
 
@@ -404,7 +405,7 @@ FL_ALWAYS_INLINE INT_TO int_scale(typename fl::identity<INT_FROM>::type x) {
 /// Correctly maps both endpoints: 0x00 → 0x0000 and 0xFF → 0xFFFF.
 ///
 /// @note Performs no floating point operations; suitable for embedded systems.
-FL_ALWAYS_INLINE u16 map8_to_16(u8 x) {
+FL_ALWAYS_INLINE u16 map8_to_16(u8 x) FL_NOEXCEPT {
     return u16(x) * 0x101;
 }
 
@@ -418,7 +419,7 @@ FL_ALWAYS_INLINE u16 map8_to_16(u8 x) {
 /// Maps correctly: 0 → 0, 127 → 32639, -1 → -1, -128 → -32640.
 ///
 /// @note Performs no floating point operations; suitable for embedded systems.
-FL_ALWAYS_INLINE i16 smap8_to_16(i8 x) {
+FL_ALWAYS_INLINE i16 smap8_to_16(i8 x) FL_NOEXCEPT {
     // Cast signed to unsigned to preserve bit pattern, map with unsigned function,
     // then reinterpret result as signed
     return i16(map8_to_16(u8(x)));
@@ -434,7 +435,7 @@ FL_ALWAYS_INLINE i16 smap8_to_16(i8 x) {
 /// Correctly maps both endpoints: 0x00 → 0x00000000 and 0xFF → 0xFFFFFFFF.
 ///
 /// @note Performs no floating point operations; suitable for embedded systems.
-FL_ALWAYS_INLINE u32 map8_to_32(u8 x) {
+FL_ALWAYS_INLINE u32 map8_to_32(u8 x) FL_NOEXCEPT {
     return u32(x) * 0x1010101;
 }
 
@@ -448,7 +449,7 @@ FL_ALWAYS_INLINE u32 map8_to_32(u8 x) {
 /// Maps correctly: 0 → 0, 127 → 2139062143, -1 → -1, -128 → -2139062144.
 ///
 /// @note Performs no floating point operations; suitable for embedded systems.
-FL_ALWAYS_INLINE i32 smap8_to_32(i8 x) {
+FL_ALWAYS_INLINE i32 smap8_to_32(i8 x) FL_NOEXCEPT {
     return i32(map8_to_32(u8(x)));
 }
 
@@ -462,7 +463,7 @@ FL_ALWAYS_INLINE i32 smap8_to_32(i8 x) {
 /// Correctly maps both endpoints: 0x0000 → 0x00000000 and 0xFFFF → 0xFFFFFFFF.
 ///
 /// @note Performs no floating point operations; suitable for embedded systems.
-FL_ALWAYS_INLINE u32 map16_to_32(u16 x) {
+FL_ALWAYS_INLINE u32 map16_to_32(u16 x) FL_NOEXCEPT {
     return u32(x) * 0x10001;
 }
 
@@ -476,7 +477,7 @@ FL_ALWAYS_INLINE u32 map16_to_32(u16 x) {
 /// Maps correctly: 0 → 0, 32767 → 2147450879, -1 → -1, -32768 → -2147483648.
 ///
 /// @note Performs no floating point operations; suitable for embedded systems.
-FL_ALWAYS_INLINE i32 smap16_to_32(i16 x) {
+FL_ALWAYS_INLINE i32 smap16_to_32(i16 x) FL_NOEXCEPT {
     return i32(map16_to_32(u16(x)));
 }
 
@@ -496,7 +497,7 @@ FL_ALWAYS_INLINE i32 smap16_to_32(i16 x) {
 /// @note Tested to produce results nearly identical to double-precision floating-point
 ///       division while remaining integer-only. The zero case is handled naturally
 ///       by the rounding math: (0 + 128) >> 8 = 0.
-FL_ALWAYS_INLINE u8 map16_to_8(u16 x) {
+FL_ALWAYS_INLINE u8 map16_to_8(u16 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
     // On memory-constrained devices (typically with simple CPUs and no branch prediction),
     // use branched version since it's faster to skip the shift operation entirely when x >= 0xff00
@@ -524,7 +525,7 @@ FL_ALWAYS_INLINE u8 map16_to_8(u16 x) {
 ///
 /// @note Tested to produce results nearly identical to double-precision floating-point
 ///       division while remaining integer-only.
-FL_ALWAYS_INLINE i8 smap16_to_8(i16 x) {
+FL_ALWAYS_INLINE i8 smap16_to_8(i16 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
     // On memory-constrained devices
     if (x >= 0x7f80) {
@@ -554,7 +555,7 @@ FL_ALWAYS_INLINE i8 smap16_to_8(i16 x) {
 /// @note Tested to produce results nearly identical to double-precision floating-point
 ///       division while remaining integer-only. The zero case is handled naturally
 ///       by the rounding math: (0 + 32768) >> 16 = 0.
-FL_ALWAYS_INLINE u16 map32_to_16(u32 x) {
+FL_ALWAYS_INLINE u16 map32_to_16(u32 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
     // On memory-constrained devices (typically with simple CPUs and no branch prediction),
     // use branched version since it's faster to skip the shift operation entirely when x >= 0xffff0000
@@ -583,7 +584,7 @@ FL_ALWAYS_INLINE u16 map32_to_16(u32 x) {
 ///
 /// @note Tested to produce results nearly identical to double-precision floating-point
 ///       division while remaining integer-only.
-FL_ALWAYS_INLINE i16 smap32_to_16(i32 x) {
+FL_ALWAYS_INLINE i16 smap32_to_16(i32 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
     // On memory-constrained devices
     if (x >= 0x7fff8000) {
@@ -613,7 +614,7 @@ FL_ALWAYS_INLINE i16 smap32_to_16(i32 x) {
 /// @note Tested to produce results nearly identical to double-precision floating-point
 ///       division while remaining integer-only. The zero case is handled naturally
 ///       by the rounding math: (0 + 0x800000) >> 24 = 0.
-FL_ALWAYS_INLINE u8 map32_to_8(u32 x) {
+FL_ALWAYS_INLINE u8 map32_to_8(u32 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
     // On memory-constrained devices (typically with simple CPUs and no branch prediction),
     // use branched version since it's faster to skip the shift operation entirely when x >= 0xFF000000
@@ -642,7 +643,7 @@ FL_ALWAYS_INLINE u8 map32_to_8(u32 x) {
 ///
 /// @note Tested to produce results nearly identical to double-precision floating-point
 ///       division while remaining integer-only.
-FL_ALWAYS_INLINE i8 smap32_to_8(i32 x) {
+FL_ALWAYS_INLINE i8 smap32_to_8(i32 x) FL_NOEXCEPT {
 #if SKETCH_HAS_LARGE_MEMORY == 0
     // On memory-constrained devices
     if (x >= 0x7F000000) {

@@ -35,13 +35,14 @@ FL_DISABLE_WARNING(unused-parameter)
 #include "platforms/apollo3/compile_test.hpp"
 #elif defined(FASTLED_STUB_IMPL)
 #include "platforms/stub/compile_test.hpp"
+#include "fl/stl/noexcept.h"
 #endif
 
 namespace fl {
 
 // Test that sstream and sstream_noop can accept all fundamental integer types
 // This ensures SFINAE collision prevention works across all platforms
-FL_MAYBE_UNUSED static void test_strstream_integer_operators() {
+FL_MAYBE_UNUSED static void test_strstream_integer_operators() FL_NOEXCEPT {
     fl::sstream ss;
     fl::sstream_noop fss;
 
@@ -87,7 +88,7 @@ FL_MAYBE_UNUSED static void test_strstream_integer_operators() {
 // This file contains only compile-time tests.
 // The platform-specific test functions are called to trigger
 // any compile-time errors if the platform is not configured correctly.
-FL_MAYBE_UNUSED static void compile_tests() {
+FL_MAYBE_UNUSED static void compile_tests() FL_NOEXCEPT {
 
     static_assert(fl::is_same<u32, u32>::value, "u32 must be the same type as u32");
     static_assert(fl::is_same<u16, u16>::value, "u16 must be the same type as u16");

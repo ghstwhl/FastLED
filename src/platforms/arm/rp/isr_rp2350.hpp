@@ -64,6 +64,7 @@ FL_EXTERN_C_BEGIN
 // IWYU pragma: end_keep
 // IWYU pragma: begin_keep
 #include "pico/critical_section.h"
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 FL_EXTERN_C_END
 
@@ -125,7 +126,7 @@ static rp2350_isr_handle_data* alarm_handles[FL_NUM_ALARMS] = {};
 // =============================================================================
 
 // Initialize alarm lock (called once)
-static void init_alarm_lock() {
+static void init_alarm_lock() FL_NOEXCEPT {
     if (!alarm_lock_initialized) {
         critical_section_init(&alarm_lock);
         alarm_lock_initialized = true;
@@ -133,7 +134,7 @@ static void init_alarm_lock() {
 }
 
 // Allocate a hardware alarm (thread-safe, multi-core safe)
-static i8 allocate_alarm() {
+static i8 allocate_alarm() FL_NOEXCEPT {
     init_alarm_lock();
 
     critical_section_enter_blocking(&alarm_lock);
@@ -152,7 +153,7 @@ static i8 allocate_alarm() {
 }
 
 // Free a hardware alarm (thread-safe, multi-core safe)
-static void free_alarm(i8 alarm_num) {
+static void free_alarm(i8 alarm_num) FL_NOEXCEPT {
     if (alarm_num < 0 || alarm_num >= FL_NUM_ALARMS) {
         return;
     }
@@ -167,7 +168,7 @@ static void free_alarm(i8 alarm_num) {
 
 // Map ISR priority (1-7) to NVIC priority (0-255, lower = higher)
 // RP2350 Cortex-M33 supports 8-bit priority (0-255)
-static u8 map_priority_to_nvic(u8 isr_priority) {
+static u8 map_priority_to_nvic(u8 isr_priority) FL_NOEXCEPT {
     // Clamp to valid range
     if (isr_priority < 1) isr_priority = 1;
     if (isr_priority > 7) isr_priority = 7;
@@ -188,7 +189,7 @@ static u8 map_priority_to_nvic(u8 isr_priority) {
 // =============================================================================
 
 // Repeating alarm callback wrapper
-static i64 alarm_callback_wrapper(alarm_id_t id, void* user_data) {
+static i64 alarm_callback_wrapper(alarm_id_t id, void* user_data) FL_NOEXCEPT {
     rp2350_isr_handle_data* handle = static_cast<rp2350_isr_handle_data*>(user_data);
 
     if (handle && handle->user_handler && handle->is_enabled) {
@@ -211,7 +212,7 @@ static i64 alarm_callback_wrapper(alarm_id_t id, void* user_data) {
 static rp2350_isr_handle_data* gpio_handles[30] = {};  // 30 GPIO pins max
 
 // GPIO interrupt handler (shared callback for all GPIOs on this core)
-static void gpio_callback_wrapper(uint gpio, u32 events) {
+static void gpio_callback_wrapper(uint gpio, u32 events) FL_NOEXCEPT {
     if (gpio < 30 && gpio_handles[gpio]) {
         rp2350_isr_handle_data* handle = gpio_handles[gpio];
 
@@ -228,7 +229,7 @@ static void gpio_callback_wrapper(uint gpio, u32 events) {
 // RP2350 ISR Implementation (fl::isr::platform namespace)
 // =============================================================================
 
-int attach_timer_handler(const isr_config_t& config, isr_handle_t* out_handle) {
+int attach_timer_handler(const isr_config_t& config, isr_handle_t* out_handle) FL_NOEXCEPT {
     if (!config.handler) {
         FL_WARN("attachTimerHandler: handler is null");
         return -1;  // Invalid parameter
@@ -311,7 +312,7 @@ int attach_timer_handler(const isr_config_t& config, isr_handle_t* out_handle) {
     return 0;  // Success
 }
 
-int attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t* out_handle) {
+int attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t* out_handle) FL_NOEXCEPT {
     if (!config.handler) {
         FL_WARN("attachExternalHandler: handler is null");
         return -1;  // Invalid parameter
@@ -398,7 +399,7 @@ int attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t* ou
     return 0;  // Success
 }
 
-int detach_handler(isr_handle_t& handle) {
+int detach_handler(isr_handle_t& handle) FL_NOEXCEPT {
     if (!handle.is_valid() || handle.platform_id != RP2350_PLATFORM_ID) {
         FL_WARN("detachHandler: invalid handle");
         return -1;  // Invalid handle
@@ -434,7 +435,7 @@ int detach_handler(isr_handle_t& handle) {
     return 0;  // Success
 }
 
-int enable_handler(const isr_handle_t& handle) {
+int enable_handler(const isr_handle_t& handle) FL_NOEXCEPT {
     if (!handle.is_valid() || handle.platform_id != RP2350_PLATFORM_ID) {
         FL_WARN("enableHandler: invalid handle");
         return -1;  // Invalid handle
@@ -468,7 +469,7 @@ int enable_handler(const isr_handle_t& handle) {
     return 0;  // Success
 }
 
-int disable_handler(const isr_handle_t& handle) {
+int disable_handler(const isr_handle_t& handle) FL_NOEXCEPT {
     if (!handle.is_valid() || handle.platform_id != RP2350_PLATFORM_ID) {
         FL_WARN("disableHandler: invalid handle");
         return -1;  // Invalid handle
@@ -499,7 +500,7 @@ int disable_handler(const isr_handle_t& handle) {
     return 0;  // Success
 }
 
-bool is_handler_enabled(const isr_handle_t& handle) {
+bool is_handler_enabled(const isr_handle_t& handle) FL_NOEXCEPT {
     if (!handle.is_valid() || handle.platform_id != RP2350_PLATFORM_ID) {
         return false;
     }
@@ -512,7 +513,7 @@ bool is_handler_enabled(const isr_handle_t& handle) {
     return handle_data->is_enabled;
 }
 
-const char* get_error_string(int error_code) {
+const char* get_error_string(int error_code) FL_NOEXCEPT {
     switch (error_code) {
         case 0: return "Success";
         case -1: return "Invalid parameter";
@@ -524,25 +525,25 @@ const char* get_error_string(int error_code) {
     }
 }
 
-const char* get_platform_name() {
+const char* get_platform_name() FL_NOEXCEPT {
     return "RP2350";
 }
 
-u32 get_max_timer_frequency() {
+u32 get_max_timer_frequency() FL_NOEXCEPT {
     return 1000000;  // 1 MHz (limited by microsecond counter resolution)
 }
 
-u32 get_min_timer_frequency() {
+u32 get_min_timer_frequency() FL_NOEXCEPT {
     return 1;  // 1 Hz (practical minimum given 32-bit alarm period)
 }
 
-u8 get_max_priority() {
+u8 get_max_priority() FL_NOEXCEPT {
     // RP2350 Cortex-M33 supports priority levels 0-255 in hardware
     // We expose 1-7 in the ISR API and map to 0-255 in NVIC
     return 7;
 }
 
-bool requires_assembly_handler(u8 priority) {
+bool requires_assembly_handler(u8 priority) FL_NOEXCEPT {
     // ARM Cortex-M33: All priority levels support C handlers
     (void)priority;
     return false;

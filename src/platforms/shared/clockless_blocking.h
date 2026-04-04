@@ -27,6 +27,7 @@
 #include "crgb.h"
 #include "fastled_delay.h"
 #include "platforms/avr/is_avr.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -81,7 +82,7 @@ private:
     CMinWait<WAIT_TIME> mWait;
 
 public:
-    virtual void init() {
+    virtual void init() FL_NOEXCEPT {
         // Warn once that generic fallback controller is being used
         // This may indicate missing platform-specific optimizations
         static bool warned = false;  // okay static in header
@@ -98,14 +99,14 @@ public:
         fl::FastPin<DATA_PIN>::lo();
     }
 
-    virtual u16 getMaxRefreshRate() const {
+    virtual u16 getMaxRefreshRate() const FL_NOEXCEPT {
         // Rough estimate: about 300-400 Hz for typical 60 LED WS2812 strings
         // Actual rate depends on T1+T2 timing and LED count
         return 300;
     }
 
 protected:
-    virtual void showPixels(PixelController<RGB_ORDER> & pixels) {
+    virtual void showPixels(PixelController<RGB_ORDER> & pixels) FL_NOEXCEPT {
         // Wait for minimum time since last frame
         mWait.wait();
 

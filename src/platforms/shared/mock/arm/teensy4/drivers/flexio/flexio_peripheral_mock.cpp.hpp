@@ -10,11 +10,12 @@
 
 #include "platforms/arm/teensy/teensy4_common/drivers/flexio/iflexio_peripheral.h"
 #include "platforms/shared/mock/arm/teensy4/drivers/flexio/flexio_peripheral_mock.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
 // Factory: create mock peripheral on non-Teensy platforms
-fl::shared_ptr<IFlexIOPeripheral> IFlexIOPeripheral::create() {
+fl::shared_ptr<IFlexIOPeripheral> IFlexIOPeripheral::create() FL_NOEXCEPT {
     return fl::make_shared<FlexIOPeripheralMock>();
 }
 

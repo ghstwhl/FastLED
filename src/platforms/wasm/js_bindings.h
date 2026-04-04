@@ -35,6 +35,7 @@
 // ⚠️⚠️⚠️ REMEMBER: Header changes affect ALL JavaScript async callers! ⚠️⚠️⚠️
 
 #include "fl/stl/stdint.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -51,7 +52,7 @@ class ActiveStripData;
  * Note: This function calls async JavaScript callbacks that may return Promises.
  * Frame processing will await JavaScript Promise returns when Asyncify is enabled.
  */
-void jsOnFrame(ActiveStripData &active_strips);
+void jsOnFrame(ActiveStripData &active_strips) FL_NOEXCEPT;
 
 /**
  * Async-aware strip addition notification
@@ -63,7 +64,7 @@ void jsOnFrame(ActiveStripData &active_strips);
  * Note: This function calls async JavaScript callbacks that may return Promises.
  * Strip addition will await JavaScript Promise returns when Asyncify is enabled.
  */
-void jsOnStripAdded(uintptr_t strip, u32 num_leds);
+void jsOnStripAdded(uintptr_t strip, u32 num_leds) FL_NOEXCEPT;
 
 /**
  * Async-aware UI update function
@@ -74,6 +75,6 @@ void jsOnStripAdded(uintptr_t strip, u32 num_leds);
  * Note: This function calls async JavaScript callbacks that may return Promises.
  * UI updates will await JavaScript Promise returns when Asyncify is enabled.
  */
-void updateJs(const char *jsonStr);
+void updateJs(const char *jsonStr) FL_NOEXCEPT;
 
 } // namespace fl

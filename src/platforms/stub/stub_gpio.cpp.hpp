@@ -6,6 +6,7 @@
 #include "platforms/stub/stub_gpio.h"
 #include "fl/stl/flat_map.h"
 #include "fl/stl/vector.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace stub {
@@ -17,13 +18,13 @@ namespace stub {
 namespace {
 
 /// Per-pin callback storage: map from pin number to callback
-static fl::flat_map<int, PinEdgeCallback>& pinCallbackMap() {
+static fl::flat_map<int, PinEdgeCallback>& pinCallbackMap() FL_NOEXCEPT {
     static fl::flat_map<int, PinEdgeCallback>* m = new fl::flat_map<int, PinEdgeCallback>();  // ok bare allocation
     return *m;
 }
 
 /// Per-pin state: current HIGH/LOW value
-static fl::flat_map<int, int>& pinStateMap() {
+static fl::flat_map<int, int>& pinStateMap() FL_NOEXCEPT {
     // Heap-allocated and never freed: avoids static destructor ordering issues
     // on Windows where fl::allocator_slab may be destroyed before this map.
     static fl::flat_map<int, int>* state = new fl::flat_map<int, int>();  // ok bare allocation
@@ -36,7 +37,7 @@ struct PinEdgeBuffer {
     bool armed = false;
 };
 
-static fl::flat_map<int, PinEdgeBuffer>& edgeBufferMap() {
+static fl::flat_map<int, PinEdgeBuffer>& edgeBufferMap() FL_NOEXCEPT {
     // Heap-allocated and never freed: avoids static destructor ordering issues.
     static fl::flat_map<int, PinEdgeBuffer>* buffers = new fl::flat_map<int, PinEdgeBuffer>();  // ok bare allocation
     return *buffers;
@@ -46,7 +47,7 @@ static fl::flat_map<int, PinEdgeBuffer>& edgeBufferMap() {
 /// @param pin GPIO pin
 /// @param high new level after this transition
 /// @param duration_ns how long the pin will stay at this level
-inline void recordEdge(int pin, bool high, u32 duration_ns) {
+inline void recordEdge(int pin, bool high, u32 duration_ns) FL_NOEXCEPT {
     auto& buffers = edgeBufferMap();
     auto it = buffers.find(pin);
     if (it == buffers.end()) return;
@@ -64,7 +65,7 @@ inline void recordEdge(int pin, bool high, u32 duration_ns) {
 // Public API
 // ============================================================================
 
-void setPinState(int pin, bool high) {
+void setPinState(int pin, bool high) FL_NOEXCEPT {
     pinStateMap()[pin] = high ? 1 : 0;
     // Fire callback for this pin with duration=0 (state changes via direct GPIO toggling carry no timing info)
     auto& callbacks = pinCallbackMap();
@@ -74,21 +75,21 @@ void setPinState(int pin, bool high) {
     }
 }
 
-bool getPinState(int pin) {
+bool getPinState(int pin) FL_NOEXCEPT {
     auto& state = pinStateMap();
     auto it = state.find(pin);
     if (it == state.end()) return false;
     return it->second != 0;
 }
 
-void armPinEdges(int pin) {
+void armPinEdges(int pin) FL_NOEXCEPT {
     auto& buffers = edgeBufferMap();
     auto& buf = buffers[pin];
     buf.edges.clear();
     buf.armed = true;
 }
 
-void clearPinEdges(int pin) {
+void clearPinEdges(int pin) FL_NOEXCEPT {
     auto& buffers = edgeBufferMap();
     auto it = buffers.find(pin);
     if (it != buffers.end()) {
@@ -97,14 +98,14 @@ void clearPinEdges(int pin) {
     }
 }
 
-size_t getEdgeCount(int pin) {
+size_t getEdgeCount(int pin) FL_NOEXCEPT {
     auto& buffers = edgeBufferMap();
     auto it = buffers.find(pin);
     if (it == buffers.end()) return 0;
     return it->second.edges.size();
 }
 
-fl::EdgeTime getEdge(int pin, size_t index) {
+fl::EdgeTime getEdge(int pin, size_t index) FL_NOEXCEPT {
     auto& buffers = edgeBufferMap();
     auto it = buffers.find(pin);
     if (it == buffers.end()) return fl::EdgeTime();
@@ -115,7 +116,7 @@ fl::EdgeTime getEdge(int pin, size_t index) {
 
 void simulateWS2812Output(int pin,
                            fl::span<const u8> data,
-                           const fl::ChipsetTimingConfig& timing) {
+                           const fl::ChipsetTimingConfig& timing) FL_NOEXCEPT {
     // Make sure edge buffer is accessible (arm it if needed, don't clear if already armed)
     auto& buffers = edgeBufferMap();
     (void)buffers[pin];  // Ensure map entry exists; don't arm here
@@ -161,7 +162,7 @@ void simulateWS2812Output(int pin,
     // completion by checking that edges are present.
 }
 
-void injectEdges(int pin, fl::span<const fl::EdgeTime> edges) {
+void injectEdges(int pin, fl::span<const fl::EdgeTime> edges) FL_NOEXCEPT {
     auto& buffers = edgeBufferMap();
     auto& buf = buffers[pin];
     if (!buf.armed) {
@@ -174,11 +175,11 @@ void injectEdges(int pin, fl::span<const fl::EdgeTime> edges) {
     }
 }
 
-void setPinEdgeCallback(int pin, PinEdgeCallback cb) {
+void setPinEdgeCallback(int pin, PinEdgeCallback cb) FL_NOEXCEPT {
     pinCallbackMap()[pin] = fl::move(cb);
 }
 
-void clearPinEdgeCallback(int pin) {
+void clearPinEdgeCallback(int pin) FL_NOEXCEPT {
     auto& m = pinCallbackMap();
     auto it = m.find(pin);
     if (it != m.end()) {

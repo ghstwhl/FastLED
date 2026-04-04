@@ -3,6 +3,7 @@
 #include "platforms/arm/teensy/audio_input_teensy.h"
 #include "platforms/arm/teensy/is_teensy.h"
 #include "fl/audio/input.h"  // For TeensyI2S namespace
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -335,7 +336,7 @@ fl::shared_ptr<audio::IInput> teensy_create_audio_input(
 fl::shared_ptr<audio::IInput> teensy_create_audio_input(
     const audio::Config& config,
     fl::string* error_message
-) {
+) FL_NOEXCEPT {
     FL_UNUSED(config);
     const char* ERROR_MESSAGE = "Teensy Audio Library not found. Install from Arduino Library Manager.";
     FL_WARN(ERROR_MESSAGE);

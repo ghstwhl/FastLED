@@ -36,7 +36,7 @@ namespace fl {
 namespace platforms {
 
 /// @brief No-op SPI hardware initialization for non-ESP32 platforms
-inline void initSpiHardware() {
+inline void initSpiHardware() FL_NOEXCEPT {
     // No-op: This platform doesn't have ESP32 SPI hardware
 }
 

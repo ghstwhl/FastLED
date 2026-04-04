@@ -32,6 +32,7 @@ FL_EXTERN_C_END
 #include "fl/system/log.h"
 #include "fl/system/log.h"
 #include "fl/system/pin.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace platforms {
@@ -68,7 +69,7 @@ static PWMState g_pwm_state[AM_HAL_GPIO_MAX_PADS] = {};
 // Digital Pin Functions
 // ============================================================================
 
-inline void pinMode(int pin, PinMode mode) {
+inline void pinMode(int pin, PinMode mode) FL_NOEXCEPT {
     if (pin < 0 || pin >= AM_HAL_GPIO_MAX_PADS) {
         FL_WARN("Apollo3: Invalid pin " << pin);
         return;
@@ -114,7 +115,7 @@ inline void pinMode(int pin, PinMode mode) {
     }
 }
 
-inline void digitalWrite(int pin, PinValue val) {
+inline void digitalWrite(int pin, PinValue val) FL_NOEXCEPT {
     if (pin < 0 || pin >= AM_HAL_GPIO_MAX_PADS) {
         return;  // Invalid pin
     }
@@ -124,7 +125,7 @@ inline void digitalWrite(int pin, PinValue val) {
     am_hal_gpio_state_write(pin, write_type);
 }
 
-inline PinValue digitalRead(int pin) {
+inline PinValue digitalRead(int pin) FL_NOEXCEPT {
     if (pin < 0 || pin >= AM_HAL_GPIO_MAX_PADS) {
         return PinValue::Low;  // Invalid pin
     }
@@ -143,7 +144,7 @@ inline PinValue digitalRead(int pin) {
 // Analog Pin Functions
 // ============================================================================
 
-inline u16 analogRead(int pin) {
+inline u16 analogRead(int pin) FL_NOEXCEPT {
     // Apollo3 ADC implementation using HAL APIs
     // Maps Arduino pin numbers to ADC channels and performs 12-bit conversion
     // Returns 10-bit value (0-1023) for Arduino compatibility
@@ -267,7 +268,7 @@ inline u16 analogRead(int pin) {
     return 0;
 }
 
-inline void analogWrite(int pin, u16 val) {
+inline void analogWrite(int pin, u16 val) FL_NOEXCEPT {
     // Apollo3 PWM implementation using CTIMER HAL APIs
     // Generates PWM output at ~490Hz (Arduino default) with 8-bit duty cycle
 
@@ -358,7 +359,7 @@ inline void analogWrite(int pin, u16 val) {
     }
 }
 
-inline void setPwm16(int pin, u16 val) {
+inline void setPwm16(int pin, u16 val) FL_NOEXCEPT {
     // Apollo3 16-bit PWM implementation using CTIMER
     // Hardware supports 32-bit counters, capable of full 16-bit PWM
     // Scale 16-bit value down to 8-bit for simplified implementation
@@ -366,7 +367,7 @@ inline void setPwm16(int pin, u16 val) {
     analogWrite(pin, val >> 8);
 }
 
-inline void setAdcRange(AdcRange range) {
+inline void setAdcRange(AdcRange range) FL_NOEXCEPT {
     // Apollo3 ADC reference voltage configuration
     // Supports internal 1.5V, 2.0V, and external references
     //

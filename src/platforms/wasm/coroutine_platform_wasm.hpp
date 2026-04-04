@@ -26,6 +26,7 @@
 
 #include "platforms/coroutine_runtime.h"
 #include "fl/stl/int.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace platforms {
@@ -126,11 +127,11 @@ namespace platforms {
 // Context IDs are small ints stored in void* — reinterpret_cast is unavoidable
 // because the ICoroutinePlatform interface uses void* for platform contexts.
 
-inline void* id_to_ctx(int id) {
+inline void* id_to_ctx(int id) FL_NOEXCEPT {
     return reinterpret_cast<void*>(static_cast<uintptr_t>(id));  // ok reinterpret cast
 }
 
-inline int ctx_to_id(void* ctx) {
+inline int ctx_to_id(void* ctx) FL_NOEXCEPT {
     return static_cast<int>(reinterpret_cast<uintptr_t>(ctx));  // ok reinterpret cast
 }
 // NOLINTEND(reinterpret_cast)
@@ -148,13 +149,13 @@ public:
         return id_to_ctx(id);
     }
 
-    void* createRunnerContext() override {
+    void* createRunnerContext() FL_NOEXCEPT override {
         // Runner is always ID 0
         _jspi_register(0);
         return id_to_ctx(0);
     }
 
-    void destroyContext(void* ctx) override {
+    void destroyContext(void* ctx) FL_NOEXCEPT override {
         int id = ctx_to_id(ctx);
         if (id >= 0 && id < kMaxJspiContexts) {
             g_jspi_entries[id] = nullptr;
@@ -162,11 +163,11 @@ public:
         }
     }
 
-    void contextSwitch(void* from_ctx, void* to_ctx) override {
+    void contextSwitch(void* from_ctx, void* to_ctx) FL_NOEXCEPT override {
         _jspi_context_switch(ctx_to_id(from_ctx), ctx_to_id(to_ctx));
     }
 
-    fl::u32 micros() const override {
+    fl::u32 micros() const FL_NOEXCEPT override {
         // emscripten_get_now() returns milliseconds as double
         return static_cast<fl::u32>(emscripten_get_now() * 1000.0);
     }

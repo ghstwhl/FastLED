@@ -10,6 +10,7 @@
 /// stub to observe simulated GPIO transitions.
 
 #include "platforms/stub/stub_gpio.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace platforms {
@@ -26,11 +27,11 @@ inline void pinMode(int /*pin*/, PinMode /*mode*/) {
 // Digital I/O
 // ============================================================================
 
-inline void digitalWrite(int pin, PinValue val) {
+inline void digitalWrite(int pin, PinValue val) FL_NOEXCEPT {
     fl::stub::setPinState(pin, val == PinValue::High);
 }
 
-inline PinValue digitalRead(int pin) {
+inline PinValue digitalRead(int pin) FL_NOEXCEPT {
     return fl::stub::getPinState(pin) ? PinValue::High : PinValue::Low;
 }
 

@@ -24,6 +24,7 @@
 #include "platforms/arm/rp/is_rp2350.h"
 #include "platforms/arm/samd/is_samd.h"
 #include "platforms/arm/nrf52/is_nrf52.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace platforms {
@@ -42,12 +43,12 @@ namespace platforms {
 /// - SAMD51: platforms/arm/d51/spi_hw_manager_samd51.cpp.hpp
 /// - SAMD21: platforms/arm/d21/spi_hw_manager_samd21.cpp.hpp
 /// - nRF52: platforms/arm/nrf52/spi_hw_manager_nrf52.cpp.hpp
-void initSpiHardware();
+void initSpiHardware() FL_NOEXCEPT;
 
 #else
 
 /// @brief No-op SPI hardware initialization for unsupported ARM platforms
-inline void initSpiHardware() {
+inline void initSpiHardware() FL_NOEXCEPT {
     // No-op for unsupported ARM platforms
 }
 

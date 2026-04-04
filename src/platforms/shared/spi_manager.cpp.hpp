@@ -13,6 +13,7 @@
 #include "fl/stl/limits.h"
 #include "fl/system/fastpin.h"
 #include "fl/math/math.h"
+#include "fl/stl/noexcept.h"
 
 // Arduino defines max/min as macros, which conflicts with fl::numeric_limits<T>::max()
 // Undefine them here since we use the FastLED fl:: equivalents (min/max)
@@ -29,7 +30,7 @@ namespace fl {
 // SPIBusManager Implementation
 // ============================================================================
 
-SPIBusManager::SPIBusManager() : mNumBuses(0), mInitialized(false) {
+SPIBusManager::SPIBusManager() FL_NOEXCEPT : mNumBuses(0), mInitialized(false) {
     for (u8 i = 0; i < MAX_BUSES; i++) {
         mBuses[i] = SPIBusInfo{};
     }
@@ -45,7 +46,7 @@ SPIBusManager::~SPIBusManager() {
     // Device destructors already handle cleanup via unregisterDevice(), so this is safe.
 }
 
-SPIBusHandle SPIBusManager::registerDevice(u8 clock_pin, u8 data_pin, u32 requested_speed_hz, void* controller) {
+SPIBusHandle SPIBusManager::registerDevice(u8 clock_pin, u8 data_pin, u32 requested_speed_hz, void* controller) FL_NOEXCEPT {
     if (!controller) {
         FL_WARN("SPIBusManager: nullptr controller pointer");
         return SPIBusHandle();
@@ -80,7 +81,7 @@ SPIBusHandle SPIBusManager::registerDevice(u8 clock_pin, u8 data_pin, u32 reques
     return SPIBusHandle(bus_id, device_idx);
 }
 
-bool SPIBusManager::unregisterDevice(SPIBusHandle handle) {
+bool SPIBusManager::unregisterDevice(SPIBusHandle handle) FL_NOEXCEPT {
     if (!handle.is_valid || handle.bus_id >= mNumBuses) {
         return false;
     }
@@ -116,7 +117,7 @@ bool SPIBusManager::unregisterDevice(SPIBusHandle handle) {
     return true;
 }
 
-bool SPIBusManager::initialize() {
+bool SPIBusManager::initialize() FL_NOEXCEPT {
     bool all_ok = true;
 
     // Initialize each bus that hasn't been initialized yet
@@ -132,7 +133,7 @@ bool SPIBusManager::initialize() {
     return all_ok;
 }
 
-void SPIBusManager::transmit(SPIBusHandle handle, const u8* data, size_t length) {
+void SPIBusManager::transmit(SPIBusHandle handle, const u8* data, size_t length) FL_NOEXCEPT {
     if (!handle.is_valid || handle.bus_id >= mNumBuses) {
         return;
     }
@@ -202,7 +203,7 @@ void SPIBusManager::transmit(SPIBusHandle handle, const u8* data, size_t length)
     }
 }
 
-void SPIBusManager::waitComplete(SPIBusHandle handle) {
+void SPIBusManager::waitComplete(SPIBusHandle handle) FL_NOEXCEPT {
     if (!handle.is_valid || handle.bus_id >= mNumBuses) {
         return;
     }
@@ -218,7 +219,7 @@ void SPIBusManager::waitComplete(SPIBusHandle handle) {
     }
 }
 
-void SPIBusManager::finalizeTransmission(SPIBusHandle handle) {
+void SPIBusManager::finalizeTransmission(SPIBusHandle handle) FL_NOEXCEPT {
     if (!handle.is_valid || handle.bus_id >= mNumBuses) {
         return;
     }
@@ -500,7 +501,7 @@ void SPIBusManager::finalizeTransmission(SPIBusHandle handle) {
     }
 }
 
-bool SPIBusManager::isDeviceEnabled(SPIBusHandle handle) const {
+bool SPIBusManager::isDeviceEnabled(SPIBusHandle handle) const FL_NOEXCEPT {
     if (!handle.is_valid || handle.bus_id >= mNumBuses) {
         return false;
     }
@@ -513,7 +514,7 @@ bool SPIBusManager::isDeviceEnabled(SPIBusHandle handle) const {
     return bus.devices[handle.lane_id].is_enabled;
 }
 
-void SPIBusManager::reset() {
+void SPIBusManager::reset() FL_NOEXCEPT {
     FL_DBG("SPIBusManager: reset() called");
     // Save current mNumBuses before clearing
     u8 num_buses_to_clear = mNumBuses;
@@ -554,11 +555,11 @@ void SPIBusManager::reset() {
     FL_DBG("SPIBusManager: reset() complete");
 }
 
-u8 SPIBusManager::getNumBuses() const {
+u8 SPIBusManager::getNumBuses() const FL_NOEXCEPT {
     return mNumBuses;
 }
 
-const SPIBusInfo* SPIBusManager::getBusInfo(u8 bus_id) const {
+const SPIBusInfo* SPIBusManager::getBusInfo(u8 bus_id) const FL_NOEXCEPT {
     if (bus_id >= mNumBuses) {
         return nullptr;
     }
@@ -569,7 +570,7 @@ const SPIBusInfo* SPIBusManager::getBusInfo(u8 bus_id) const {
 // Private Methods
 // ============================================================================
 
-SPIBusInfo* SPIBusManager::getOrCreateBus(u8 clock_pin) {
+SPIBusInfo* SPIBusManager::getOrCreateBus(u8 clock_pin) FL_NOEXCEPT {
     // Search for existing bus with this clock pin
     for (u8 i = 0; i < mNumBuses; i++) {
         if (mBuses[i].clock_pin == clock_pin) {
@@ -588,7 +589,7 @@ SPIBusInfo* SPIBusManager::getOrCreateBus(u8 clock_pin) {
     return &mBuses[mNumBuses++];
 }
 
-bool SPIBusManager::initializeBus(SPIBusInfo& bus) {
+bool SPIBusManager::initializeBus(SPIBusInfo& bus) FL_NOEXCEPT {
     // No devices? Skip initialization (bus was released)
     if (bus.num_devices == 0) {
         return true;  // Not an error, just nothing to initialize
@@ -637,7 +638,7 @@ bool SPIBusManager::initializeBus(SPIBusInfo& bus) {
     return false;
 }
 
-bool SPIBusManager::promoteToMultiSPI(SPIBusInfo& bus) {
+bool SPIBusManager::promoteToMultiSPI(SPIBusInfo& bus) FL_NOEXCEPT {
     SPIBusType max_type = getMaxSupportedSPIType();
 
     // Determine which multi-SPI type to use
@@ -880,7 +881,7 @@ bool SPIBusManager::promoteToMultiSPI(SPIBusInfo& bus) {
     return false;
 }
 
-bool SPIBusManager::createSingleSPI(SPIBusInfo& bus) {
+bool SPIBusManager::createSingleSPI(SPIBusInfo& bus) FL_NOEXCEPT {
     // Single SPI is the standard path - just mark as initialized
     // The existing SPI controller code will handle it
     FL_DBG("SPI: Using standard single-lane SPI (bus manager passthrough mode)");
@@ -888,7 +889,7 @@ bool SPIBusManager::createSingleSPI(SPIBusInfo& bus) {
     return true;
 }
 
-void SPIBusManager::disableConflictingDevices(SPIBusInfo& bus) {
+void SPIBusManager::disableConflictingDevices(SPIBusInfo& bus) FL_NOEXCEPT {
     // Keep first device enabled, disable all others
     for (u8 i = 1; i < bus.num_devices; i++) {
         bus.devices[i].is_enabled = false;
@@ -903,7 +904,7 @@ void SPIBusManager::disableConflictingDevices(SPIBusInfo& bus) {
     }
 }
 
-u32 SPIBusManager::selectBusSpeed(const SPIBusInfo& bus) {
+u32 SPIBusManager::selectBusSpeed(const SPIBusInfo& bus) FL_NOEXCEPT {
     // Find the minimum (slowest) requested speed from all devices on this bus
     // This ensures all devices can handle the speed
     u32 min_speed = fl::numeric_limits<u32>::max();
@@ -938,7 +939,7 @@ u32 SPIBusManager::selectBusSpeed(const SPIBusInfo& bus) {
     return min_speed;
 }
 
-u32 SPIBusManager::getPlatformDefaultSpeed() {
+u32 SPIBusManager::getPlatformDefaultSpeed() FL_NOEXCEPT {
     // Platform-specific defaults based on hardware capabilities
     #if defined(FL_IS_ESP32)
         return 40000000;  // ESP32: 40 MHz default (can do up to 80 MHz)
@@ -955,7 +956,7 @@ u32 SPIBusManager::getPlatformDefaultSpeed() {
     #endif
 }
 
-u32 SPIBusManager::getPlatformMaxSpeed() {
+u32 SPIBusManager::getPlatformMaxSpeed() FL_NOEXCEPT {
     // Platform-specific maximums based on hardware datasheets
     #if defined(FL_IS_ESP32)
         return 80000000;  // ESP32: 80 MHz maximum with IO_MUX pins
@@ -972,7 +973,7 @@ u32 SPIBusManager::getPlatformMaxSpeed() {
     #endif
 }
 
-void SPIBusManager::releaseBusHardware(SPIBusInfo& bus) {
+void SPIBusManager::releaseBusHardware(SPIBusInfo& bus) FL_NOEXCEPT {
     FL_DBG("SPIBusManager: releaseBusHardware() called, is_initialized=" << (bus.is_initialized ? "true" : "false"));
     if (!bus.is_initialized) {
         FL_DBG("SPIBusManager: releaseBusHardware() bus not initialized, returning");
@@ -1028,7 +1029,7 @@ void SPIBusManager::releaseBusHardware(SPIBusInfo& bus) {
     bus.num_devices = 0;  // Reset device count to prevent stale state
 }
 
-void SPIBusManager::softwareSPIWrite(u8 clock_pin, u8 data_pin, const u8* data, size_t length) {
+void SPIBusManager::softwareSPIWrite(u8 clock_pin, u8 data_pin, const u8* data, size_t length) FL_NOEXCEPT {
 #if !defined(FASTLED_STUB_IMPL) && !defined(FL_IS_WASM)
     // Real hardware implementation using Pin class for bit-banging
     // At this point in the header (after class definition), Pin should be available
@@ -1077,7 +1078,7 @@ void SPIBusManager::softwareSPIWrite(u8 clock_pin, u8 data_pin, const u8* data, 
 #endif
 }
 
-SPIBusType SPIBusManager::getMaxSupportedSPIType() const {
+SPIBusType SPIBusManager::getMaxSupportedSPIType() const FL_NOEXCEPT {
     // Check at runtime using getAll() - platforms provide via weak linkage
     if (!SpiHw16::getAll().empty()) {
         return SPIBusType::HEXADECA_SPI;  // 16-lane SPI
@@ -1098,7 +1099,7 @@ SPIBusType SPIBusManager::getMaxSupportedSPIType() const {
 // Global instance
 // ============================================================================
 
-SPIBusManager& getSPIBusManager() {
+SPIBusManager& getSPIBusManager() FL_NOEXCEPT {
     static SPIBusManager instance;
     return instance;
 }

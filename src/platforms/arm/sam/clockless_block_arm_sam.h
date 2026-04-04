@@ -8,6 +8,7 @@
 #include "bitswap.h"
 #include "platforms/arm/sam/is_sam.h"
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 FL_DISABLE_WARNING_PUSH
 FL_DISABLE_WARNING_DEPRECATED_REGISTER
@@ -55,7 +56,7 @@ class InlineBlockClocklessController : public CPixelLEDController<RGB_ORDER, LAN
 
 public:
 	virtual int size() { return CLEDController::size() * LANES; }
-	virtual void init() {
+	virtual void init() FL_NOEXCEPT {
         static_assert(LANES <= 8, "Maximum of 8 lanes for Due parallel controllers!");
         if(FIRST_PIN == PORTA_FIRST_PIN) {
             switch(LANES) {
@@ -97,14 +98,14 @@ public:
 
     virtual u16 getMaxRefreshRate() const { return 400; }
 
-    virtual void showPixels(PixelController<RGB_ORDER, LANES, PORT_MASK> & pixels) {
+    virtual void showPixels(PixelController<RGB_ORDER, LANES, PORT_MASK> & pixels) FL_NOEXCEPT {
         mWait.wait();
         showRGBInternal(pixels);
         sei();
         mWait.mark();
     }
 
-    static u32 showRGBInternal(PixelController<RGB_ORDER, LANES, PORT_MASK> &allpixels) {
+    static u32 showRGBInternal(PixelController<RGB_ORDER, LANES, PORT_MASK> &allpixels) FL_NOEXCEPT {
         // Serial.println("Entering show");
 
         int nLeds = allpixels.mLen;
@@ -118,9 +119,9 @@ public:
         }
 
         // Setup and start the clock
-        TC_Configure(DUE_TIMER,DUE_TIMER_CHANNEL,TC_CMR_TCCLKS_TIMER_CLOCK1);
+        TC_Configure(DUE_TIMER,DUE_TIMER_CHANNEL,TC_CMR_TCCLKS_TIMER_CLOCK1) FL_NOEXCEPT;
         pmc_enable_periph_clk(DUE_TIMER_ID);
-        TC_Start(DUE_TIMER,DUE_TIMER_CHANNEL);
+        TC_Start(DUE_TIMER,DUE_TIMER_CHANNEL) FL_NOEXCEPT;
 
         #if (FASTLED_ALLOW_INTERRUPTS == 1)
         cli();
@@ -155,7 +156,7 @@ public:
         return DUE_TIMER_VAL;
     }
 
-    template<int BITS,int PX> __attribute__ ((always_inline)) inline static void writeBits(FASTLED_REGISTER u32 & next_mark, FASTLED_REGISTER Lines & b, Lines & b3, PixelController<RGB_ORDER,LANES, PORT_MASK> &pixels) { // , FASTLED_REGISTER uint32_t & b2)  {
+    template<int BITS,int PX> __attribute__ ((always_inline)) FL_NOEXCEPT inline static void writeBits(FASTLED_REGISTER u32 & next_mark, FASTLED_REGISTER Lines & b, Lines & b3, PixelController<RGB_ORDER,LANES, PORT_MASK> &pixels) { // , FASTLED_REGISTER uint32_t & b2)  {
         Lines b2;
         fl::transpose8x1(b.bytes,b2.bytes);
 

@@ -9,11 +9,12 @@
 #include "fl/system/pin.h"
 #include "fl/stl/algorithm.h"
 #include "platforms/avr/is_avr.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
 BitBangChannelDriver::BitBangChannelDriver()
-    : mNumActiveSlots(0), mActiveSlotMask(0) {
+ FL_NOEXCEPT : mNumActiveSlots(0), mActiveSlotMask(0) {
     for (int i = 0; i < 256; ++i) {
         mSlotForPin[i] = -1;
     }
@@ -24,30 +25,30 @@ BitBangChannelDriver::BitBangChannelDriver()
 
 BitBangChannelDriver::~BitBangChannelDriver() = default;
 
-bool BitBangChannelDriver::canHandle(const ChannelDataPtr& /*data*/) const {
+bool BitBangChannelDriver::canHandle(const ChannelDataPtr& /*data*/) const FL_NOEXCEPT {
     return true;
 }
 
-void BitBangChannelDriver::enqueue(ChannelDataPtr channelData) {
+void BitBangChannelDriver::enqueue(ChannelDataPtr channelData) FL_NOEXCEPT {
     if (channelData) {
         mEnqueuedChannels.push_back(fl::move(channelData));
     }
 }
 
-IChannelDriver::DriverState BitBangChannelDriver::poll() {
+IChannelDriver::DriverState BitBangChannelDriver::poll() FL_NOEXCEPT {
     return DriverState(DriverState::READY);
 }
 
-fl::string BitBangChannelDriver::getName() const {
+fl::string BitBangChannelDriver::getName() const FL_NOEXCEPT {
     return fl::string::from_literal("BITBANG");
 }
 
-IChannelDriver::Capabilities BitBangChannelDriver::getCapabilities() const {
+IChannelDriver::Capabilities BitBangChannelDriver::getCapabilities() const FL_NOEXCEPT {
     return Capabilities(true, true);
 }
 
 void BitBangChannelDriver::rebuildPinConfig(
-    fl::span<const ChannelDataPtr> channels) {
+    fl::span<const ChannelDataPtr> channels) FL_NOEXCEPT {
     // Clear previous mapping
     for (int i = 0; i < 256; ++i) {
         mSlotForPin[i] = -1;
@@ -108,7 +109,7 @@ void BitBangChannelDriver::rebuildPinConfig(
 }
 
 void BitBangChannelDriver::transmitClocklessBit(u8 onesMask, u32 t1_ns,
-                                                  u32 t2_ns, u32 t3_ns) {
+                                                  u32 t2_ns, u32 t3_ns) FL_NOEXCEPT {
     // Phase 1: ALL active lines HIGH
     mMultiWriter.writeByte(mActiveSlotMask);
 
@@ -125,7 +126,7 @@ void BitBangChannelDriver::transmitClocklessBit(u8 onesMask, u32 t1_ns,
 }
 
 void BitBangChannelDriver::transmitClockless(
-    fl::span<const ChannelDataPtr> channels) {
+    fl::span<const ChannelDataPtr> channels) FL_NOEXCEPT {
     if (channels.empty()) return;
 
     // Group channels by timing config.
@@ -212,7 +213,7 @@ void BitBangChannelDriver::transmitClockless(
 }
 
 void BitBangChannelDriver::transmitSpi(
-    fl::span<const ChannelDataPtr> channels) {
+    fl::span<const ChannelDataPtr> channels) FL_NOEXCEPT {
     if (channels.empty()) return;
 
     // Group channels by clock pin
@@ -289,7 +290,7 @@ void BitBangChannelDriver::transmitSpi(
     }
 }
 
-void BitBangChannelDriver::show() {
+void BitBangChannelDriver::show() FL_NOEXCEPT {
     if (mEnqueuedChannels.empty()) return;
 
     // Move enqueued to transmitting

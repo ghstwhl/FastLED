@@ -43,6 +43,7 @@ FL_EXTERN_C_BEGIN
 FL_EXTERN_C_END
 
 #include "fl/stl/assert.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace isr {
@@ -124,7 +125,7 @@ static void FL_IRAM gpio_isr_wrapper(void* arg)
 // ESP32 ISR Implementation (fl::platform namespace)
 // =============================================================================
 
-inline int attach_timer_handler(const isr_config_t& config, isr_handle_t* out_handle) {
+inline int attach_timer_handler(const isr_config_t& config, isr_handle_t* out_handle) FL_NOEXCEPT {
         if (!config.handler) {
             ESP_LOGW(ESP32_ISR_TAG, "attachTimerHandler: handler is null");
             return -1;  // Invalid parameter
@@ -242,7 +243,7 @@ inline int attach_timer_handler(const isr_config_t& config, isr_handle_t* out_ha
         return 0;  // Success
 }
 
-inline int attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t* out_handle) {
+inline int attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t* out_handle) FL_NOEXCEPT {
         if (!config.handler) {
             ESP_LOGW(ESP32_ISR_TAG, "attachExternalHandler: handler is null");
             return -1;  // Invalid parameter
@@ -331,7 +332,7 @@ inline int attach_external_handler(u8 pin, const isr_config_t& config, isr_handl
         return 0;  // Success
 }
 
-inline int detach_handler(isr_handle_t& handle) {
+inline int detach_handler(isr_handle_t& handle) FL_NOEXCEPT {
         if (!handle.is_valid() || handle.platform_id != ESP32_PLATFORM_ID) {
             ESP_LOGW(ESP32_ISR_TAG, "detachHandler: invalid handle");
             return -1;  // Invalid handle
@@ -370,7 +371,7 @@ inline int detach_handler(isr_handle_t& handle) {
         return 0;  // Success
 }
 
-inline int enable_handler(const isr_handle_t& handle) {
+inline int enable_handler(const isr_handle_t& handle) FL_NOEXCEPT {
         if (!handle.is_valid() || handle.platform_id != ESP32_PLATFORM_ID) {
             ESP_LOGW(ESP32_ISR_TAG, "enableHandler: invalid handle");
             return -1;  // Invalid handle
@@ -401,7 +402,7 @@ inline int enable_handler(const isr_handle_t& handle) {
         return 0;  // Success
 }
 
-inline int disable_handler(const isr_handle_t& handle) {
+inline int disable_handler(const isr_handle_t& handle) FL_NOEXCEPT {
         if (!handle.is_valid() || handle.platform_id != ESP32_PLATFORM_ID) {
             ESP_LOGW(ESP32_ISR_TAG, "disableHandler: invalid handle");
             return -1;  // Invalid handle
@@ -432,7 +433,7 @@ inline int disable_handler(const isr_handle_t& handle) {
         return 0;  // Success
 }
 
-inline bool is_handler_enabled(const isr_handle_t& handle) {
+inline bool is_handler_enabled(const isr_handle_t& handle) FL_NOEXCEPT {
         if (!handle.is_valid() || handle.platform_id != ESP32_PLATFORM_ID) {
             return false;
         }
@@ -445,7 +446,7 @@ inline bool is_handler_enabled(const isr_handle_t& handle) {
         return handle_data->is_enabled;
 }
 
-inline const char* get_error_string(int error_code) {
+inline const char* get_error_string(int error_code) FL_NOEXCEPT {
         switch (error_code) {
             case 0: return "Success";
             case -1: return "Invalid parameter";
@@ -467,7 +468,7 @@ inline const char* get_error_string(int error_code) {
         }
 }
 
-inline const char* get_platform_name() {
+inline const char* get_platform_name() FL_NOEXCEPT {
 #if defined(FL_IS_ESP_32DEV)
     return "ESP32 (IDF5)";
 #elif defined(FL_IS_ESP_32S2)
@@ -483,15 +484,15 @@ inline const char* get_platform_name() {
 #endif
 }
 
-inline u32 get_max_timer_frequency() {
+inline u32 get_max_timer_frequency() FL_NOEXCEPT {
     return 40000000;  // 40 MHz (limited by hardware divider >= 2 requirement)
 }
 
-inline u32 get_min_timer_frequency() {
+inline u32 get_min_timer_frequency() FL_NOEXCEPT {
     return 1;  // 1 Hz
 }
 
-inline u8 get_max_priority() {
+inline u8 get_max_priority() FL_NOEXCEPT {
 #if defined(FL_IS_ESP_32C3) || defined(FL_IS_ESP_32C6)
     // RISC-V: Priority 1-7 (but 4-7 may have limitations)
     return 7;
@@ -501,7 +502,7 @@ inline u8 get_max_priority() {
 #endif
 }
 
-inline bool requires_assembly_handler(u8 priority) {
+inline bool requires_assembly_handler(u8 priority) FL_NOEXCEPT {
 #if defined(FL_IS_ESP_32C3) || defined(FL_IS_ESP_32C6)
     // RISC-V: All priority levels can use C handlers
     return false;
@@ -519,12 +520,12 @@ inline bool requires_assembly_handler(u8 priority) {
 // =============================================================================
 
 /// Disable interrupts on ESP32
-inline void interruptsDisable() {
+inline void interruptsDisable() FL_NOEXCEPT {
     portDISABLE_INTERRUPTS();
 }
 
 /// Enable interrupts on ESP32
-inline void interruptsEnable() {
+inline void interruptsEnable() FL_NOEXCEPT {
     portENABLE_INTERRUPTS();
 }
 

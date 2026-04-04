@@ -17,6 +17,7 @@
 #include "fastspi_types.h"
 #include "platforms/arm/stm32/is_stm32.h"
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 FL_DISABLE_WARNING_PUSH
 FL_DISABLE_WARNING_DEPRECATED_REGISTER
@@ -95,12 +96,12 @@ public:
 #endif
 
     // Set the object representing the selectable
-    void setSelect(Selectable* pSelect) {
+    void setSelect(Selectable* pSelect) FL_NOEXCEPT {
         mPSelect = pSelect;
     }
 
     // Initialize the SPI subsystem
-    void init() {
+    void init() FL_NOEXCEPT {
 #if FASTLED_STM32_USE_HAL
         if (!mInitialized) {
             // Initialize SPI with specified pins
@@ -132,38 +133,38 @@ public:
     }
 
     // Stop the SPI output
-    static void stop() {
+    static void stop() FL_NOEXCEPT {
         // NOP for now - could disable SPI peripheral if needed
     }
 
     // Wait until the SPI subsystem is ready for more data
-    static void wait() __attribute__((always_inline)) {
+    static void wait() FL_NOEXCEPT __attribute__((always_inline)) {
         // For basic implementation, this is a NOP
         // Could check SPI busy flag if needed
     }
 
-    static void waitFully() __attribute__((always_inline)) {
+    static void waitFully() FL_NOEXCEPT __attribute__((always_inline)) {
         wait();
     }
 
     // Write byte variants
-    void writeByteNoWait(u8 b) __attribute__((always_inline)) {
+    void writeByteNoWait(u8 b) FL_NOEXCEPT __attribute__((always_inline)) {
         writeByte(b);
     }
 
-    void writeBytePostWait(u8 b) __attribute__((always_inline)) {
+    void writeBytePostWait(u8 b) FL_NOEXCEPT __attribute__((always_inline)) {
         writeByte(b);
         wait();
     }
 
     // Write a 16-bit word
-    void writeWord(u16 w) __attribute__((always_inline)) {
+    void writeWord(u16 w) FL_NOEXCEPT __attribute__((always_inline)) {
         writeByte(static_cast<u8>(w >> 8));
         writeByte(static_cast<u8>(w & 0xFF));
     }
 
     // Write a single byte via SPI
-    void writeByte(u8 b) {
+    void writeByte(u8 b) FL_NOEXCEPT {
 #if FASTLED_STM32_USE_HAL
         #ifdef FL_IS_STM32_MBED
             if (mSpi) {
@@ -188,7 +189,7 @@ public:
     }
 
     // Select the SPI output (begin transaction)
-    void select() {
+    void select() FL_NOEXCEPT {
 #if FASTLED_STM32_USE_HAL
         // Calculate SPI settings based on SPI_SPEED
         // STM32 SPI can typically handle up to 18 MHz on APB1, 36 MHz on APB2
@@ -209,7 +210,7 @@ public:
     }
 
     // Release the SPI line (end transaction)
-    void release() {
+    void release() FL_NOEXCEPT {
         if (mPSelect != nullptr) {
             mPSelect->release();
         }
@@ -224,19 +225,19 @@ public:
 #endif
     }
 
-    void endTransaction() {
+    void endTransaction() FL_NOEXCEPT {
         waitFully();
         release();
     }
 
     // Write out len bytes of the given value
-    void writeBytesValue(u8 value, int len) {
+    void writeBytesValue(u8 value, int len) FL_NOEXCEPT {
         select();
         writeBytesValueRaw(value, len);
         release();
     }
 
-    void writeBytesValueRaw(u8 value, int len) {
+    void writeBytesValueRaw(u8 value, int len) FL_NOEXCEPT {
         while (len--) {
 #if FASTLED_STM32_USE_HAL
             #ifdef FL_IS_STM32_MBED
@@ -254,7 +255,7 @@ public:
 
     // Write a block of bytes with per-byte data modifier
     template <class D>
-    void writeBytes(FASTLED_REGISTER u8* data, int len) {
+    void writeBytes(FASTLED_REGISTER u8* data, int len) FL_NOEXCEPT {
         select();
         u8* end = data + len;
         while (data != end) {
@@ -265,7 +266,7 @@ public:
     }
 
     // Default version - write a block of data with no modifications
-    void writeBytes(FASTLED_REGISTER u8* data, int len) {
+    void writeBytes(FASTLED_REGISTER u8* data, int len) FL_NOEXCEPT {
         writeBytes<DATA_NOP>(data, len);
     }
 
@@ -276,7 +277,7 @@ public:
 
     // Write a single bit out
     template <u8 BIT>
-    inline void writeBit(u8 b) {
+    inline void writeBit(u8 b) FL_NOEXCEPT {
 #if FASTLED_STM32_USE_HAL
         // For single bit writes, we need to use GPIO directly
         // This is typically only used for specific LED chipsets
@@ -302,7 +303,7 @@ public:
     // Write pixels with color order and optional flags
     template <u8 FLAGS, class D, EOrder RGB_ORDER>
     __attribute__((noinline))
-    void writePixels(PixelController<RGB_ORDER> pixels, void* context = nullptr) {
+    void writePixels(PixelController<RGB_ORDER> pixels, void* context = nullptr) FL_NOEXCEPT {
         select();
         int len = pixels.mLen;
 

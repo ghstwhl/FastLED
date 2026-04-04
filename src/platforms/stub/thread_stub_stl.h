@@ -22,6 +22,7 @@
 #else
     #include <time.h>
     #include <errno.h>
+#include "fl/stl/noexcept.h"
 #endif
 
 // FASTLED_MULTITHREADED is defined by fl/stl/thread_config.h
@@ -35,20 +36,20 @@ namespace platforms {
 namespace detail {
 
 /// @brief Capture the main thread ID (set once on first call)
-inline std::thread::id& main_thread_id() {
+inline std::thread::id& main_thread_id() FL_NOEXCEPT {
     static std::thread::id id = std::this_thread::get_id();  // okay std namespace  // okay static in header
     return id;
 }
 
 /// @brief Check if the current thread is the main thread
-inline bool is_main_thread() {
+inline bool is_main_thread() FL_NOEXCEPT {
     return std::this_thread::get_id() == main_thread_id();  // okay std namespace
 }
 
 /// @brief Native sleep for 1ms
-inline void native_sleep_1ms() {
+inline void native_sleep_1ms() FL_NOEXCEPT {
 #ifdef FL_IS_WIN
-    Sleep(1);
+    Sleep(1) FL_NOEXCEPT;
 #else
     struct timespec ts;
     ts.tv_sec = 0;
@@ -61,7 +62,7 @@ inline void native_sleep_1ms() {
 /// @tparam Rep The arithmetic type representing the number of ticks
 /// @tparam Period A fl::ratio representing the tick period
 template<typename Rep, typename Period>
-inline void native_sleep(const fl::chrono::duration<Rep, Period>& sleep_duration) {
+inline void native_sleep(const fl::chrono::duration<Rep, Period>& sleep_duration) FL_NOEXCEPT {
     // Convert to nanoseconds
     auto ns = fl::chrono::duration_cast<fl::chrono::nanoseconds>(sleep_duration).count();
 
@@ -73,7 +74,7 @@ inline void native_sleep(const fl::chrono::duration<Rep, Period>& sleep_duration
     // Windows: Sleep takes milliseconds
     // Convert nanoseconds to milliseconds (round up)
     unsigned long ms = static_cast<unsigned long>((ns + 999999) / 1000000);
-    Sleep(ms);
+    Sleep(ms) FL_NOEXCEPT;
 #else
     // POSIX: Use nanosleep
     struct timespec ts;
@@ -106,7 +107,7 @@ namespace this_thread {
     /// @brief Yield with event pumping on main thread
     /// On main thread: calls fl::yield() to pump scheduler + OS yield
     /// On worker threads: raw std::this_thread::yield()
-    inline void yield() {
+    inline void yield() FL_NOEXCEPT {
         if (fl::platforms::detail::is_main_thread()) {
             fl::yield();
         } else {
@@ -118,13 +119,13 @@ namespace this_thread {
     // Pure low-level sleep with no task/scheduler pumping
     // Consistent across all threads (main and worker)
     template<typename Rep, typename Period>
-    inline void sleep_for(const fl::chrono::duration<Rep, Period>& sleep_duration) {
+    inline void sleep_for(const fl::chrono::duration<Rep, Period>& sleep_duration) FL_NOEXCEPT {
         fl::platforms::detail::native_sleep(sleep_duration);
     }
 
     // Sleep functions - fl::chrono::time_point overloads
     template<typename Rep, typename Period>
-    inline void sleep_until(const fl::chrono::duration<Rep, Period>& wake_time) {
+    inline void sleep_until(const fl::chrono::duration<Rep, Period>& wake_time) FL_NOEXCEPT {
         // For time_point support, we would need fl::chrono::time_point and fl::chrono::clock
         // For now, this is a placeholder - implement when needed
         (void)wake_time;  // Suppress unused parameter warning

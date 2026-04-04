@@ -7,6 +7,7 @@
 
 #include "platforms/cycle_type.h"
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 /// @file platforms/esp/32/delay_riscv.h
 /// ESP32-C3/C6 (RISC-V) platform-specific nanosecond-precision delay utilities
@@ -17,19 +18,19 @@ namespace fl {
 /// @param ns Number of nanoseconds
 /// @param hz CPU frequency in Hz
 /// @return Number of cycles (rounded up)
-constexpr u32 cycles_from_ns_riscv(u32 ns, u32 hz) {
+constexpr u32 cycles_from_ns_riscv(u32 ns, u32 hz) FL_NOEXCEPT {
   // Round up: cycles = ceil(ns * hz / 1e9)
   // Using: (ns * hz + 999'999'999) / 1'000'000'000
   return ((u64)ns * (u64)hz + 999999999UL) / 1000000000UL;
 }
 
 /// Forward declaration for runtime frequency query
-extern u32 esp_clk_cpu_freq_impl();
+extern u32 esp_clk_cpu_freq_impl() FL_NOEXCEPT;
 
 /// Platform-specific implementation of nanosecond delay with runtime frequency (ESP32 RISC-V)
 /// @param ns Number of nanoseconds
 /// @param hz CPU frequency in Hz
-FASTLED_FORCE_INLINE void delayNanoseconds_impl(u32 ns, u32 hz) {
+FASTLED_FORCE_INLINE void delayNanoseconds_impl(u32 ns, u32 hz) FL_NOEXCEPT {
   u32 cycles = cycles_from_ns_riscv(ns, hz);
   if (cycles == 0) return;
   delay_cycles_mcycle(cycles);
@@ -37,7 +38,7 @@ FASTLED_FORCE_INLINE void delayNanoseconds_impl(u32 ns, u32 hz) {
 
 /// Platform-specific implementation of nanosecond delay with auto-detected frequency (ESP32 RISC-V)
 /// @param ns Number of nanoseconds
-FASTLED_FORCE_INLINE void delayNanoseconds_impl(u32 ns) {
+FASTLED_FORCE_INLINE void delayNanoseconds_impl(u32 ns) FL_NOEXCEPT {
   u32 hz = esp_clk_cpu_freq_impl();
   delayNanoseconds_impl(ns, hz);
 }

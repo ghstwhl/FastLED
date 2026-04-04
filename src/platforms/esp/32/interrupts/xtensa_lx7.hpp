@@ -23,6 +23,7 @@
 #include "esp_intr_alloc.h"
 // IWYU pragma: begin_keep
 #include "hal/interrupt_coreasm.h"
+#include "fl/stl/noexcept.h"
 
 // IWYU pragma: end_keep
 FL_EXTERN_C_BEGIN
@@ -156,7 +157,7 @@ FL_EXTERN_C_BEGIN
  *                  ESP_INTR_FLAG_LEVEL4 | ESP_INTR_FLAG_IRAM,
  *                  xt_highint4, nullptr, &handle);
  */
-extern void xt_highint4(void);
+extern void xt_highint4(void) FL_NOEXCEPT;
 
 /*
  * Level 5 Interrupt Shim (EXPERIMENTAL)
@@ -168,7 +169,7 @@ extern void xt_highint4(void);
  * Critical for RMT LED timing under Wi-Fi load - provides maximum
  * interrupt latency immunity, but requires custom implementation.
  */
-extern void xt_highint5(void);
+extern void xt_highint5(void) FL_NOEXCEPT;
 
 //=============================================================================
 // C HANDLER FUNCTION PROTOTYPES
@@ -192,10 +193,10 @@ extern void xt_highint5(void);
  */
 
 // Level 4 C handler - EXPERIMENTAL, called from xt_highint4 assembly shim
-void FL_IRAM fastled_esp32s3_level4_handler(void);
+void FL_IRAM fastled_esp32s3_level4_handler(void) FL_NOEXCEPT;
 
 // Level 5 C handler - EXPERIMENTAL, called from xt_highint5 assembly shim
-void FL_IRAM fastled_esp32s3_level5_handler(void);
+void FL_IRAM fastled_esp32s3_level5_handler(void) FL_NOEXCEPT;
 
 //=============================================================================
 // INTERRUPT INSTALLATION HELPERS
@@ -225,7 +226,7 @@ esp_err_t fastled_esp32s3_install_level3_interrupt(
     int source,
     void *arg,
     esp_intr_handle_t *handle
-);
+) FL_NOEXCEPT;
 
 /*
  * Install Level 4 High-Priority Interrupt (EXPERIMENTAL)
@@ -237,7 +238,7 @@ esp_err_t fastled_esp32s3_install_level4_interrupt(
     int source,
     void *arg,
     esp_intr_handle_t *handle
-);
+) FL_NOEXCEPT;
 
 /*
  * Install Level 5 High-Priority Interrupt (EXPERIMENTAL)
@@ -249,7 +250,7 @@ esp_err_t fastled_esp32s3_install_level5_interrupt(
     int source,
     void *arg,
     esp_intr_handle_t *handle
-);
+) FL_NOEXCEPT;
 
 //=============================================================================
 // RMT-SPECIFIC INTEGRATION
@@ -285,7 +286,7 @@ esp_err_t fastled_esp32s3_rmt_init_official(
     fl::u32 resolution_hz,
     size_t mem_block_symbols,
     int interrupt_level  // 1-3 only, 3 recommended
-);
+) FL_NOEXCEPT;
 
 // Initialize RMT with CUSTOM high-priority interrupt (EXPERIMENTAL)
 esp_err_t fastled_esp32s3_rmt_init_custom(
@@ -294,7 +295,7 @@ esp_err_t fastled_esp32s3_rmt_init_custom(
     fl::u32 resolution_hz,
     size_t mem_block_symbols,
     int interrupt_level  // 4 or 5, bypasses official driver
-);
+) FL_NOEXCEPT;
 
 //=============================================================================
 // ASSEMBLY TRAMPOLINE MACRO

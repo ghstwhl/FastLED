@@ -10,6 +10,7 @@
 #include "fl/system/log.h"
 #include "fl/stl/cstring.h"
 #include "fl/gfx/rectangular_draw_buffer.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -42,13 +43,13 @@ struct TimingGroup {
 // ============================================================================
 
 ChannelEngineObjectFLED::ChannelEngineObjectFLED()
-    : mPeripheral(IObjectFLEDPeripheral::create()) {
+ FL_NOEXCEPT : mPeripheral(IObjectFLEDPeripheral::create()) {
     FL_LOG_OBJECTFLED("ChannelEngineObjectFLED: created");
 }
 
 ChannelEngineObjectFLED::ChannelEngineObjectFLED(
         fl::shared_ptr<IObjectFLEDPeripheral> peripheral)
-    : mPeripheral(fl::move(peripheral)) {
+ FL_NOEXCEPT : mPeripheral(fl::move(peripheral)) {
     FL_LOG_OBJECTFLED("ChannelEngineObjectFLED: created with injected peripheral");
 }
 
@@ -56,7 +57,7 @@ ChannelEngineObjectFLED::~ChannelEngineObjectFLED() {
     FL_LOG_OBJECTFLED("ChannelEngineObjectFLED: destroyed");
 }
 
-bool ChannelEngineObjectFLED::canHandle(const ChannelDataPtr& data) const {
+bool ChannelEngineObjectFLED::canHandle(const ChannelDataPtr& data) const FL_NOEXCEPT {
     if (!data || !data->isClockless()) {
         return false;
     }
@@ -64,14 +65,14 @@ bool ChannelEngineObjectFLED::canHandle(const ChannelDataPtr& data) const {
     return period >= kMinPeriodNs && period <= kMaxPeriodNs;
 }
 
-void ChannelEngineObjectFLED::enqueue(ChannelDataPtr channelData) {
+void ChannelEngineObjectFLED::enqueue(ChannelDataPtr channelData) FL_NOEXCEPT {
     if (channelData) {
         channelData->setInUse(true);
         mEnqueuedChannels.push_back(fl::move(channelData));
     }
 }
 
-void ChannelEngineObjectFLED::show() {
+void ChannelEngineObjectFLED::show() FL_NOEXCEPT {
     // Wait for any previous transmission (per DMA Wait Pattern)
     while (poll() != DriverState::READY) {
         // ObjectFLED show() is synchronous, so this should be instant
@@ -239,7 +240,7 @@ void ChannelEngineObjectFLED::show() {
     mTransmittingChannels.clear();
 }
 
-IChannelDriver::DriverState ChannelEngineObjectFLED::poll() {
+IChannelDriver::DriverState ChannelEngineObjectFLED::poll() FL_NOEXCEPT {
     // ObjectFLED show() is synchronous - always READY after show() returns
     return DriverState::READY;
 }

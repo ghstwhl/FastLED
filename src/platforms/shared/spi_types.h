@@ -6,6 +6,7 @@
 #include "fl/stl/stdint.h"
 #include "fl/stl/string.h"
 #include "fl/stl/shared_ptr.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -34,7 +35,7 @@ enum class SPIError : u8 {
 
 /// @brief Stream operator for SPIError (enables use with FL_DBG/FL_WARN macros)
 /// @note Defined in spi_types.cpp
-sstream& operator<<(sstream& s, SPIError err);
+sstream& operator<<(sstream& s, SPIError err) FL_NOEXCEPT;
 
 /// @brief Result type for DMA buffer acquisition
 /// @details Returns either a valid buffer span or an error code
@@ -48,35 +49,35 @@ private:
 
 public:
     /// @brief Default constructor (uninitialized error state)
-    DMABuffer();
+    DMABuffer() FL_NOEXCEPT;
 
     /// @brief Construct successful result with buffer size
     /// @param size Size of buffer in bytes to allocate
-    explicit DMABuffer(size_t size);
+    explicit DMABuffer(size_t size) FL_NOEXCEPT;
 
     /// @brief Construct successful result with buffer pointer and size (legacy compatibility)
     /// @param ptr Shared pointer to buffer data
     /// @param size Size of buffer in bytes
     /// @deprecated Use DMABuffer(size_t) constructor instead
-    DMABuffer(fl::shared_ptr<u8> ptr, size_t size);
+    DMABuffer(fl::shared_ptr<u8> ptr, size_t size) FL_NOEXCEPT;
 
     /// @brief Construct error result
-    explicit DMABuffer(SPIError err);
+    explicit DMABuffer(SPIError err) FL_NOEXCEPT;
 
     /// @brief Check if buffer acquisition succeeded
-    bool ok() const;
+    bool ok() const FL_NOEXCEPT;
 
     /// @brief Get the buffer span (only valid if ok() returns true)
-    fl::span<u8> data() const;
+    fl::span<u8> data() const FL_NOEXCEPT;
 
     /// @brief Get the error code (only meaningful if ok() returns false)
-    SPIError error() const;
+    SPIError error() const FL_NOEXCEPT;
 
     /// @brief Reset/clear the buffer (invalidates internal data)
-    void reset();
+    void reset() FL_NOEXCEPT;
 
     /// @brief Get the size of the buffer in bytes
-    size_t size() const;
+    size_t size() const FL_NOEXCEPT;
 };
 
 /// @brief Request structure for SPI transmit operations
@@ -88,18 +89,18 @@ struct SPITransmitRequest {
     TransmitMode mode;
 
     /// @brief Default constructor
-    SPITransmitRequest();
+    SPITransmitRequest() FL_NOEXCEPT;
 
     /// @brief Construct with buffer and mode
-    SPITransmitRequest(const DMABuffer& buf, TransmitMode m = TransmitMode::ASYNC);
+    SPITransmitRequest(const DMABuffer& buf, TransmitMode m = TransmitMode::ASYNC) FL_NOEXCEPT;
 
     /// @brief Move the buffer out of this request (consumes the buffer)
     /// @details This is called internally by transmit() to take ownership
     /// @return The buffer with ownership transferred
-    DMABuffer take_buffer();
+    DMABuffer take_buffer() FL_NOEXCEPT;
 
     /// @brief Check if the request still has a valid buffer
-    bool has_buffer() const;
+    bool has_buffer() const FL_NOEXCEPT;
 };
 
 /// @brief Result structure for SPI transmit operations
@@ -110,25 +111,25 @@ struct SPITransmitResult {
     SPIError error_code;
 
     /// @brief Default constructor (successful transmission)
-    SPITransmitResult();
+    SPITransmitResult() FL_NOEXCEPT;
 
     /// @brief Construct successful result
-    static SPITransmitResult success();
+    static SPITransmitResult success() FL_NOEXCEPT;
 
     /// @brief Construct error result with code and message
-    static SPITransmitResult error(SPIError err, const fl::string& msg);
+    static SPITransmitResult error(SPIError err, const fl::string& msg) FL_NOEXCEPT;
 
     /// @brief Construct error result with code only
-    static SPITransmitResult error(SPIError err);
+    static SPITransmitResult error(SPIError err) FL_NOEXCEPT;
 
     /// @brief Check if transmission succeeded
-    bool ok() const;
+    bool ok() const FL_NOEXCEPT;
 
     /// @brief Get error code (only meaningful if ok() returns false)
-    SPIError error() const;
+    SPIError error() const FL_NOEXCEPT;
 
     /// @brief Get error message (only meaningful if ok() returns false)
-    const fl::string& message() const;
+    const fl::string& message() const FL_NOEXCEPT;
 };
 
 }  // namespace fl

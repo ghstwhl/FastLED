@@ -9,6 +9,7 @@
 
 #include "platforms/wasm/compiler/Arduino.h"
 #include "fl/stl/stdint.h"
+#include "fl/stl/noexcept.h"
 
 #ifndef F_CPU
 #define F_CPU 1000000000
@@ -53,5 +54,5 @@ extern "C" {
 // uint32_t micros(void);
 
 // Note: delay() removed - FastLED.h provides via "using fl::delay;"
-void yield(void);
+void yield(void) FL_NOEXCEPT;
 }

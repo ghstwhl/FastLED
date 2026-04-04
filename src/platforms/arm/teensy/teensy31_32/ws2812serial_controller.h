@@ -5,13 +5,14 @@
 
 #ifdef USE_WS2812SERIAL
 #include "fl/stl/allocator.h"
+#include "fl/stl/noexcept.h"
 namespace fl {
 template<int DATA_PIN, EOrder RGB_ORDER>
 class CWS2812SerialController : public CPixelLEDController<RGB_ORDER, 8, 0xFF> {
     WS2812Serial *pserial;
     u8 *drawbuffer,*framebuffer;
 
-    void _init(int nLeds) {
+    void _init(int nLeds) FL_NOEXCEPT {
         if (pserial == nullptr) {
             drawbuffer = (u8*)fl::malloc(nLeds * 3);
             framebuffer = (u8*)fl::malloc(nLeds * 12);
@@ -25,7 +26,7 @@ public:
 
     virtual void init() { /* do nothing yet */ }
 
-    virtual void showPixels(PixelController<RGB_ORDER, 8, 0xFF> & pixels) {
+    virtual void showPixels(PixelController<RGB_ORDER, 8, 0xFF> & pixels) FL_NOEXCEPT {
         _init(pixels.size());
 
         u8 *p = drawbuffer;

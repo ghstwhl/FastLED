@@ -15,6 +15,7 @@
 #include "fl/channels/manager.h"
 #include "pixel_iterator.h"
 #include "fl/system/log.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -75,7 +76,7 @@ protected:
         mDriver->enqueue(mChannelData);
     }
 
-    static fl::shared_ptr<IChannelDriver> getWasmSpiEngine() {
+    static fl::shared_ptr<IChannelDriver> getWasmSpiEngine() FL_NOEXCEPT {
         return ChannelManager::instance().getDriverByName("SPI");
     }
 };

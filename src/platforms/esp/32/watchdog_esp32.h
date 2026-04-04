@@ -22,6 +22,7 @@
 // IWYU pragma: private
 
 #include "fl/stl/stdint.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -41,6 +42,6 @@ typedef void (*watchdog_callback_t)(void* user_data);
 /// @note Callback executes in ISR context - keep it simple and avoid logging functions
 void watchdog_setup(u32 timeout_ms = 5000,
                     watchdog_callback_t callback = nullptr,
-                    void* user_data = nullptr);
+                    void* user_data = nullptr) FL_NOEXCEPT;
 
 } // namespace fl

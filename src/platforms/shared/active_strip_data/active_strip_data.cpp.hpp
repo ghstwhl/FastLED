@@ -6,33 +6,34 @@
 #include "fl/stl/string.h"
 #include "fl/stl/json.h"
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 // CLEDController is forward declared in header - no include needed
 
 
 namespace fl {
 
-ActiveStripData &ActiveStripData::Instance() {
+ActiveStripData &ActiveStripData::Instance() FL_NOEXCEPT {
     return fl::Singleton<ActiveStripData>::instance();
 }
 
-void ActiveStripData::update(int id, u32 now, fl::span<const u8> pixel_data) {
+void ActiveStripData::update(int id, u32 now, fl::span<const u8> pixel_data) FL_NOEXCEPT {
     FL_UNUSED(now);
     mStripMap.update(id, pixel_data);
 }
 
-void ActiveStripData::updateScreenMap(int id, const ScreenMap &screenmap) {
+void ActiveStripData::updateScreenMap(int id, const ScreenMap &screenmap) FL_NOEXCEPT {
     mScreenMap.update(id, screenmap);
 }
 
 void ActiveStripData::onCanvasUiSet(CLEDController *strip,
-                                   const ScreenMap &screenmap) {
+                                   const ScreenMap &screenmap) FL_NOEXCEPT {
     // Use the IdTracker for consistent strip ID management across all platforms
     int id = mIdTracker.getOrCreateId(strip);
     updateScreenMap(id, screenmap);
 }
 
 // NEW: JSON parsing using fl::json API (WORKING - parsing is fully functional)
-bool ActiveStripData::parseStripJsonInfo(const char* jsonStr) {
+bool ActiveStripData::parseStripJsonInfo(const char* jsonStr) FL_NOEXCEPT {
     if (!jsonStr) return false;
     
     // Use the working fl::json parsing API
@@ -69,11 +70,11 @@ bool ActiveStripData::parseStripJsonInfo(const char* jsonStr) {
     return true;
 }
 
-fl::string ActiveStripData::infoJsonString() {
+fl::string ActiveStripData::infoJsonString() FL_NOEXCEPT {
     return infoJsonStringNew();
 }
 
-fl::string ActiveStripData::infoJsonStringNew() {
+fl::string ActiveStripData::infoJsonStringNew() FL_NOEXCEPT {
     // NEW API - Using fl::json creation API (PROPER IMPLEMENTATION)
     // 
     // This is the target implementation that the JSON creation API must support

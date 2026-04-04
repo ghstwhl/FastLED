@@ -4,6 +4,7 @@
 
 #include "fl/stl/string.h"
 #include "fl/stl/function.h"
+#include "fl/stl/noexcept.h"
 
 // Forward declaration - fl::net::http::Response is defined in fl/net/http/fetch.h
 namespace fl {
@@ -26,11 +27,11 @@ private:
     fl::string mUrl;
     
 public:
-    explicit WasmFetchRequest(const fl::string& url) : mUrl(url) {}
+    explicit WasmFetchRequest(const fl::string& url) FL_NOEXCEPT : mUrl(url) {}
     
     /// Execute the fetch request and call the response callback
     /// @param callback Function to call with the response object
-    void response(const FetchResponseCallback& callback);
+    void response(const FetchResponseCallback& callback) FL_NOEXCEPT;
 };
 
 /// Internal WASM fetch object (renamed to avoid conflicts)
@@ -39,7 +40,7 @@ public:
     /// Create a GET request
     /// @param url The URL to fetch
     /// @returns WasmFetchRequest object for chaining
-    WasmFetchRequest get(const fl::string& url) {
+    WasmFetchRequest get(const fl::string& url) FL_NOEXCEPT {
         return WasmFetchRequest(url);
     }
 };

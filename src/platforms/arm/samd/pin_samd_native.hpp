@@ -32,6 +32,7 @@
 #include "fl/system/pin.h"
 // IWYU pragma: begin_keep
 #include <sam.h>  // SAMD register definitions
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 
 namespace fl {
@@ -52,7 +53,7 @@ struct PinMapping {
 ///       should provide accurate mappings via g_APinDescription table.
 /// @param pin Arduino pin number
 /// @return PinMapping with group and bit, or {0xFF, 0xFF} if invalid
-inline PinMapping getPinMapping(int pin) {
+inline PinMapping getPinMapping(int pin) FL_NOEXCEPT {
     // Simple default mapping for common SAMD boards
     // In a real implementation, this would use the variant's g_APinDescription table
     // or compile-time board-specific lookup tables.
@@ -78,7 +79,7 @@ inline PinMapping getPinMapping(int pin) {
 /// Set pin mode (input, output, input_pullup, input_pulldown)
 /// @param pin Arduino pin number
 /// @param mode Pin mode (PinMode enum)
-inline void pinMode(int pin, PinMode mode) {
+inline void pinMode(int pin, PinMode mode) FL_NOEXCEPT {
     PinMapping pm = getPinMapping(pin);
     if (pm.group == 0xFF) {
         return;  // Invalid pin
@@ -129,7 +130,7 @@ inline void pinMode(int pin, PinMode mode) {
 /// Write digital output value
 /// @param pin Arduino pin number
 /// @param val Output value (PinValue enum)
-inline void digitalWrite(int pin, PinValue val) {
+inline void digitalWrite(int pin, PinValue val) FL_NOEXCEPT {
     PinMapping pm = getPinMapping(pin);
     if (pm.group == 0xFF) {
         return;  // Invalid pin
@@ -150,7 +151,7 @@ inline void digitalWrite(int pin, PinValue val) {
 /// Read digital input value
 /// @param pin Arduino pin number
 /// @return Pin value (PinValue enum: Low or High)
-inline PinValue digitalRead(int pin) {
+inline PinValue digitalRead(int pin) FL_NOEXCEPT {
     PinMapping pm = getPinMapping(pin);
     if (pm.group == 0xFF) {
         return PinValue::Low;  // Invalid pin

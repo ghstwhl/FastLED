@@ -22,6 +22,7 @@
 #include "fl/stl/singleton.h"
 #include "platforms/stub/time_stub.h"
 #include "fl/math/math.h"
+#include "fl/stl/noexcept.h"
 
 // Math functions from fl:: namespace
 // On stub platform, min/max/abs/radians/degrees are provided by
@@ -37,17 +38,17 @@
 // Arduino map() function - defined in global namespace (NOT in fl::)
 // fl::map refers to the map container
 // This delegates to fl::map_range() for consistent behavior and overflow protection
-long map(long x, long in_min, long in_max, long out_min, long out_max);
+long map(long x, long in_min, long in_max, long out_min, long out_max) FL_NOEXCEPT;
 
-long random(long min, long max);
-long random(long max);
-int analogRead(int);
-void init();  // Arduino hardware initialization (stub: does nothing)
+long random(long min, long max) FL_NOEXCEPT;
+long random(long max) FL_NOEXCEPT;
+int analogRead(int) FL_NOEXCEPT;
+void init() FL_NOEXCEPT;  // Arduino hardware initialization (stub: does nothing)
 
 // Test helper functions for analog value injection (stub platform only)
-void setAnalogValue(int pin, int value);  // Set analog value for specific pin
-int getAnalogValue(int pin);              // Get current analog value for pin
-void clearAnalogValues();                 // Reset all analog values to default (random)
+void setAnalogValue(int pin, int value) FL_NOEXCEPT;  // Set analog value for specific pin
+int getAnalogValue(int pin) FL_NOEXCEPT;              // Get current analog value for pin
+void clearAnalogValues() FL_NOEXCEPT;                 // Reset all analog values to default (random)
 #endif // FASTLED_NO_ARDUINO_STUBS
 
 
@@ -108,20 +109,20 @@ void clearAnalogValues();                 // Reset all analog values to default 
 #ifndef FASTLED_NO_ARDUINO_STUBS
 // Serial emulation and digital I/O - excluded when FASTLED_NO_ARDUINO_STUBS is defined
 struct SerialEmulation {
-    void begin(int);
+    void begin(int) FL_NOEXCEPT;
 
     // Single-argument print/println
-    template <typename T> void print(T val) {
+    template <typename T> void print(T val) FL_NOEXCEPT {
         fl::cout << val;
     }
-    template <typename T> void println(T val) {
+    template <typename T> void println(T val) FL_NOEXCEPT {
         fl::cout << val << fl::endl;
     }
 
     // Two-argument floating point: print(float/double, digits)
     template <typename T>
     typename fl::enable_if<fl::is_floating_point<T>::value>::type
-    print(T val, int digits) {
+    print(T val, int digits) FL_NOEXCEPT {
         digits = digits < 0 ? 0 : (digits > 9 ? 9 : digits);
         double d = static_cast<double>(val);
         switch(digits) {
@@ -140,7 +141,7 @@ struct SerialEmulation {
 
     template <typename T>
     typename fl::enable_if<fl::is_floating_point<T>::value>::type
-    println(T val, int digits) {
+    println(T val, int digits) FL_NOEXCEPT {
         print(val, digits);
         fl::printf("\n");
     }
@@ -151,7 +152,7 @@ struct SerialEmulation {
     template <typename T>
     typename fl::enable_if<fl::is_integral<T>::value &&
                            !fl::is_same<typename fl::remove_cv<T>::type, bool>::value>::type
-    print(T val, int base) {
+    print(T val, int base) FL_NOEXCEPT {
         if (fl::is_signed<T>::value) {
             long long v = static_cast<long long>(val);
             if (base == 16) fl::printf("%llx", v);
@@ -178,33 +179,33 @@ struct SerialEmulation {
     template <typename T>
     typename fl::enable_if<fl::is_integral<T>::value &&
                            !fl::is_same<typename fl::remove_cv<T>::type, bool>::value>::type
-    println(T val, int base) {
+    println(T val, int base) FL_NOEXCEPT {
         print(val, base);
         fl::printf("\n");
     }
 
-    void println();
+    void println() FL_NOEXCEPT;
 
     // Printf-style formatted output (variadic template implementation)
     template<typename... Args>
-    void printf(const char* format, Args... args) {
+    void printf(const char* format, Args... args) FL_NOEXCEPT {
         fl::printf(format, args...);
     }
 
-    int available();
-    int read();
-    fl::string readStringUntil(char terminator);
-    void write(fl::u8);
-    void write(const char *s);
-    void write(const fl::u8 *s, size_t n);
-    void write(const char *s, size_t n);
-    void flush();
-    void end();
-    fl::u8 peek();
+    int available() FL_NOEXCEPT;
+    int read() FL_NOEXCEPT;
+    fl::string readStringUntil(char terminator) FL_NOEXCEPT;
+    void write(fl::u8) FL_NOEXCEPT;
+    void write(const char *s) FL_NOEXCEPT;
+    void write(const fl::u8 *s, size_t n) FL_NOEXCEPT;
+    void write(const char *s, size_t n) FL_NOEXCEPT;
+    void flush() FL_NOEXCEPT;
+    void end() FL_NOEXCEPT;
+    fl::u8 peek() FL_NOEXCEPT;
 
     // Support for Serial boolean checks (always returns true for stub platform)
-    explicit operator bool() const { return true; }
-    bool operator!() const { return false; }
+    explicit operator bool() const FL_NOEXCEPT { return true; }
+    bool operator!() const FL_NOEXCEPT { return false; }
 };
 
 #define LED_BUILTIN 13
@@ -226,11 +227,11 @@ struct SerialEmulation {
 // Arduino math macro
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 
-void digitalWrite(int, int);
-void analogWrite(int, int);
-void analogReference(int);
-int digitalRead(int);
-void pinMode(int, int);
+void digitalWrite(int, int) FL_NOEXCEPT;
+void analogWrite(int, int) FL_NOEXCEPT;
+void analogReference(int) FL_NOEXCEPT;
+int digitalRead(int) FL_NOEXCEPT;
+void pinMode(int, int) FL_NOEXCEPT;
 #endif // FASTLED_NO_ARDUINO_STUBS
 
 

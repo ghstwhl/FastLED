@@ -12,6 +12,7 @@
 #include "pixel_iterator.h"
 #include "platforms/shared/active_strip_data/active_strip_data.h"
 #include "platforms/shared/active_strip_tracker/active_strip_tracker.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 #define FL_CLOCKLESS_CONTROLLER_DEFINED 1
@@ -24,7 +25,7 @@ public:
 	virtual void init() { }
 
 protected:
-	virtual void showPixels(PixelController<RGB_ORDER> & pixels) {
+	virtual void showPixels(PixelController<RGB_ORDER> & pixels) FL_NOEXCEPT {
 		// Capture LED data for simulation/testing
 		mRgb.clear();
 		PixelController<RGB> pixels_rgb = pixels; // Converts to RGB pixels
@@ -47,7 +48,7 @@ struct ClocklessControllerAdapter : public CPixelLEDController<RGB_ORDER> {
 	virtual void init() { }
 
 protected:
-	virtual void showPixels(PixelController<RGB_ORDER> & pixels) {
+	virtual void showPixels(PixelController<RGB_ORDER> & pixels) FL_NOEXCEPT {
 		// Capture LED data for simulation/testing
 		mRgb.clear();
 		PixelController<RGB> pixels_rgb = pixels; // Converts to RGB pixels
@@ -71,7 +72,7 @@ public:
 	virtual void init() { }
 
 protected:
-	virtual void showPixels(PixelController<RGB_ORDER> & pixels) {
+	virtual void showPixels(PixelController<RGB_ORDER> & pixels) FL_NOEXCEPT {
 		// Capture LED data for simulation/testing
 		mRgb.clear();
 		PixelController<RGB> pixels_rgb = pixels; // Converts to RGB pixels

@@ -2,6 +2,7 @@
 
 #include "fl/stl/compiler_control.h"
 #include "fl/audio/audio_input.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -13,7 +14,7 @@ public:
     // Stops the audio source, call this before light sleep.
     void stop() override {}
 
-    bool error(fl::string* msg = nullptr) override {
+    bool error(fl::string* msg = nullptr) FL_NOEXCEPT override {
         if (msg) {
             *msg = "No audio device available: this is a null device.";
         }
@@ -21,7 +22,7 @@ public:
     }
     // Read audio data and return as audio::Sample with calculated timestamp.
     // Returns invalid audio::Sample on error or when no data is available.
-    audio::Sample read() override {
+    audio::Sample read() FL_NOEXCEPT override {
         return audio::Sample();  // Always return invalid sample
     }
 

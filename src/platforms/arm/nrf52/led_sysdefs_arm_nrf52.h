@@ -53,6 +53,7 @@
 #include <nrf_nvic.h>   // for Clockless / anything else using interrupts
 // IWYU pragma: end_keep
 #include "fl/stl/stdint.h"
+#include "fl/stl/noexcept.h"
 typedef __I  fl::u32 RoReg;
 typedef __IO fl::u32 RwReg;
 
@@ -86,10 +87,10 @@ extern "C" {
 #endif
 
 // Declare the malloc wrapper functions from heap_3.c
-extern void* __wrap_malloc(size_t size);
-extern void __wrap_free(void* ptr);
-extern void* __wrap_realloc(void* ptr, size_t size);
-extern void* __wrap_calloc(size_t nmemb, size_t size);
+extern void* __wrap_malloc(size_t size) FL_NOEXCEPT;
+extern void __wrap_free(void* ptr) FL_NOEXCEPT;
+extern void* __wrap_realloc(void* ptr, size_t size) FL_NOEXCEPT;
+extern void* __wrap_calloc(size_t nmemb, size_t size) FL_NOEXCEPT;
 
 // Dummy function that references the malloc wrappers
 // __attribute__((used)) prevents the compiler from optimizing it away
@@ -98,7 +99,7 @@ extern void* __wrap_calloc(size_t nmemb, size_t size);
 // The function is never actually called, but its existence forces the linker
 // to resolve the __wrap_* symbols, pulling in heap_3.c.o
 __attribute__((used, noinline))
-static volatile void* fastled_nrf52_force_malloc_wrappers_link(void) {
+static volatile void* fastled_nrf52_force_malloc_wrappers_link(void) FL_NOEXCEPT {
     // Cast function pointers to volatile void* to prevent optimization
     // while avoiding type mismatch errors with volatile function pointers
     volatile void* ptrs[] = {

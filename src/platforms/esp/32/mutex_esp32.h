@@ -13,6 +13,7 @@
 #include "fl/stl/assert.h"
 // IWYU pragma: begin_keep
 #include <mutex>  // ok include - needed for std::unique_lock
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 
 namespace fl {
@@ -46,7 +47,7 @@ private:
     void* mHandle;  // SemaphoreHandle_t (opaque pointer to avoid including FreeRTOS headers)
 
 public:
-    MutexESP32();
+    MutexESP32() FL_NOEXCEPT;
     ~MutexESP32();
 
     // Non-copyable and non-movable
@@ -55,9 +56,9 @@ public:
     MutexESP32(MutexESP32&&) = delete;
     MutexESP32& operator=(MutexESP32&&) = delete;
 
-    void lock();
-    void unlock();
-    bool try_lock();
+    void lock() FL_NOEXCEPT;
+    void unlock() FL_NOEXCEPT;
+    bool try_lock() FL_NOEXCEPT;
 };
 
 // ESP32 FreeRTOS recursive mutex wrapper
@@ -66,7 +67,7 @@ private:
     void* mHandle;  // SemaphoreHandle_t (opaque pointer to avoid including FreeRTOS headers)
 
 public:
-    RecursiveMutexESP32();
+    RecursiveMutexESP32() FL_NOEXCEPT;
     ~RecursiveMutexESP32();
 
     // Non-copyable and non-movable
@@ -75,9 +76,9 @@ public:
     RecursiveMutexESP32(RecursiveMutexESP32&&) = delete;
     RecursiveMutexESP32& operator=(RecursiveMutexESP32&&) = delete;
 
-    void lock();
-    void unlock();
-    bool try_lock();
+    void lock() FL_NOEXCEPT;
+    void unlock() FL_NOEXCEPT;
+    bool try_lock() FL_NOEXCEPT;
 };
 
 // Define FASTLED_MULTITHREADED for ESP32 (has FreeRTOS)

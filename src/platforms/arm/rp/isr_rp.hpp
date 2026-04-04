@@ -22,6 +22,7 @@
     #include "platforms/arm/rp/isr_rp2350.hpp"
 #elif defined(FL_IS_RP2040)
     #include "platforms/arm/rp/isr_rp2040.hpp"
+#include "fl/stl/noexcept.h"
 #else
     #error "RP ISR: Unknown RP variant - FL_IS_RP is defined but neither FL_IS_RP2040 nor FL_IS_RP2350"
 #endif
@@ -35,13 +36,13 @@
 namespace fl {
 
 /// Disable interrupts on ARM Cortex-M (RP2040/RP2350)
-inline void interruptsDisable() {
-    __asm__ __volatile__("cpsid i" ::: "memory");
+inline void interruptsDisable() FL_NOEXCEPT {
+    __asm__ __volatile__("cpsid i" ::: "memory") FL_NOEXCEPT;
 }
 
 /// Enable interrupts on ARM Cortex-M (RP2040/RP2350)
-inline void interruptsEnable() {
-    __asm__ __volatile__("cpsie i" ::: "memory");
+inline void interruptsEnable() FL_NOEXCEPT {
+    __asm__ __volatile__("cpsie i" ::: "memory") FL_NOEXCEPT;
 }
 
 } // namespace fl

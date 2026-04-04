@@ -40,17 +40,18 @@
 
 // IWYU pragma: begin_keep
 #include <avr/interrupt.h>
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 
 namespace fl {
 
 /// Disable interrupts on AVR
-inline void interruptsDisable() {
+inline void interruptsDisable() FL_NOEXCEPT {
     cli();
 }
 
 /// Enable interrupts on AVR
-inline void interruptsEnable() {
+inline void interruptsEnable() FL_NOEXCEPT {
     sei();
 }
 

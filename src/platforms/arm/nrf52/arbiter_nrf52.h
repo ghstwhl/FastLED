@@ -9,6 +9,7 @@
 #if defined(FL_IS_NRF52)
 
 #include "platforms/arm/nrf52/led_sysdefs_arm_nrf52.h"
+#include "fl/stl/noexcept.h"
 
 typedef void (*FASTLED_NRF52_PWM_INTERRUPT_HANDLER)();
 
@@ -49,16 +50,16 @@ private:
     static FASTLED_NRF52_PWM_INTERRUPT_HANDLER volatile   s_Isr;
 
 public:
-    static void isr_handler() {
+    static void isr_handler() FL_NOEXCEPT {
         return s_Isr();
     }
-    FASTLED_NRF52_INLINE_ATTRIBUTE static bool            isAcquired() {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static bool            isAcquired() FL_NOEXCEPT {
         return (0u != (s_PwmInUse & 1u)); // _ACQUIRE_MASK
     }
-    FASTLED_NRF52_INLINE_ATTRIBUTE static void            acquire(FASTLED_NRF52_PWM_INTERRUPT_HANDLER isr) {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static void            acquire(FASTLED_NRF52_PWM_INTERRUPT_HANDLER isr) FL_NOEXCEPT {
         while (!tryAcquire(isr));
     }
-    FASTLED_NRF52_INLINE_ATTRIBUTE static bool            tryAcquire(FASTLED_NRF52_PWM_INTERRUPT_HANDLER isr) {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static bool            tryAcquire(FASTLED_NRF52_PWM_INTERRUPT_HANDLER isr) FL_NOEXCEPT {
         fl::u32 oldValue = __sync_fetch_and_or(&s_PwmInUse, 1u); // _ACQUIRE_MASK
         if (0u == (oldValue & 1u)) { // _ACQUIRE_MASK
             s_Isr = isr;
@@ -66,7 +67,7 @@ public:
         }
         return false;
     }
-    FASTLED_NRF52_INLINE_ATTRIBUTE static void            releaseFromIsr() {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static void            releaseFromIsr() FL_NOEXCEPT {
         fl::u32 oldValue = __sync_fetch_and_and(&s_PwmInUse, ~1u); // _CLEAR_MASK
         if (0u == (oldValue & 1u)) { // _ACQUIRE_MASK
             // TODO: This should never be true... indicates was not held.
@@ -75,7 +76,7 @@ public:
         }
         return;
     }
-    FASTLED_NRF52_INLINE_ATTRIBUTE static NRF_PWM_Type *  getPWM() {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static NRF_PWM_Type *  getPWM() FL_NOEXCEPT {
         return s_PWM;
     }
     FASTLED_NRF52_INLINE_ATTRIBUTE static IRQn_Type       getIRQn() { return s_PWM_IRQ; }

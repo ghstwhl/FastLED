@@ -7,6 +7,7 @@
 
 #include "platforms/cycle_type.h"
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 /// @file platforms/delay_cycles_generic.h
 /// Generic fallback cycle-accurate delay utilities for non-AVR platforms
@@ -29,24 +30,24 @@
 
 /// Forward declaration
 template<fl::cycle_t CYCLES>
-inline void delaycycles();
+inline void delaycycles() FL_NOEXCEPT;
 
 // Base case specializations for non-positive cycles (to prevent infinite recursion)
 // These provide the minimum base cases to stop the recursive template from infinitely recursing.
 // All specializations (positive and non-positive cycles) are provided in fl/delay.cpp and linked at compile time.
 // Use #ifndef guard to allow delay.cpp to override these with its definitions
 #ifndef FL_DELAY_CPP_SPECIALIZATIONS
-template<> FASTLED_FORCE_INLINE void delaycycles<-10>() {}
-template<> FASTLED_FORCE_INLINE void delaycycles<-9>() {}
-template<> FASTLED_FORCE_INLINE void delaycycles<-8>() {}
-template<> FASTLED_FORCE_INLINE void delaycycles<-7>() {}
-template<> FASTLED_FORCE_INLINE void delaycycles<-6>() {}
-template<> FASTLED_FORCE_INLINE void delaycycles<-5>() {}
-template<> FASTLED_FORCE_INLINE void delaycycles<-4>() {}
-template<> FASTLED_FORCE_INLINE void delaycycles<-3>() {}
-template<> FASTLED_FORCE_INLINE void delaycycles<-2>() {}
-template<> FASTLED_FORCE_INLINE void delaycycles<-1>() {}
-template<> FASTLED_FORCE_INLINE void delaycycles<0>() {}
+template<> FASTLED_FORCE_INLINE void delaycycles<-10>() FL_NOEXCEPT {}
+template<> FASTLED_FORCE_INLINE void delaycycles<-9>() FL_NOEXCEPT {}
+template<> FASTLED_FORCE_INLINE void delaycycles<-8>() FL_NOEXCEPT {}
+template<> FASTLED_FORCE_INLINE void delaycycles<-7>() FL_NOEXCEPT {}
+template<> FASTLED_FORCE_INLINE void delaycycles<-6>() FL_NOEXCEPT {}
+template<> FASTLED_FORCE_INLINE void delaycycles<-5>() FL_NOEXCEPT {}
+template<> FASTLED_FORCE_INLINE void delaycycles<-4>() FL_NOEXCEPT {}
+template<> FASTLED_FORCE_INLINE void delaycycles<-3>() FL_NOEXCEPT {}
+template<> FASTLED_FORCE_INLINE void delaycycles<-2>() FL_NOEXCEPT {}
+template<> FASTLED_FORCE_INLINE void delaycycles<-1>() FL_NOEXCEPT {}
+template<> FASTLED_FORCE_INLINE void delaycycles<0>() FL_NOEXCEPT {}
 #endif
 
 /// Delay for N clock cycles (generic NOP-based implementation)
@@ -55,7 +56,7 @@ template<> FASTLED_FORCE_INLINE void delaycycles<0>() {}
 /// delaycycles<N>() → delaycycles<N/2>() + delaycycles<N - N/2>()
 /// Base cases (0-50) are specialized in fl/delay.cpp for efficiency
 template<fl::cycle_t CYCLES>
-FASTLED_FORCE_INLINE void delaycycles() {
+FASTLED_FORCE_INLINE void delaycycles() FL_NOEXCEPT {
   constexpr fl::cycle_t HALF = CYCLES / 2;
   constexpr fl::cycle_t REMAINDER = CYCLES - HALF;
   delaycycles<HALF>();

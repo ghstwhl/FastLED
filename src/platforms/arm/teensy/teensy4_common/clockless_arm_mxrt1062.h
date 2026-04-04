@@ -7,6 +7,7 @@
 #include "fastled_delay.h"
 #include "platforms/is_platform.h"
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 FL_DISABLE_WARNING_PUSH
 FL_DISABLE_WARNING_DEPRECATED_REGISTER
@@ -49,7 +50,7 @@ public:
 	static constexpr bool __FLIP() { return FLIP; }
 	static constexpr int __WAIT_TIME() { return WAIT_TIME; }
 
-	virtual void init() {
+	virtual void init() FL_NOEXCEPT {
 		FastPin<DATA_PIN>::setOutput();
 		mPinMask = FastPin<DATA_PIN>::mask();
 		mPort = FastPin<DATA_PIN>::port();
@@ -59,7 +60,7 @@ public:
 	virtual u16 getMaxRefreshRate() const { return 400; }
 
 protected:
-	virtual void showPixels(PixelController<RGB_ORDER> & pixels) {
+	virtual void showPixels(PixelController<RGB_ORDER> & pixels) FL_NOEXCEPT {
     	mWait.wait();
 		if(!showRGBInternal(pixels)) {
       		sei(); delayMicroseconds(WAIT_TIME); cli();
@@ -68,7 +69,7 @@ protected:
     	mWait.mark();
   	}
 
-	template<int BITS> __attribute__ ((always_inline)) inline void writeBits(FASTLED_REGISTER u32 & next_mark, FASTLED_REGISTER u32 & b)  {
+	template<int BITS> __attribute__ ((always_inline)) FL_NOEXCEPT inline void writeBits(FASTLED_REGISTER u32 & next_mark, FASTLED_REGISTER u32 & b)  {
 		for(FASTLED_REGISTER u32 i = BITS-1; i > 0; --i) {
 			while(ARM_DWT_CYCCNT < next_mark);
 			next_mark = ARM_DWT_CYCCNT + off[0];
@@ -96,7 +97,7 @@ protected:
 		}
 	}
 
-	u32 showRGBInternal(PixelController<RGB_ORDER> pixels) {
+	u32 showRGBInternal(PixelController<RGB_ORDER> pixels) FL_NOEXCEPT {
 		u32 start = ARM_DWT_CYCCNT;
 
 		// Setup the pixel controller and load/scale the first byte

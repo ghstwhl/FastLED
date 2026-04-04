@@ -1,6 +1,7 @@
 // ok no namespace fl
 // allow-include-after-namespace
 #pragma once
+#include "fl/stl/noexcept.h"
 
 // IWYU pragma: private
 
@@ -27,7 +28,7 @@ namespace platforms {
 /// multiple times (subsequent calls are no-ops).
 ///
 /// @note Implementation is in src/platforms/arm/teensy/init_teensy4.cpp
-void init();
+void init() FL_NOEXCEPT;
 
 } // namespace platforms
 } // namespace fl

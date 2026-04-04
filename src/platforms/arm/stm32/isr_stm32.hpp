@@ -14,6 +14,7 @@
 
 // Global Interrupt Control (interruptsDisable/interruptsEnable)
 #include "platforms/arm/stm32/interrupts_stm32_inline.h"
+#include "fl/stl/noexcept.h"
 namespace fl {
 namespace isr {
 namespace platforms {
@@ -22,14 +23,14 @@ namespace platforms {
 // Platform ID registry: 0=STUB, 1=ESP32, 2=AVR, 3=NRF52, 4=RP2040, 5=Teensy, 6=STM32, 7=SAMD, 255=NULL
 constexpr u8 STM32_PLATFORM_ID = 6;
 
-int attach_timer_handler(const isr_config_t& config, isr_handle_t* out_handle) {
+int attach_timer_handler(const isr_config_t& config, isr_handle_t* out_handle) FL_NOEXCEPT {
     (void)config;
     (void)out_handle;
     FL_WARN("STM32 ISR: not yet implemented");
     return -100;  // Not implemented
 }
 
-int attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t* out_handle) {
+int attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t* out_handle) FL_NOEXCEPT {
     (void)pin;
     (void)config;
     (void)out_handle;
@@ -37,30 +38,30 @@ int attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t* ou
     return -100;  // Not implemented
 }
 
-int detach_handler(isr_handle_t& handle) {
+int detach_handler(isr_handle_t& handle) FL_NOEXCEPT {
     (void)handle;
     FL_WARN("STM32 ISR: not yet implemented");
     return -100;  // Not implemented
 }
 
-int enable_handler(const isr_handle_t& handle) {
+int enable_handler(const isr_handle_t& handle) FL_NOEXCEPT {
     (void)handle;
     FL_WARN("STM32 ISR: not yet implemented");
     return -100;  // Not implemented
 }
 
-int disable_handler(const isr_handle_t& handle) {
+int disable_handler(const isr_handle_t& handle) FL_NOEXCEPT {
     (void)handle;
     FL_WARN("STM32 ISR: not yet implemented");
     return -100;  // Not implemented
 }
 
-bool is_handler_enabled(const isr_handle_t& handle) {
+bool is_handler_enabled(const isr_handle_t& handle) FL_NOEXCEPT {
     (void)handle;
     return false;
 }
 
-const char* get_error_string(int error_code) {
+const char* get_error_string(int error_code) FL_NOEXCEPT {
     switch (error_code) {
         case 0: return "Success";
         case -100: return "Not implemented";
@@ -68,23 +69,23 @@ const char* get_error_string(int error_code) {
     }
 }
 
-const char* get_platform_name() {
+const char* get_platform_name() FL_NOEXCEPT {
     return "STM32 (stub)";
 }
 
-u32 get_max_timer_frequency() {
+u32 get_max_timer_frequency() FL_NOEXCEPT {
     return 1000000;  // 1 MHz placeholder
 }
 
-u32 get_min_timer_frequency() {
+u32 get_min_timer_frequency() FL_NOEXCEPT {
     return 1;  // 1 Hz placeholder
 }
 
-u8 get_max_priority() {
+u8 get_max_priority() FL_NOEXCEPT {
     return 15;  // STM32 NVIC supports 16 priority levels (0-15)
 }
 
-bool requires_assembly_handler(u8 priority) {
+bool requires_assembly_handler(u8 priority) FL_NOEXCEPT {
     (void)priority;
     return false;
 }

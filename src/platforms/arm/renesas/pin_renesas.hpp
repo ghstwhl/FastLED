@@ -28,6 +28,7 @@
 // - variant.h: PinMuxCfg_t type and g_pin_cfg[] array declaration
 // IWYU pragma: begin_keep
 #include "fl/system/arduino.h"
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 namespace fl {
 namespace platforms {
@@ -40,7 +41,7 @@ namespace platforms {
 /// @param pin Arduino pin number
 /// @return BSP pin identifier (bsp_io_port_pin_t)
 /// @note Uses g_pin_cfg[] declared in Arduino.h (from variant.h)
-inline bsp_io_port_pin_t getBspPin(int pin) {
+inline bsp_io_port_pin_t getBspPin(int pin) FL_NOEXCEPT {
     // g_pin_cfg[] is declared in Arduino.h as extern const PinMuxCfg_t g_pin_cfg[];
     // PinMuxCfg_t contains: bsp_io_port_pin_t pin; const uint16_t* list;
     return g_pin_cfg[pin].pin;
@@ -53,7 +54,7 @@ inline bsp_io_port_pin_t getBspPin(int pin) {
 /// Set pin mode (input, output, input_pullup, input_pulldown)
 /// @param pin Arduino pin number
 /// @param mode Pin mode (PinMode enum)
-inline void pinMode(int pin, PinMode mode) {
+inline void pinMode(int pin, PinMode mode) FL_NOEXCEPT {
     bsp_io_port_pin_t bsp_pin = getBspPin(pin);
     u32 cfg = 0;
 
@@ -91,13 +92,13 @@ inline void pinMode(int pin, PinMode mode) {
 
     // Configure pin using BSP IOPORT driver
     // R_IOPORT_PinCfg(ctrl, pin, cfg) atomically updates pin configuration
-    R_IOPORT_PinCfg(NULL, bsp_pin, cfg);
+    R_IOPORT_PinCfg(NULL, bsp_pin, cfg) FL_NOEXCEPT;
 }
 
 /// Write digital output value
 /// @param pin Arduino pin number
 /// @param val Output value (PinValue enum)
-inline void digitalWrite(int pin, PinValue val) {
+inline void digitalWrite(int pin, PinValue val) FL_NOEXCEPT {
     bsp_io_port_pin_t bsp_pin = getBspPin(pin);
 
     // Convert fl::PinValue to BSP level
@@ -106,18 +107,18 @@ inline void digitalWrite(int pin, PinValue val) {
 
     // Write pin state using BSP IOPORT driver
     // R_IOPORT_PinWrite() uses PCNTR3 register for atomic operation
-    R_IOPORT_PinWrite(NULL, bsp_pin, level);
+    R_IOPORT_PinWrite(NULL, bsp_pin, level) FL_NOEXCEPT;
 }
 
 /// Read digital input value
 /// @param pin Arduino pin number
 /// @return Pin value (PinValue enum: Low or High)
-inline PinValue digitalRead(int pin) {
+inline PinValue digitalRead(int pin) FL_NOEXCEPT {
     bsp_io_port_pin_t bsp_pin = getBspPin(pin);
     bsp_io_level_t level;
 
     // Read pin state using BSP IOPORT driver
-    R_IOPORT_PinRead(NULL, bsp_pin, &level);
+    R_IOPORT_PinRead(NULL, bsp_pin, &level) FL_NOEXCEPT;
 
     // Convert BSP level to fl::PinValue
     return (level == BSP_IO_LEVEL_HIGH) ? PinValue::High : PinValue::Low;
@@ -159,7 +160,7 @@ inline void analogWrite(int /*pin*/, u16 /*val*/) {
 /// @param pin Arduino pin number
 /// @param val PWM duty cycle (0-65535)
 /// @note STUB: Real implementation requires GPT timer configuration
-inline void setPwm16(int pin, fl::u16 val) {
+inline void setPwm16(int pin, fl::u16 val) FL_NOEXCEPT {
     // STUB: 16-bit PWM would use same GPT configuration as analogWrite
     // but with 16-bit period and compare registers
     // For now, scale to 8-bit and use analogWrite stub

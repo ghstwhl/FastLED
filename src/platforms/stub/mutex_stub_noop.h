@@ -41,17 +41,17 @@ public:
     MutexFake& operator=(MutexFake&&) = delete;
 
     // Non-recursive mutex operations
-    void lock() {
+    void lock() FL_NOEXCEPT {
         FL_ASSERT(!mLocked, "MutexFake: attempting to lock already locked mutex (non-recursive)");
         mLocked = true;
     }
 
-    void unlock() {
+    void unlock() FL_NOEXCEPT {
         FL_ASSERT(mLocked, "MutexFake: unlock called on unlocked mutex");
         mLocked = false;
     }
 
-    bool try_lock() {
+    bool try_lock() FL_NOEXCEPT {
         if (mLocked) {
             return false;
         }
@@ -75,18 +75,18 @@ public:
     RecursiveMutexFake& operator=(RecursiveMutexFake&&) = delete;
 
     // Recursive mutex operations
-    void lock() {
+    void lock() FL_NOEXCEPT {
         // In single-threaded mode, we just track the lock count for debugging
         mLockCount++;
     }
 
-    void unlock() {
+    void unlock() FL_NOEXCEPT {
         // In single-threaded mode, we just track the lock count for debugging
         FL_ASSERT(mLockCount > 0, "RecursiveMutexFake: unlock called without matching lock");
         mLockCount--;
     }
 
-    bool try_lock() {
+    bool try_lock() FL_NOEXCEPT {
         // In single-threaded mode, always succeed and increment count
         mLockCount++;
         return true;
@@ -103,7 +103,7 @@ class lock_guard {
 public:
     using mutex_type = Mutex;
 
-    explicit lock_guard(Mutex& m) : mMutex(m) { mMutex.lock(); }
+    explicit lock_guard(Mutex& m) FL_NOEXCEPT : mMutex(m) { mMutex.lock(); }
     lock_guard(Mutex& m, adopt_lock_t) FL_NOEXCEPT : mMutex(m) {}
 
     ~lock_guard() { mMutex.unlock(); }
@@ -129,14 +129,14 @@ public:
     // Constructors
     unique_lock() FL_NOEXCEPT : mMutex(nullptr), mOwns(false) {}
 
-    explicit unique_lock(Mutex& m) : mMutex(&m), mOwns(false) {
+    explicit unique_lock(Mutex& m) FL_NOEXCEPT : mMutex(&m), mOwns(false) {
         lock();
         mOwns = true;
     }
 
     unique_lock(Mutex& m, defer_lock_t) FL_NOEXCEPT : mMutex(&m), mOwns(false) {}
 
-    unique_lock(Mutex& m, try_to_lock_t) : mMutex(&m), mOwns(m.try_lock()) {}
+    unique_lock(Mutex& m, try_to_lock_t) FL_NOEXCEPT : mMutex(&m), mOwns(m.try_lock()) {}
 
     unique_lock(Mutex& m, adopt_lock_t) FL_NOEXCEPT : mMutex(&m), mOwns(true) {}
 
@@ -173,7 +173,7 @@ public:
     }
 
     // Locking operations
-    void lock() {
+    void lock() FL_NOEXCEPT {
         if (!mMutex) {
             // throw error: operation not permitted
             return;
@@ -186,7 +186,7 @@ public:
         mOwns = true;
     }
 
-    bool try_lock() {
+    bool try_lock() FL_NOEXCEPT {
         if (!mMutex) {
             return false;
         }
@@ -197,7 +197,7 @@ public:
         return mOwns;
     }
 
-    void unlock() {
+    void unlock() FL_NOEXCEPT {
         if (!mOwns) {
             // throw error: operation not permitted
             return;

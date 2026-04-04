@@ -9,13 +9,14 @@
 #include <OctoWS2811.h>
 // IWYU pragma: end_keep
 #include "fl/stl/allocator.h"
+#include "fl/stl/noexcept.h"
 namespace fl {
 template<EOrder RGB_ORDER = GRB, u8 CHIP = WS2811_800kHz>
 class COctoWS2811Controller : public CPixelLEDController<RGB_ORDER, 8, 0xFF> {
   OctoWS2811  *pocto;
   u8 *drawbuffer,*framebuffer;
 
-  void _init(int nLeds) {
+  void _init(int nLeds) FL_NOEXCEPT {
     if(pocto == nullptr) {
       drawbuffer = (u8*)fl::malloc(nLeds * 8 * 3);
       framebuffer = (u8*)fl::malloc(nLeds * 8 * 3);
@@ -35,7 +36,7 @@ public:
 
   virtual void init() { /* do nothing yet */ }
 
-  virtual void showPixels(PixelController<RGB_ORDER, 8, 0xFF> &pixels) {
+  virtual void showPixels(PixelController<RGB_ORDER, 8, 0xFF> &pixels) FL_NOEXCEPT {
     u32 size = pixels.size();
     u32 sizeTimes8 = 8U * size;
     _init(size);

@@ -7,6 +7,7 @@
 #include "platforms/arm/stm32/is_stm32.h"
 #include "fl/system/pin.h"  // For PinMode, PinValue enums
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 FL_DISABLE_WARNING_PUSH
 FL_DISABLE_WARNING_DEPRECATED_REGISTER
@@ -29,7 +30,7 @@ public:
     typedef u32 port_t;
 
     #if 0
-    inline static void setOutput() {
+    inline static void setOutput() FL_NOEXCEPT {
         if(_BIT<8) {
             _CRL::r() = (_CRL::r() & (0xF << (_BIT*4)) | (0x1 << (_BIT*4)));
         } else {

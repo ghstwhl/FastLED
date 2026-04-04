@@ -29,6 +29,7 @@
 
 // IWYU pragma: begin_keep
 #include <stdlib.h>  // malloc, free
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 
 namespace fl {
@@ -46,7 +47,7 @@ static constexpr size_t kDefaultCoroutineStackSize = 4096;
 static constexpr fl::u32 kStackCanaryValue = 0xDEADC0DE;
 
 /// @brief Initialize a coroutine stack so context_switch will "return" into entry_fn
-inline void* init_coroutine_stack(void* stack_top, void (*entry_fn)()) {
+inline void* init_coroutine_stack(void* stack_top, void (*entry_fn)()) FL_NOEXCEPT {
     uintptr_t sp = reinterpret_cast<uintptr_t>(stack_top);  // ok reinterpret cast
     sp &= ~7u;  // align down to 8 bytes
     sp -= kContextFrameSize;
@@ -72,13 +73,13 @@ struct TeensyContextState {
 
 class CoroutinePlatformTeensy : public ICoroutinePlatform {
 public:
-    void* createContext(void (*entry_fn)(), size_t stack_size) override;
-    void* createRunnerContext() override;
-    void destroyContext(void* ctx) override;
-    void contextSwitch(void* from_ctx, void* to_ctx) override;
-    bool inInterruptContext() const override;
-    bool checkStackHealth(void* ctx) const override;
-    fl::u32 micros() const override;
+    void* createContext(void (*entry_fn)(), size_t stack_size) FL_NOEXCEPT override;
+    void* createRunnerContext() FL_NOEXCEPT override;
+    void destroyContext(void* ctx) FL_NOEXCEPT override;
+    void contextSwitch(void* from_ctx, void* to_ctx) FL_NOEXCEPT override;
+    bool inInterruptContext() const FL_NOEXCEPT override;
+    bool checkStackHealth(void* ctx) const FL_NOEXCEPT override;
+    fl::u32 micros() const FL_NOEXCEPT override;
 };
 
 //=============================================================================
@@ -87,7 +88,7 @@ public:
 
 class CoroutineRuntimeTeensy : public ICoroutineRuntime {
 public:
-    void pumpCoroutines(fl::u32 us) override {
+    void pumpCoroutines(fl::u32 us) FL_NOEXCEPT override {
         if (CoroutineContext::isInsideCoroutine()) {
             CoroutineContext::suspend();
         } else {
@@ -108,12 +109,12 @@ public:
     static TaskCoroutinePtr create(fl::string name,
                                     TaskFunction function,
                                     size_t stack_size = 4096,
-                                    u8 priority = 5);
+                                    u8 priority = 5) FL_NOEXCEPT;
 
     ~TaskCoroutineTeensy() override;
 
-    void stop() override;
-    bool isRunning() const override;
+    void stop() FL_NOEXCEPT override;
+    bool isRunning() const FL_NOEXCEPT override;
 
 private:
     TaskCoroutineTeensy() = default;
@@ -190,7 +191,7 @@ void context_switch(void** /*old_sp*/, void* /*new_sp*/) {
 //=============================================================================
 
 void* CoroutinePlatformTeensy::createContext(void (*entry_fn)(),
-                                              size_t stack_size) {
+                                              size_t stack_size) FL_NOEXCEPT {
     if (stack_size < kMinCoroutineStackSize) {
         stack_size = kMinCoroutineStackSize;
     }
@@ -216,7 +217,7 @@ void* CoroutinePlatformTeensy::createContext(void (*entry_fn)(),
     return state;
 }
 
-void* CoroutinePlatformTeensy::createRunnerContext() {
+void* CoroutinePlatformTeensy::createRunnerContext() FL_NOEXCEPT {
     auto* state = new TeensyContextState();  // ok bare allocation
     // Runner uses main thread's MSP — saved_sp filled on first contextSwitch
     state->saved_sp = nullptr;
@@ -225,7 +226,7 @@ void* CoroutinePlatformTeensy::createRunnerContext() {
     return state;
 }
 
-void CoroutinePlatformTeensy::destroyContext(void* ctx) {
+void CoroutinePlatformTeensy::destroyContext(void* ctx) FL_NOEXCEPT {
     if (!ctx) return;
     auto* state = static_cast<TeensyContextState*>(ctx);
     if (state->stack_base) {
@@ -234,7 +235,7 @@ void CoroutinePlatformTeensy::destroyContext(void* ctx) {
     delete state;  // ok bare allocation
 }
 
-void CoroutinePlatformTeensy::contextSwitch(void* from_ctx, void* to_ctx) {
+void CoroutinePlatformTeensy::contextSwitch(void* from_ctx, void* to_ctx) FL_NOEXCEPT {
     auto* from = static_cast<TeensyContextState*>(from_ctx);
     auto* to = static_cast<TeensyContextState*>(to_ctx);
     // Naked asm: saves regs to from->saved_sp, restores from to->saved_sp,
@@ -242,13 +243,13 @@ void CoroutinePlatformTeensy::contextSwitch(void* from_ctx, void* to_ctx) {
     context_switch(&from->saved_sp, to->saved_sp);
 }
 
-bool CoroutinePlatformTeensy::inInterruptContext() const {
+bool CoroutinePlatformTeensy::inInterruptContext() const FL_NOEXCEPT {
     fl::u32 ipsr;
-    __asm__ volatile("MRS %0, ipsr" : "=r"(ipsr));
+    __asm__ volatile("MRS %0, ipsr" : "=r"(ipsr)) FL_NOEXCEPT;
     return ipsr != 0;
 }
 
-bool CoroutinePlatformTeensy::checkStackHealth(void* ctx) const {
+bool CoroutinePlatformTeensy::checkStackHealth(void* ctx) const FL_NOEXCEPT {
     if (!ctx) return true;
     auto* state = static_cast<TeensyContextState*>(ctx);
     if (!state->stack_base) return true;  // runner has no managed stack
@@ -257,14 +258,14 @@ bool CoroutinePlatformTeensy::checkStackHealth(void* ctx) const {
     return *canary == kStackCanaryValue;
 }
 
-fl::u32 CoroutinePlatformTeensy::micros() const {
+fl::u32 CoroutinePlatformTeensy::micros() const FL_NOEXCEPT {
     return static_cast<fl::u32>(::micros());
 }
 
 // Register Teensy platform into generic coroutine_context code
 namespace {
 struct TeensyPlatformRegistrar {
-    TeensyPlatformRegistrar() {
+    TeensyPlatformRegistrar() FL_NOEXCEPT {
         ICoroutinePlatform::setInstance(
             &fl::Singleton<CoroutinePlatformTeensy>::instance());
     }
@@ -272,7 +273,7 @@ struct TeensyPlatformRegistrar {
 static TeensyPlatformRegistrar sTeensyPlatformRegistrar;
 } // namespace
 
-ICoroutineRuntime& ICoroutineRuntime::instance() {
+ICoroutineRuntime& ICoroutineRuntime::instance() FL_NOEXCEPT {
     return fl::Singleton<CoroutineRuntimeTeensy>::instance();
 }
 
@@ -284,14 +285,14 @@ TaskCoroutinePtr TaskCoroutineTeensy::create(
         fl::string name,
         TaskFunction function,
         size_t stack_size,
-        u8 /*priority*/) {
+        u8 /*priority*/) FL_NOEXCEPT {
     auto* ctx = CoroutineContext::create(fl::move(function), stack_size);
     if (!ctx) {
         FL_WARN("TaskCoroutineTeensy: Failed to create context for '" << name << "'");
         return nullptr;
     }
 
-    TaskCoroutinePtr task(new TaskCoroutineTeensy());  // ok bare allocation
+    TaskCoroutinePtr task(new TaskCoroutineTeensy()) FL_NOEXCEPT;  // ok bare allocation
     auto* impl = static_cast<TaskCoroutineTeensy*>(task.get());
     impl->mName = fl::move(name);
     impl->mContext.reset(ctx);
@@ -307,7 +308,7 @@ TaskCoroutineTeensy::~TaskCoroutineTeensy() {
     // mContext freed automatically by unique_ptr destructor
 }
 
-void TaskCoroutineTeensy::stop() {
+void TaskCoroutineTeensy::stop() FL_NOEXCEPT {
     if (!mContext) return;
 
     mContext->stop_and_complete();
@@ -316,7 +317,7 @@ void TaskCoroutineTeensy::stop() {
     CoroutineRunner::instance().remove(mContext.get());
 }
 
-bool TaskCoroutineTeensy::isRunning() const {
+bool TaskCoroutineTeensy::isRunning() const FL_NOEXCEPT {
     if (!mContext) return false;
     return !mContext->is_completed();
 }
@@ -329,7 +330,7 @@ TaskCoroutinePtr createTaskCoroutine(fl::string name,
                                       ICoroutineTask::TaskFunction function,
                                       size_t stack_size,
                                       u8 priority,
-                                      int /*core_id*/) {
+                                      int /*core_id*/) FL_NOEXCEPT {
     return TaskCoroutineTeensy::create(fl::move(name), fl::move(function), stack_size, priority);
 }
 
@@ -337,7 +338,7 @@ TaskCoroutinePtr createTaskCoroutine(fl::string name,
 // Static exitCurrent — suspend back to runner and mark completed
 //=============================================================================
 
-void ICoroutineTask::exitCurrent() {
+void ICoroutineTask::exitCurrent() FL_NOEXCEPT {
     CoroutineContext* ctx = CoroutineContext::runningCoroutine();
     if (ctx) {
         ctx->set_should_stop(true);

@@ -1,4 +1,5 @@
 #pragma once
+#include "fl/stl/noexcept.h"
 
 // IWYU pragma: private
 
@@ -16,7 +17,7 @@ namespace platforms {
 ///
 /// This is a no-op function for platforms that don't have SPI hardware.
 /// Platform-specific implementations should replace this with actual registration code.
-inline void initSpiHardware() {
+inline void initSpiHardware() FL_NOEXCEPT {
     // No-op: This platform doesn't have SPI hardware
 }
 

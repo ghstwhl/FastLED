@@ -8,22 +8,23 @@
 #include "fl/stl/vector.h"
 #include "fl/stl/unique_ptr.h"
 #include "fl/stl/function.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
 // Temporary storage for UI components that arrive before handlers are set
-static fl::vector_inlined<fl::weak_ptr<JsonUiInternal>, 32>& getPendingComponents() {
+static fl::vector_inlined<fl::weak_ptr<JsonUiInternal>, 32>& getPendingComponents() FL_NOEXCEPT {
     static fl::vector_inlined<fl::weak_ptr<JsonUiInternal>, 32> pending;
     return pending;
 }
 
 // Internal JsonUiManager instance
-static fl::unique_ptr<JsonUiManager>& getInternalManager() {
+static fl::unique_ptr<JsonUiManager>& getInternalManager() FL_NOEXCEPT {
     static fl::unique_ptr<JsonUiManager> manager;
     return manager;
 }
 
-JsonUiUpdateInput setJsonUiHandlers(const JsonUiUpdateOutput& updateJsHandler) {
+JsonUiUpdateInput setJsonUiHandlers(const JsonUiUpdateOutput& updateJsHandler) FL_NOEXCEPT {
     // FL_WARN("setJsonUiHandlers: ENTRY - updateJsHandler is " << (updateJsHandler ? "VALID" : "nullptr/EMPTY"));
     
     // Create internal JsonUiManager only if updateJsHandler is valid (not empty)
@@ -58,7 +59,7 @@ JsonUiUpdateInput setJsonUiHandlers(const JsonUiUpdateOutput& updateJsHandler) {
         
         // Return a function that allows updating the driver state
         // FL_WARN("setJsonUiHandlers: Creating and returning updateEngineState lambda");
-        auto result = fl::function<void(const char*)>([](const char* jsonStr) {
+        auto result = fl::function<void(const char*) FL_NOEXCEPT >([](const char* jsonStr) {
             // FL_WARN("*** updateEngineState lambda CALLED ***");
             // FL_WARN("*** updateEngineState lambda ENTRY: jsonStr=" << (jsonStr ? jsonStr : "nullptr"));
             // FL_WARN("*** updateEngineState lambda JSON LENGTH: " << (jsonStr ? strlen(jsonStr) : 0));
@@ -83,7 +84,7 @@ JsonUiUpdateInput setJsonUiHandlers(const JsonUiUpdateOutput& updateJsHandler) {
     }
 }
 
-void addJsonUiComponent(fl::weak_ptr<JsonUiInternal> component) {
+void addJsonUiComponent(fl::weak_ptr<JsonUiInternal> component) FL_NOEXCEPT {
     // FL_WARN("addJsonUiComponent: ENTRY - component=" << component);
     
     // Check if we have an internal manager first
@@ -104,7 +105,7 @@ void addJsonUiComponent(fl::weak_ptr<JsonUiInternal> component) {
     // FL_WARN("addJsonUiComponent: no manager exists, component stored in pending list: " << component);
 }
 
-void removeJsonUiComponent(fl::weak_ptr<JsonUiInternal> component) {
+void removeJsonUiComponent(fl::weak_ptr<JsonUiInternal> component) FL_NOEXCEPT {
     // Check if we have an internal manager first
     // No longer need to clear functions as we're not using lambda captures anymore
 
@@ -121,7 +122,7 @@ void removeJsonUiComponent(fl::weak_ptr<JsonUiInternal> component) {
         auto comp_locked = component.lock();
         auto pending_locked = pending_component.lock();
         return comp_locked && pending_locked && comp_locked == pending_locked;
-    });
+    }) FL_NOEXCEPT;
     
     if (it != pending.end()) {
         pending.erase(it);
@@ -131,7 +132,7 @@ void removeJsonUiComponent(fl::weak_ptr<JsonUiInternal> component) {
     }
 }
 
-void processJsonUiPendingUpdates() {
+void processJsonUiPendingUpdates() FL_NOEXCEPT {
     // Force immediate processing of any pending UI updates (for testing)
     auto& manager = getInternalManager();
     if (manager) {

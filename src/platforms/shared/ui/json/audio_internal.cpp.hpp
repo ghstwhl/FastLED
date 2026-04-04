@@ -4,10 +4,11 @@
 #include "fl/system/log.h"
 #include "platforms/shared/ui/json/audio_buffer.h"
 #include "fl/audio/audio.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
-void JsonUiAudioInternal::toJson(fl::json &json) const {
+void JsonUiAudioInternal::toJson(fl::json &json) const FL_NOEXCEPT {
     json.set("name", name());
     json.set("group", groupName());
     json.set("type", "audio");
@@ -19,7 +20,7 @@ void JsonUiAudioInternal::toJson(fl::json &json) const {
     // Echoing would create a feedback loop of growing JSON payloads.
 }
 
-void JsonUiAudioInternal::updateInternal(const fl::json &value) {
+void JsonUiAudioInternal::updateInternal(const fl::json &value) FL_NOEXCEPT {
     if (value.contains("audioData")) {
         fl::json audioDataArray = value["audioData"];
 

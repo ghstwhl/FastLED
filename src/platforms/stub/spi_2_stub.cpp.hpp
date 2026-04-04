@@ -8,11 +8,12 @@
 #include "platforms/stub/spi_2_stub.h"
 #include "platforms/shared/spi_manager.h"  // For DMABuffer, TransmitMode, SPIError
 #include "fl/system/log.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
 SpiHw2Stub::SpiHw2Stub(int bus_id, const char* name)
-    : mBusId(bus_id)
+ FL_NOEXCEPT : mBusId(bus_id)
     , mName(name)
     , mInitialized(false)
     , mBusy(false)
@@ -22,7 +23,7 @@ SpiHw2Stub::SpiHw2Stub(int bus_id, const char* name)
     , mBufferAcquired(false) {
 }
 
-bool SpiHw2Stub::begin(const SpiHw2::Config& config) {
+bool SpiHw2Stub::begin(const SpiHw2::Config& config) FL_NOEXCEPT {
     if (mInitialized) {
         return true;  // Already initialized
     }
@@ -37,7 +38,7 @@ bool SpiHw2Stub::begin(const SpiHw2::Config& config) {
     return true;
 }
 
-void SpiHw2Stub::end() {
+void SpiHw2Stub::end() FL_NOEXCEPT {
     mInitialized = false;
     mBusy = false;
     mLastBuffer.clear();
@@ -47,7 +48,7 @@ void SpiHw2Stub::end() {
     mBufferAcquired = false;
 }
 
-DMABuffer SpiHw2Stub::acquireDMABuffer(size_t bytes_per_lane) {
+DMABuffer SpiHw2Stub::acquireDMABuffer(size_t bytes_per_lane) FL_NOEXCEPT {
     if (!mInitialized) {
         return DMABuffer(SPIError::NOT_INITIALIZED);
     }
@@ -74,7 +75,7 @@ DMABuffer SpiHw2Stub::acquireDMABuffer(size_t bytes_per_lane) {
     return mCurrentBuffer;
 }
 
-bool SpiHw2Stub::transmit(TransmitMode mode) {
+bool SpiHw2Stub::transmit(TransmitMode mode) FL_NOEXCEPT {
     (void)mode;  // Unused in stub
 
     if (!mInitialized || !mBufferAcquired) {
@@ -99,7 +100,7 @@ bool SpiHw2Stub::transmit(TransmitMode mode) {
     return true;
 }
 
-bool SpiHw2Stub::waitComplete(u32 timeout_ms) {
+bool SpiHw2Stub::waitComplete(u32 timeout_ms) FL_NOEXCEPT {
     (void)timeout_ms;  // Unused in stub
     mBusy = false;
 
@@ -109,45 +110,45 @@ bool SpiHw2Stub::waitComplete(u32 timeout_ms) {
     return true;
 }
 
-bool SpiHw2Stub::isBusy() const {
+bool SpiHw2Stub::isBusy() const FL_NOEXCEPT {
     return mBusy;
 }
 
-bool SpiHw2Stub::isInitialized() const {
+bool SpiHw2Stub::isInitialized() const FL_NOEXCEPT {
     return mInitialized;
 }
 
-int SpiHw2Stub::getBusId() const {
+int SpiHw2Stub::getBusId() const FL_NOEXCEPT {
     return mBusId;
 }
 
-const char* SpiHw2Stub::getName() const {
+const char* SpiHw2Stub::getName() const FL_NOEXCEPT {
     return mName;
 }
 
-const fl::vector<u8>& SpiHw2Stub::getLastTransmission() const {
+const fl::vector<u8>& SpiHw2Stub::getLastTransmission() const FL_NOEXCEPT {
     return mLastBuffer;
 }
 
-u32 SpiHw2Stub::getTransmissionCount() const {
+u32 SpiHw2Stub::getTransmissionCount() const FL_NOEXCEPT {
     return mTransmitCount;
 }
 
-u32 SpiHw2Stub::getClockSpeed() const {
+u32 SpiHw2Stub::getClockSpeed() const FL_NOEXCEPT {
     return mClockSpeed;
 }
 
-bool SpiHw2Stub::isTransmissionActive() const {
+bool SpiHw2Stub::isTransmissionActive() const FL_NOEXCEPT {
     return mBusy;
 }
 
-void SpiHw2Stub::reset() {
+void SpiHw2Stub::reset() FL_NOEXCEPT {
     mLastBuffer.clear();
     mTransmitCount = 0;
     mBusy = false;
 }
 
-fl::vector<fl::vector<u8>> SpiHw2Stub::extractLanes(u8 num_lanes, size_t bytes_per_lane) const {
+fl::vector<fl::vector<u8>> SpiHw2Stub::extractLanes(u8 num_lanes, size_t bytes_per_lane) const FL_NOEXCEPT {
     fl::vector<fl::vector<u8>> lanes(num_lanes);
 
     if (num_lanes != 2) {
@@ -209,12 +210,12 @@ fl::vector<fl::vector<u8>> SpiHw2Stub::extractLanes(u8 num_lanes, size_t bytes_p
 
 namespace {
 // Singleton getters for mock controller instances (Meyer's Singleton pattern)
-fl::shared_ptr<SpiHw2Stub>& getController0_Spi2() {
+fl::shared_ptr<SpiHw2Stub>& getController0_Spi2() FL_NOEXCEPT {
     static fl::shared_ptr<SpiHw2Stub> instance = fl::make_shared<SpiHw2Stub>(0, "MockDual0");
     return instance;
 }
 
-fl::shared_ptr<SpiHw2Stub>& getController1_Spi2() {
+fl::shared_ptr<SpiHw2Stub>& getController1_Spi2() FL_NOEXCEPT {
     static fl::shared_ptr<SpiHw2Stub> instance = fl::make_shared<SpiHw2Stub>(1, "MockDual1");
     return instance;
 }
@@ -230,7 +231,7 @@ namespace platforms {
 ///
 /// Called lazily on first access to SpiHw2::getAll().
 /// Registers mock SpiHw2 controller instances for testing.
-void initSpiHw2Instances() {
+void initSpiHw2Instances() FL_NOEXCEPT {
     FL_WARN("Registering SpiHw2 stub instances...");
     SpiHw2::registerInstance(getController0_Spi2());
     SpiHw2::registerInstance(getController1_Spi2());

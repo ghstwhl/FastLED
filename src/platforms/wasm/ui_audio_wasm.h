@@ -10,6 +10,7 @@
 #include "fl/audio/audio.h"
 #include "fl/audio/audio_input.h"  // For Config
 #include "fl/stl/shared_ptr.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -22,16 +23,16 @@ class JsonUiAudioInternal;
  */
 class WasmAudioImpl {
   public:
-    WasmAudioImpl(const fl::string& name);
-    WasmAudioImpl(const fl::string& name, const fl::url& url);
-    WasmAudioImpl(const fl::string& name, const fl::audio::Config& config);
+    WasmAudioImpl(const fl::string& name) FL_NOEXCEPT;
+    WasmAudioImpl(const fl::string& name, const fl::url& url) FL_NOEXCEPT;
+    WasmAudioImpl(const fl::string& name, const fl::audio::Config& config) FL_NOEXCEPT;
     ~WasmAudioImpl();
 
-    audio::Sample next();
-    bool hasNext();
+    audio::Sample next() FL_NOEXCEPT;
+    bool hasNext() FL_NOEXCEPT;
 
     // Group setting (used by JSON UI system)
-    void setGroup(const fl::string& groupName);
+    void setGroup(const fl::string& groupName) FL_NOEXCEPT;
 
     // Expose underlying audio input for FastLED.add() auto-pump
     fl::shared_ptr<audio::IInput> audioInput() { return mWasmInputOwner; }

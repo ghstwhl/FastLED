@@ -14,6 +14,7 @@
 #include "fl/system/log.h"
 #include "fl/system/log.h"
 #include "fl/stl/vector.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -21,7 +22,7 @@ namespace fl {
 // Factory
 // ============================================================================
 
-fl::shared_ptr<NativeRxDevice> NativeRxDevice::create(int pin) {
+fl::shared_ptr<NativeRxDevice> NativeRxDevice::create(int pin) FL_NOEXCEPT {
     return fl::make_shared<NativeRxDevice>(pin);
 }
 
@@ -30,7 +31,7 @@ fl::shared_ptr<NativeRxDevice> NativeRxDevice::create(int pin) {
 // ============================================================================
 
 NativeRxDevice::NativeRxDevice(int pin)
-    : mPin(pin)
+ FL_NOEXCEPT : mPin(pin)
     , mFinished(false)
     , mArmed(false) {
 }
@@ -47,7 +48,7 @@ NativeRxDevice::~NativeRxDevice() {
 // RxDevice interface
 // ============================================================================
 
-bool NativeRxDevice::begin(const RxConfig& config) {
+bool NativeRxDevice::begin(const RxConfig& config) FL_NOEXCEPT {
     (void)config;
     // Clear any previous callback before re-arming
     if (mArmed) {
@@ -58,16 +59,16 @@ bool NativeRxDevice::begin(const RxConfig& config) {
     // Register callback on the pin: simulateWS2812Output() will fire it
     fl::stub::setPinEdgeCallback(mPin, [this](bool high, u32 duration_ns) {
         this->onEdge(high, duration_ns);
-    });
+    }) FL_NOEXCEPT;
     mArmed = true;
     return true;
 }
 
-bool NativeRxDevice::finished() const {
+bool NativeRxDevice::finished() const FL_NOEXCEPT {
     return mFinished;
 }
 
-RxWaitResult NativeRxDevice::wait(u32 timeout_ms) {
+RxWaitResult NativeRxDevice::wait(u32 timeout_ms) FL_NOEXCEPT {
     (void)timeout_ms;
     // Clear callback — edges are already in mEdges from synchronous simulation
     if (mArmed) {
@@ -87,7 +88,7 @@ RxWaitResult NativeRxDevice::wait(u32 timeout_ms) {
 // Edge callback — called by simulateWS2812Output() via registered callback
 // ============================================================================
 
-void NativeRxDevice::onEdge(bool high, u32 duration_ns) {
+void NativeRxDevice::onEdge(bool high, u32 duration_ns) FL_NOEXCEPT {
     EdgeTime edge;
     edge.ns   = duration_ns;
     edge.high = high ? 1u : 0u;
@@ -107,7 +108,7 @@ void NativeRxDevice::onEdge(bool high, u32 duration_ns) {
 /// Bit 0: T0H ∈ [t0h_min, t0h_max], T0L ∈ [t0l_min, t0l_max]
 /// Bit 1: T1H ∈ [t1h_min, t1h_max], T1L ∈ [t1l_min, t1l_max]
 fl::result<u32, DecodeError> NativeRxDevice::decode(const ChipsetTiming4Phase& timing,
-                                                     fl::span<u8> out) {
+                                                     fl::span<u8> out) FL_NOEXCEPT {
     size_t edge_count = mEdges.size();
     if (edge_count == 0) {
         FL_WARN("NativeRxDevice::decode: No edges recorded for pin " << mPin);
@@ -195,7 +196,7 @@ fl::result<u32, DecodeError> NativeRxDevice::decode(const ChipsetTiming4Phase& t
     return fl::result<u32, DecodeError>::success(static_cast<u32>(bytes_written));
 }
 
-size_t NativeRxDevice::getRawEdgeTimes(fl::span<EdgeTime> out, size_t offset) {
+size_t NativeRxDevice::getRawEdgeTimes(fl::span<EdgeTime> out, size_t offset) FL_NOEXCEPT {
     size_t total = mEdges.size();
     if (offset >= total) return 0;
 
@@ -208,15 +209,15 @@ size_t NativeRxDevice::getRawEdgeTimes(fl::span<EdgeTime> out, size_t offset) {
     return count;
 }
 
-const char* NativeRxDevice::name() const {
+const char* NativeRxDevice::name() const FL_NOEXCEPT {
     return "native";
 }
 
-int NativeRxDevice::getPin() const {
+int NativeRxDevice::getPin() const FL_NOEXCEPT {
     return mPin;
 }
 
-bool NativeRxDevice::injectEdges(fl::span<const EdgeTime> edges) {
+bool NativeRxDevice::injectEdges(fl::span<const EdgeTime> edges) FL_NOEXCEPT {
     for (size_t i = 0; i < edges.size(); i++) {
         mEdges.push_back(edges[i]);
     }

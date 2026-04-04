@@ -3,9 +3,10 @@
 // IWYU pragma: private
 
 #include "fl/fastled.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
-static void stub_compile_tests() {
+static void stub_compile_tests() FL_NOEXCEPT {
 #if FASTLED_USE_PROGMEM != 0
 #error "FASTLED_USE_PROGMEM should be 0 for stub platforms"
 #endif

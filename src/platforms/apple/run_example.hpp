@@ -26,8 +26,9 @@
 
 // Timeout watchdog for hung example detection
 #include "timeout_watchdog.h"  // ok include path
+#include "fl/stl/noexcept.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv) FL_NOEXCEPT {
     // Setup crash handler BEFORE loading any shared libraries
     runner_setup_crash_handler();
 

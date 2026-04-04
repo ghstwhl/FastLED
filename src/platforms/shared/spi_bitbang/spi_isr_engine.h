@@ -16,6 +16,7 @@
 
 #include "fl/stl/stdint.h"
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 FL_EXTERN_C_BEGIN
 
@@ -89,38 +90,38 @@ typedef struct {
 } FastLED_SPI_ISR_State;
 
 /* --- ISR state accessor ---------------------------------------------------- */
-FastLED_SPI_ISR_State* fl_spi_state(void);
+FastLED_SPI_ISR_State* fl_spi_state(void) FL_NOEXCEPT;
 
 /* --- Payload configuration (main thread) ----------------------------------- */
-void fl_spi_set_clock_mask(fl::u32 mask);
-void fl_spi_set_total_bytes(fl::u16 n);
-void fl_spi_set_data_byte(fl::u16 i, fl::u8 v);
-void fl_spi_set_lut_entry(fl::u8 v, fl::u32 set_m, fl::u32 clr_m);
+void fl_spi_set_clock_mask(fl::u32 mask) FL_NOEXCEPT;
+void fl_spi_set_total_bytes(fl::u16 n) FL_NOEXCEPT;
+void fl_spi_set_data_byte(fl::u16 i, fl::u8 v) FL_NOEXCEPT;
+void fl_spi_set_lut_entry(fl::u8 v, fl::u32 set_m, fl::u32 clr_m) FL_NOEXCEPT;
 
 /* --- Direct LUT array access (main thread) --------------------------------- */
-PinMaskEntry* fl_spi_get_lut_array(void);  /* Returns mutable reference to 256-entry LUT */
-fl::u8*      fl_spi_get_data_array(void); /* Returns mutable reference to 256-byte data buffer */
+PinMaskEntry* fl_spi_get_lut_array(void) FL_NOEXCEPT;  /* Returns mutable reference to 256-entry LUT */
+fl::u8*      fl_spi_get_data_array(void) FL_NOEXCEPT; /* Returns mutable reference to 256-byte data buffer */
 
 /* --- Timing and control ---------------------------------------------------- */
-void fl_spi_visibility_delay_us(fl::u32 approx_us);
-void fl_spi_arm(void);
+void fl_spi_visibility_delay_us(fl::u32 approx_us) FL_NOEXCEPT;
+void fl_spi_arm(void) FL_NOEXCEPT;
 
 /* --- Status accessors (main thread) ---------------------------------------- */
-fl::u32 fl_spi_status_flags(void);
-void     fl_spi_ack_done(void);
-void     fl_spi_reset_state(void);
+fl::u32 fl_spi_status_flags(void) FL_NOEXCEPT;
+void     fl_spi_ack_done(void) FL_NOEXCEPT;
+void     fl_spi_reset_state(void) FL_NOEXCEPT;
 
 /* --- ISR function ---------------------------------------------------------- */
-FL_IRAM void fl_parallel_spi_isr(void);
+FL_IRAM void fl_parallel_spi_isr(void) FL_NOEXCEPT;
 
 /* --- Platform-specific ISR setup/teardown ---------------------------------- */
-int  fl_spi_platform_isr_start(fl::u32 timer_hz);
-void fl_spi_platform_isr_stop(void);
+int  fl_spi_platform_isr_start(fl::u32 timer_hz) FL_NOEXCEPT;
+void fl_spi_platform_isr_stop(void) FL_NOEXCEPT;
 
 #ifdef FL_SPI_ISR_VALIDATE
 /* --- Validation buffer accessors ------------------------------------------- */
-const FastLED_GPIO_Event* fl_spi_get_validation_events(void);
-fl::u16 fl_spi_get_validation_event_count(void);
+const FastLED_GPIO_Event* fl_spi_get_validation_events(void) FL_NOEXCEPT;
+fl::u16 fl_spi_get_validation_event_count(void) FL_NOEXCEPT;
 #endif
 
 FL_EXTERN_C_END

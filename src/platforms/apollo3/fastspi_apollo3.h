@@ -10,6 +10,7 @@
 #include "fastspi_types.h"
 #include "fl/system/delay.h"
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 FL_DISABLE_WARNING_PUSH
 FL_DISABLE_WARNING_DEPRECATED_REGISTER
@@ -31,7 +32,7 @@ public:
 	void setSelect(Selectable *pSelect) { mPSelect = pSelect; }
 
 	// initialize the pins for fastgpio
-	void init() {
+	void init() FL_NOEXCEPT {
 		FastPin<_CLOCK_PIN>::setOutput();
 		FastPin<_CLOCK_PIN>::lo();
 		FastPin<_DATA_PIN>::setOutput();
@@ -44,7 +45,7 @@ public:
 	// release the CS select
 	void inline release() { /* TODO */ }
 
-	void endTransaction() {
+	void endTransaction() FL_NOEXCEPT {
 		waitFully();
 		release();
 	}
@@ -56,7 +57,7 @@ public:
 	static void finalizeTransmission() { }
 
 	// write a byte as bits
-	static void writeByte(u8 b) {
+	static void writeByte(u8 b) FL_NOEXCEPT {
 		writeBit<7>(b);
 		writeBit<6>(b);
 		writeBit<5>(b);
@@ -68,25 +69,25 @@ public:
 	}
 
 	// write a word out via SPI (returns immediately on writing register)
-	static void writeWord(u16 w) {
+	static void writeWord(u16 w) FL_NOEXCEPT {
 		writeByte((u8)((w >> 8) & 0xff));
 		writeByte((u8)(w & 0xff));
 	}
 
 	// A raw set of writing byte values, assumes setup/init/waiting done elsewhere
-	static void writeBytesValueRaw(u8 value, int len) {
+	static void writeBytesValueRaw(u8 value, int len) FL_NOEXCEPT {
 		while(len--) { writeByte(value); }
 	}
 
 	// A full cycle of writing a value for len bytes, including select, release, and waiting
-	void writeBytesValue(u8 value, int len) {
+	void writeBytesValue(u8 value, int len) FL_NOEXCEPT {
 		select();
 		writeBytesValueRaw(value, len);
 		release();
 	}
 
 	// A full cycle of writing a value for len bytes, including select, release, and waiting
-	template <class D> void writeBytes(FASTLED_REGISTER u8 *data, int len) {
+	template <class D> void writeBytes(FASTLED_REGISTER u8 *data, int len) FL_NOEXCEPT {
 		u8 *end = data + len;
 		select();
 		// could be optimized to write 16bit words out instead of 8bit bytes
@@ -102,7 +103,7 @@ public:
 	void writeBytes(FASTLED_REGISTER u8 *data, int len) { writeBytes<DATA_NOP>(data, len); }
 
 	// write a single bit out, which bit from the passed in byte is determined by template parameter
-	template <u8 BIT> inline static void writeBit(u8 b) {
+	template <u8 BIT> inline static void writeBit(u8 b) FL_NOEXCEPT {
 		//waitFully();
 		if(b & (1 << BIT)) {
 			FastPin<_DATA_PIN>::hi();
@@ -118,7 +119,7 @@ public:
 
 	// write a block of uint8_ts out in groups of three.  len is the total number of uint8_ts to write out.  The template
 	// parameters indicate how many uint8_ts to skip at the beginning and/or end of each grouping
-	template <u8 FLAGS, class D, EOrder RGB_ORDER> void writePixels(PixelController<RGB_ORDER> pixels, void* context = nullptr) {
+	template <u8 FLAGS, class D, EOrder RGB_ORDER> void writePixels(PixelController<RGB_ORDER> pixels, void* context = nullptr) FL_NOEXCEPT {
 		select();
 
 		int len = pixels.mLen;

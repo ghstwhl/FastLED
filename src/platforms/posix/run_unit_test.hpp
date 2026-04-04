@@ -31,6 +31,7 @@
 #include <csignal>
 #include <dlfcn.h>  // For dlopen, dlsym, dlclose
 #include <unistd.h> // For readlink, alarm
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 
 // Crash handler setup (defined in crash_handler_main.cpp)
@@ -43,7 +44,7 @@ namespace runner_watchdog {
 static volatile bool g_active = false;
 static double g_timeout_seconds = 20.0;
 
-static void alarm_handler(int) {
+static void alarm_handler(int) FL_NOEXCEPT {
     if (!g_active) {
         return;
     }
@@ -69,7 +70,7 @@ static void alarm_handler(int) {
     _exit(1);
 }
 
-static void setup(double timeout_seconds = 20.0) {
+static void setup(double timeout_seconds = 20.0) FL_NOEXCEPT {
     const char* disable_env = getenv("FASTLED_DISABLE_TIMEOUT_WATCHDOG");
     if (disable_env && (strcmp(disable_env, "1") == 0 || strcmp(disable_env, "true") == 0)) {
         return;
@@ -98,7 +99,7 @@ static void setup(double timeout_seconds = 20.0) {
     }
 }
 
-static void cancel() {
+static void cancel() FL_NOEXCEPT {
     if (!g_active) {
         return;
     }
@@ -112,7 +113,7 @@ static void cancel() {
 // Function signature for the test entry point exported by test DLLs/SOs
 typedef int (*RunTestsFunc)(int argc, const char** argv);
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv) FL_NOEXCEPT {
     // Setup crash handler BEFORE loading any shared libraries
     runner_setup_crash_handler();
 

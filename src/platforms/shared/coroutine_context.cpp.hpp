@@ -11,6 +11,7 @@
 #include "platforms/coroutine_runtime.h"
 #include "fl/stl/singleton.h"
 #include "fl/system/log.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace platforms {
@@ -21,14 +22,14 @@ namespace platforms {
 
 static ICoroutinePlatform* sCoroutinePlatformInstance = nullptr;
 
-ICoroutinePlatform& ICoroutinePlatform::instance() {
+ICoroutinePlatform& ICoroutinePlatform::instance() FL_NOEXCEPT {
     if (sCoroutinePlatformInstance) {
         return *sCoroutinePlatformInstance;
     }
     return fl::Singleton<NullCoroutinePlatform>::instance();
 }
 
-void ICoroutinePlatform::setInstance(ICoroutinePlatform* p) {
+void ICoroutinePlatform::setInstance(ICoroutinePlatform* p) FL_NOEXCEPT {
     sCoroutinePlatformInstance = p;
 }
 
@@ -42,12 +43,12 @@ struct CoroutineGlobals {
     CoroutineContext* current = nullptr; ///< Currently executing coroutine
 };
 
-static CoroutineGlobals& globals() {
+static CoroutineGlobals& globals() FL_NOEXCEPT {
     return fl::Singleton<CoroutineGlobals>::instance();
 }
 
 /// @brief Lazy-init the runner's platform context (created on first use)
-static void* get_runner_ctx() {
+static void* get_runner_ctx() FL_NOEXCEPT {
     auto& g = globals();
     if (!g.runner_ctx) {
         g.runner_ctx = ICoroutinePlatform::instance().createRunnerContext();
@@ -59,7 +60,7 @@ static void* get_runner_ctx() {
 // CoroutineContext Implementation
 //=============================================================================
 
-void CoroutineContext::entry_trampoline() {
+void CoroutineContext::entry_trampoline() FL_NOEXCEPT {
     CoroutineContext* self = globals().current;
     if (self && self->mFunction) {
         self->mFunction();
@@ -81,7 +82,7 @@ void CoroutineContext::entry_trampoline() {
 }
 
 CoroutineContext* CoroutineContext::create(fl::function<void()> func,
-                                           size_t stack_size) {
+                                           size_t stack_size) FL_NOEXCEPT {
     auto& platform = ICoroutinePlatform::instance();
 
     void* pctx = platform.createContext(entry_trampoline, stack_size);
@@ -106,7 +107,7 @@ CoroutineContext::~CoroutineContext() {
     }
 }
 
-void CoroutineContext::resume() {
+void CoroutineContext::resume() FL_NOEXCEPT {
     if (mCompleted) {
         return;
     }
@@ -136,11 +137,11 @@ void CoroutineContext::resume() {
     globals().current = nullptr;
 }
 
-CoroutineContext* CoroutineContext::runningCoroutine() {
+CoroutineContext* CoroutineContext::runningCoroutine() FL_NOEXCEPT {
     return globals().current;
 }
 
-void CoroutineContext::suspend() {
+void CoroutineContext::suspend() FL_NOEXCEPT {
     auto& platform = ICoroutinePlatform::instance();
 
     // ISR guard
@@ -174,11 +175,11 @@ void CoroutineContext::suspend() {
 // CoroutineRunner Implementation
 //=============================================================================
 
-CoroutineRunner& CoroutineRunner::instance() {
+CoroutineRunner& CoroutineRunner::instance() FL_NOEXCEPT {
     return fl::Singleton<CoroutineRunner>::instance();
 }
 
-void CoroutineRunner::enqueue(CoroutineContext* ctx) {
+void CoroutineRunner::enqueue(CoroutineContext* ctx) FL_NOEXCEPT {
     if (!ctx) return;
 
     // Check for duplicates
@@ -194,7 +195,7 @@ void CoroutineRunner::enqueue(CoroutineContext* ctx) {
     mQueue[mCount++] = ctx;
 }
 
-void CoroutineRunner::remove(CoroutineContext* ctx) {
+void CoroutineRunner::remove(CoroutineContext* ctx) FL_NOEXCEPT {
     for (size_t i = 0; i < mCount; ++i) {
         if (mQueue[i] == ctx) {
             // Shift remaining entries down
@@ -216,7 +217,7 @@ void CoroutineRunner::remove(CoroutineContext* ctx) {
     }
 }
 
-void CoroutineRunner::run(fl::u32 us) {
+void CoroutineRunner::run(fl::u32 us) FL_NOEXCEPT {
     if (mCount == 0) return;
 
     auto& platform = ICoroutinePlatform::instance();
@@ -261,7 +262,7 @@ void CoroutineRunner::run(fl::u32 us) {
     }
 }
 
-void CoroutineRunner::stop_all() {
+void CoroutineRunner::stop_all() FL_NOEXCEPT {
     for (size_t i = 0; i < mCount; ++i) {
         if (mQueue[i]) {
             mQueue[i]->stop_and_complete();

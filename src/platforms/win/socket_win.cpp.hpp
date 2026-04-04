@@ -82,6 +82,7 @@
 // IWYU pragma: begin_keep
 #include <sys/types.h>
 #include <cstdarg>  // For va_list in fcntl emulation
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 
 namespace fl {
@@ -90,7 +91,7 @@ namespace fl {
 // Helper Functions for Windows Socket Normalization
 //=============================================================================
 
-bool initialize_winsock() {
+bool initialize_winsock() FL_NOEXCEPT {
     static bool initialized = false;
     if (!initialized) {
         WSADATA wsaData;
@@ -100,11 +101,11 @@ bool initialize_winsock() {
     return initialized;
 }
 
-void cleanup_winsock() {
+void cleanup_winsock() FL_NOEXCEPT {
     WSACleanup();
 }
 
-int translate_windows_error(int wsa_error) {
+int translate_windows_error(int wsa_error) FL_NOEXCEPT {
     switch (wsa_error) {
         case WSAEWOULDBLOCK: return EWOULDBLOCK;
         case WSAECONNREFUSED: return ECONNREFUSED;
@@ -125,7 +126,7 @@ int translate_windows_error(int wsa_error) {
 //=============================================================================
 
 // Core Socket Operations
-int socket(int domain, int type, int protocol) {
+int socket(int domain, int type, int protocol) FL_NOEXCEPT {
     if (!initialize_winsock()) {
         return -1;
     }
@@ -133,7 +134,7 @@ int socket(int domain, int type, int protocol) {
     return (sock == INVALID_SOCKET) ? -1 : static_cast<int>(sock);
 }
 
-int socketpair(int domain, int type, int protocol, int sv[2]) {
+int socketpair(int domain, int type, int protocol, int sv[2]) FL_NOEXCEPT {
     // Windows doesn't support socketpair - return error
     (void)domain; (void)type; (void)protocol; (void)sv;
     WSASetLastError(WSAEAFNOSUPPORT);
@@ -141,25 +142,25 @@ int socketpair(int domain, int type, int protocol, int sv[2]) {
 }
 
 // Addressing
-int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
+int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen) FL_NOEXCEPT {
     SOCKET sock = static_cast<SOCKET>(sockfd);
     int result = ::bind(sock, reinterpret_cast<const ::sockaddr*>(addr), addrlen); // ok reinterpret cast
     return (result == SOCKET_ERROR) ? -1 : 0;
 }
 
-int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
+int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) FL_NOEXCEPT {
     SOCKET sock = static_cast<SOCKET>(sockfd);
     int result = ::connect(sock, reinterpret_cast<const ::sockaddr*>(addr), addrlen); // ok reinterpret cast
     return (result == SOCKET_ERROR) ? -1 : 0;
 }
 
-int listen(int sockfd, int backlog) {
+int listen(int sockfd, int backlog) FL_NOEXCEPT {
     SOCKET sock = static_cast<SOCKET>(sockfd);
     int result = ::listen(sock, backlog);
     return (result == SOCKET_ERROR) ? -1 : 0;
 }
 
-int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
+int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) FL_NOEXCEPT {
     SOCKET server_sock = static_cast<SOCKET>(sockfd);
     int addr_len = addrlen ? static_cast<int>(*addrlen) : 0;
     SOCKET client_sock = ::accept(server_sock, reinterpret_cast<::sockaddr*>(addr), &addr_len); // ok reinterpret cast
@@ -168,7 +169,7 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
 }
 
 // Data Transfer
-ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
+ssize_t send(int sockfd, const void *buf, size_t len, int flags) FL_NOEXCEPT {
     SOCKET sock = static_cast<SOCKET>(sockfd);
     int result = ::send(sock, static_cast<const char*>(buf), static_cast<int>(len), flags);
     if (result == SOCKET_ERROR) {
@@ -181,7 +182,7 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
     return static_cast<ssize_t>(result);
 }
 
-ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
+ssize_t recv(int sockfd, void *buf, size_t len, int flags) FL_NOEXCEPT {
     SOCKET sock = static_cast<SOCKET>(sockfd);
     int result = ::recv(sock, static_cast<char*>(buf), static_cast<int>(len), flags);
     if (result == SOCKET_ERROR) {
@@ -195,7 +196,7 @@ ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
 }
 
 ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
-               const struct sockaddr *dest_addr, socklen_t addrlen) {
+               const struct sockaddr *dest_addr, socklen_t addrlen) FL_NOEXCEPT {
     SOCKET sock = static_cast<SOCKET>(sockfd);
     int result = ::sendto(sock, static_cast<const char*>(buf), static_cast<int>(len), flags,
                          reinterpret_cast<const ::sockaddr*>(dest_addr), addrlen); // ok reinterpret cast
@@ -203,7 +204,7 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
 }
 
 ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
-                 struct sockaddr *src_addr, socklen_t *addrlen) {
+                 struct sockaddr *src_addr, socklen_t *addrlen) FL_NOEXCEPT {
     SOCKET sock = static_cast<SOCKET>(sockfd);
     int addr_len = addrlen ? static_cast<int>(*addrlen) : 0;
     int result = ::recvfrom(sock, static_cast<char*>(buf), static_cast<int>(len), flags,
@@ -213,20 +214,20 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
 }
 
 // Connection Teardown
-int shutdown(int sockfd, int how) {
+int shutdown(int sockfd, int how) FL_NOEXCEPT {
     SOCKET sock = static_cast<SOCKET>(sockfd);
     int result = ::shutdown(sock, how);
     return (result == SOCKET_ERROR) ? -1 : 0;
 }
 
-int close(int fd) {
+int close(int fd) FL_NOEXCEPT {
     SOCKET sock = static_cast<SOCKET>(fd);
     int result = ::closesocket(sock);
     return (result == SOCKET_ERROR) ? -1 : 0;
 }
 
 // Socket Options
-int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen) {
+int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen) FL_NOEXCEPT {
     SOCKET sock = static_cast<SOCKET>(sockfd);
     
     // Handle SO_REUSEPORT specially - not supported on Windows
@@ -239,7 +240,7 @@ int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t
     return (result == SOCKET_ERROR) ? -1 : 0;
 }
 
-int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen) {
+int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen) FL_NOEXCEPT {
     SOCKET sock = static_cast<SOCKET>(sockfd);
     int len = optlen ? static_cast<int>(*optlen) : 0;
     int result = ::getsockopt(sock, level, optname, static_cast<char*>(optval), &len);
@@ -248,7 +249,7 @@ int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optl
 }
 
 // Address Information
-int getpeername(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
+int getpeername(int sockfd, struct sockaddr *addr, socklen_t *addrlen) FL_NOEXCEPT {
     SOCKET sock = static_cast<SOCKET>(sockfd);
     int len = addrlen ? static_cast<int>(*addrlen) : 0;
     int result = ::getpeername(sock, reinterpret_cast<::sockaddr*>(addr), &len); // ok reinterpret cast
@@ -256,7 +257,7 @@ int getpeername(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
     return (result == SOCKET_ERROR) ? -1 : 0;
 }
 
-int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
+int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen) FL_NOEXCEPT {
     SOCKET sock = static_cast<SOCKET>(sockfd);
     int len = addrlen ? static_cast<int>(*addrlen) : 0;
     int result = ::getsockname(sock, reinterpret_cast<::sockaddr*>(addr), &len); // ok reinterpret cast
@@ -265,16 +266,16 @@ int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
 }
 
 // Address Resolution (simplified - Windows has these functions)
-int inet_pton(int af, const char *src, void *dst) {
+int inet_pton(int af, const char *src, void *dst) FL_NOEXCEPT {
     return ::inet_pton(af, src, dst);
 }
 
-const char* inet_ntop(int af, const void *src, char *dst, socklen_t size) {
+const char* inet_ntop(int af, const void *src, char *dst, socklen_t size) FL_NOEXCEPT {
     return ::inet_ntop(af, src, dst, static_cast<size_t>(size));
 }
 
 // fcntl emulation for non-blocking sockets
-int fcntl(int fd, int cmd, ...) {
+int fcntl(int fd, int cmd, ...) FL_NOEXCEPT {
     SOCKET sock = static_cast<SOCKET>(fd);
     
     if (cmd == F_GETFL) {

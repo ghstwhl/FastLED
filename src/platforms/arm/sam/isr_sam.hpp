@@ -16,6 +16,7 @@
 #include "fl/stl/isr/handler.h"
 #include "fl/stl/compiler_control.h"
 #include "platforms/arm/sam/is_sam.h"
+#include "fl/stl/noexcept.h"
 
 // Platform guard - only compile for SAM platforms
 #if defined(FL_IS_SAM)
@@ -38,7 +39,7 @@ constexpr int ERR_NOT_IMPLEMENTED = -100;
  * Used as a placeholder until full ISR support is implemented.
  */
 
-int sam_attach_timer_handler(const isr_config_t& config, isr_handle_t* out_handle) {
+int sam_attach_timer_handler(const isr_config_t& config, isr_handle_t* out_handle) FL_NOEXCEPT {
     (void)config;
     if (out_handle) {
         *out_handle = isr_handle_t();  // Invalid handle
@@ -46,7 +47,7 @@ int sam_attach_timer_handler(const isr_config_t& config, isr_handle_t* out_handl
     return ERR_NOT_IMPLEMENTED;  // Not implemented error
 }
 
-int sam_attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t* out_handle) {
+int sam_attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t* out_handle) FL_NOEXCEPT {
     (void)pin;
     (void)config;
     if (out_handle) {
@@ -55,27 +56,27 @@ int sam_attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t
     return ERR_NOT_IMPLEMENTED;  // Not implemented error
 }
 
-int sam_detach_handler(isr_handle_t& handle) {
+int sam_detach_handler(isr_handle_t& handle) FL_NOEXCEPT {
     handle = isr_handle_t();  // Invalidate handle
     return ERR_NOT_IMPLEMENTED;  // Not implemented error
 }
 
-int sam_enable_handler(isr_handle_t& handle) {
+int sam_enable_handler(isr_handle_t& handle) FL_NOEXCEPT {
     (void)handle;
     return ERR_NOT_IMPLEMENTED;  // Not implemented error
 }
 
-int sam_disable_handler(isr_handle_t& handle) {
+int sam_disable_handler(isr_handle_t& handle) FL_NOEXCEPT {
     (void)handle;
     return ERR_NOT_IMPLEMENTED;  // Not implemented error
 }
 
-bool sam_is_handler_enabled(const isr_handle_t& handle) {
+bool sam_is_handler_enabled(const isr_handle_t& handle) FL_NOEXCEPT {
     (void)handle;
     return false;
 }
 
-const char* sam_get_error_string(int error_code) {
+const char* sam_get_error_string(int error_code) FL_NOEXCEPT {
     switch (error_code) {
         case 0: return "Success";
         case ERR_NOT_IMPLEMENTED: return "Not implemented (SAM ISR support not yet available)";
@@ -83,23 +84,23 @@ const char* sam_get_error_string(int error_code) {
     }
 }
 
-const char* sam_get_platform_name() {
+const char* sam_get_platform_name() FL_NOEXCEPT {
     return "SAM";
 }
 
-u32 sam_get_max_timer_frequency() {
+u32 sam_get_max_timer_frequency() FL_NOEXCEPT {
     return 0;  // No timer support yet
 }
 
-u32 sam_get_min_timer_frequency() {
+u32 sam_get_min_timer_frequency() FL_NOEXCEPT {
     return 0;  // No timer support yet
 }
 
-u8 sam_get_max_priority() {
+u8 sam_get_max_priority() FL_NOEXCEPT {
     return 0;  // No priority support yet
 }
 
-bool sam_requires_assembly_handler(u8 priority) {
+bool sam_requires_assembly_handler(u8 priority) FL_NOEXCEPT {
     (void)priority;
     return false;
 }
@@ -107,51 +108,51 @@ bool sam_requires_assembly_handler(u8 priority) {
 // fl::isr::platform namespace wrappers
 namespace platforms {
 
-int attach_timer_handler(const isr_config_t& config, isr_handle_t* handle) {
+int attach_timer_handler(const isr_config_t& config, isr_handle_t* handle) FL_NOEXCEPT {
     return sam_attach_timer_handler(config, handle);
 }
 
-int attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t* handle) {
+int attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t* handle) FL_NOEXCEPT {
     return sam_attach_external_handler(pin, config, handle);
 }
 
-int detach_handler(isr_handle_t& handle) {
+int detach_handler(isr_handle_t& handle) FL_NOEXCEPT {
     return sam_detach_handler(handle);
 }
 
-int enable_handler(isr_handle_t& handle) {
+int enable_handler(isr_handle_t& handle) FL_NOEXCEPT {
     return sam_enable_handler(handle);
 }
 
-int disable_handler(isr_handle_t& handle) {
+int disable_handler(isr_handle_t& handle) FL_NOEXCEPT {
     return sam_disable_handler(handle);
 }
 
-bool is_handler_enabled(const isr_handle_t& handle) {
+bool is_handler_enabled(const isr_handle_t& handle) FL_NOEXCEPT {
     return sam_is_handler_enabled(handle);
 }
 
-const char* get_error_string(int error_code) {
+const char* get_error_string(int error_code) FL_NOEXCEPT {
     return sam_get_error_string(error_code);
 }
 
-const char* get_platform_name() {
+const char* get_platform_name() FL_NOEXCEPT {
     return sam_get_platform_name();
 }
 
-u32 get_max_timer_frequency() {
+u32 get_max_timer_frequency() FL_NOEXCEPT {
     return sam_get_max_timer_frequency();
 }
 
-u32 get_min_timer_frequency() {
+u32 get_min_timer_frequency() FL_NOEXCEPT {
     return sam_get_min_timer_frequency();
 }
 
-u8 get_max_priority() {
+u8 get_max_priority() FL_NOEXCEPT {
     return sam_get_max_priority();
 }
 
-bool requires_assembly_handler(u8 priority) {
+bool requires_assembly_handler(u8 priority) FL_NOEXCEPT {
     return sam_requires_assembly_handler(priority);
 }
 
@@ -163,13 +164,13 @@ bool requires_assembly_handler(u8 priority) {
 // =============================================================================
 
 /// Disable interrupts on ARM Cortex-M (SAM)
-inline void interruptsDisable() {
-    __asm__ __volatile__("cpsid i" ::: "memory");
+inline void interruptsDisable() FL_NOEXCEPT {
+    __asm__ __volatile__("cpsid i" ::: "memory") FL_NOEXCEPT;
 }
 
 /// Enable interrupts on ARM Cortex-M (SAM)
-inline void interruptsEnable() {
-    __asm__ __volatile__("cpsie i" ::: "memory");
+inline void interruptsEnable() FL_NOEXCEPT {
+    __asm__ __volatile__("cpsie i" ::: "memory") FL_NOEXCEPT;
 }
 
 } // namespace fl

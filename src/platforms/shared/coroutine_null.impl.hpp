@@ -4,6 +4,7 @@
 /// @brief Null (no-op) coroutine implementations for platforms without OS support
 
 #include "platforms/coroutine.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace platforms {
@@ -37,7 +38,7 @@ TaskCoroutinePtr createTaskCoroutine(fl::string name,
                                       ICoroutineTask::TaskFunction function,
                                       size_t stack_size,
                                       u8 priority,
-                                      int /*core_id*/) {
+                                      int /*core_id*/) FL_NOEXCEPT {
     return TaskCoroutinePtr(
         new TaskCoroutineNull(fl::move(name), fl::move(function), stack_size, priority));  // ok bare allocation
 }
@@ -46,7 +47,7 @@ TaskCoroutinePtr createTaskCoroutine(fl::string name,
 // Static exitCurrent implementation
 //=============================================================================
 
-void ICoroutineTask::exitCurrent() {
+void ICoroutineTask::exitCurrent() FL_NOEXCEPT {
     // No-op: No task exists on platforms without OS support
 }
 

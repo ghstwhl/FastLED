@@ -19,6 +19,7 @@
 #include "fl/stl/memory.h"
 #include "fl/system/file_system.h"
 #include "fl/stl/type_traits.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -40,42 +41,42 @@ public:
         }
     }
 
-    bool is_open() const override {
+    bool is_open() const FL_NOEXCEPT override {
         return _file.isOpen();
     }
-    bool available() const override {
+    bool available() const FL_NOEXCEPT override {
         auto f = const_cast<SdFatFileHandle*>(this);
         return f->_file.available() > 0;
     }
-    fl::size_t size() const override {
+    fl::size_t size() const FL_NOEXCEPT override {
         return _file.fileSize();
     }
-    fl::size_t read(char *dst, fl::size_t bytesToRead) override {
+    fl::size_t read(char *dst, fl::size_t bytesToRead) FL_NOEXCEPT override {
         return _file.read(reinterpret_cast<u8*>(dst), bytesToRead); // ok reinterpret cast
     }
     using filebuf::read;
-    fl::size_t write(const char *data, fl::size_t count) override {
+    fl::size_t write(const char *data, fl::size_t count) FL_NOEXCEPT override {
         (void)data; (void)count;
         return 0;
     }
-    fl::size_t tell() override {
+    fl::size_t tell() FL_NOEXCEPT override {
         return _file.curPosition();
     }
-    const char* path() const override {
+    const char* path() const FL_NOEXCEPT override {
         return _path.c_str();
     }
-    bool seek(fl::size_t pos, fl::seek_dir dir) override {
+    bool seek(fl::size_t pos, fl::seek_dir dir) FL_NOEXCEPT override {
         if (dir == fl::seek_dir::beg) return _file.seekSet(pos);
         if (dir == fl::seek_dir::cur) return _file.seekCur(pos);
         return _file.seekEnd(pos);
     }
     using filebuf::seek;
-    void close() override {
+    void close() FL_NOEXCEPT override {
         if (_file.isOpen()) {
             _file.close();
         }
     }
-    bool is_eof() const override {
+    bool is_eof() const FL_NOEXCEPT override {
         auto f = const_cast<SdFatFileHandle*>(this);
         return f->_file.available() <= 0;
     }
@@ -98,34 +99,34 @@ public:
         }
     }
 
-    bool is_open() const override {
+    bool is_open() const FL_NOEXCEPT override {
         auto f = const_cast<File&>(_file);
         return f;
     }
-    bool available() const override {
+    bool available() const FL_NOEXCEPT override {
         auto f = const_cast<File&>(_file);
         return f.available() > 0;
     }
-    fl::size_t size() const override {
+    fl::size_t size() const FL_NOEXCEPT override {
         auto f = const_cast<File&>(_file);
         return f.size();
     }
-    fl::size_t read(char *dst, fl::size_t bytesToRead) override {
+    fl::size_t read(char *dst, fl::size_t bytesToRead) FL_NOEXCEPT override {
         return _file.read(reinterpret_cast<u8*>(dst), bytesToRead); // ok reinterpret cast
     }
     using filebuf::read;
-    fl::size_t write(const char *data, fl::size_t count) override {
+    fl::size_t write(const char *data, fl::size_t count) FL_NOEXCEPT override {
         (void)data; (void)count;
         return 0;
     }
-    fl::size_t tell() override {
+    fl::size_t tell() FL_NOEXCEPT override {
         auto f = const_cast<File&>(_file);
         return f.position();
     }
-    const char* path() const override {
+    const char* path() const FL_NOEXCEPT override {
         return _path.c_str();
     }
-    bool seek(fl::size_t pos, fl::seek_dir dir) override {
+    bool seek(fl::size_t pos, fl::seek_dir dir) FL_NOEXCEPT override {
         if (dir == fl::seek_dir::beg) return _file.seek(pos);
         // Arduino SD doesn't support cur/end natively
         if (dir == fl::seek_dir::cur) {
@@ -136,12 +137,12 @@ public:
         return _file.seek(f.size() + pos);
     }
     using filebuf::seek;
-    void close() override {
+    void close() FL_NOEXCEPT override {
         if (_file) {
             _file.close();
         }
     }
-    bool is_eof() const override {
+    bool is_eof() const FL_NOEXCEPT override {
         auto f = const_cast<File&>(_file);
         return f.available() <= 0;
     }
@@ -162,7 +163,7 @@ private:
 public:
     FsArduino(int cs_pin) : _cs_pin(cs_pin) {}
 
-    bool begin() override {
+    bool begin() FL_NOEXCEPT override {
 #ifdef USE_SDFAT
         // Use the CS pin provided in constructor
         return _sd.begin(_cs_pin, SPI_HALF_SPEED);
@@ -171,12 +172,12 @@ public:
 #endif
     }
 
-    void end() override {
+    void end() FL_NOEXCEPT override {
         // SD library doesn't have an end() method, but we can ensure files are closed
         // Note: This is a limitation of the Arduino SD library
     }
 
-    filebuf_ptr openRead(const char *name) override {
+    filebuf_ptr openRead(const char *name) FL_NOEXCEPT override {
 #ifdef USE_SDFAT
         SdFile file;
         // Open file for reading
@@ -196,7 +197,7 @@ public:
 };
 
 // Implementation of the factory function to create SD card filesystem
-inline FsImplPtr make_sdcard_filesystem(int cs_pin) {
+inline FsImplPtr make_sdcard_filesystem(int cs_pin) FL_NOEXCEPT {
     return fl::make_shared<FsArduino>(cs_pin);
 }
 

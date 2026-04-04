@@ -7,6 +7,7 @@
 #include "platforms/shared/ui/json/ui_internal.h"
 #include "fl/stl/json.h"
 #include "fl/stl/shared_ptr.h" // For fl::shared_ptr
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -15,20 +16,20 @@ class JsonUiDescriptionInternal;
 
 class JsonDescriptionImpl {
   public:
-    JsonDescriptionImpl(const fl::string &name);
+    JsonDescriptionImpl(const fl::string &name) FL_NOEXCEPT;
     ~JsonDescriptionImpl();
-    JsonDescriptionImpl &Group(const fl::string &name);
+    JsonDescriptionImpl &Group(const fl::string &name) FL_NOEXCEPT;
 
-    const fl::string &text() const;
+    const fl::string &text() const FL_NOEXCEPT;
 
-    const fl::string &name() const;
-    void toJson(fl::json &json) const;
-    fl::string groupName() const;
+    const fl::string &name() const FL_NOEXCEPT;
+    void toJson(fl::json &json) const FL_NOEXCEPT;
+    fl::string groupName() const FL_NOEXCEPT;
     
     // Method to allow parent UIElement class to set the group
-    void setGroup(const fl::string &groupName);
+    void setGroup(const fl::string &groupName) FL_NOEXCEPT;
 
-    int id() const;
+    int id() const FL_NOEXCEPT;
 
   private:
     // Change to use the specific internal implementation

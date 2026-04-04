@@ -1,6 +1,7 @@
 // ok no namespace fl
 // allow-include-after-namespace
 #pragma once
+#include "fl/stl/noexcept.h"
 
 // IWYU pragma: private
 
@@ -26,7 +27,7 @@ namespace platforms {
 ///
 /// This function is called once during FastLED::init() and is safe to call
 /// multiple times (subsequent calls are no-ops).
-inline void init() {
+inline void init() FL_NOEXCEPT {
     // No-op: Renesas platforms rely on Arduino core initialization
     // Future: Consider WiFi module or peripheral initialization for UNO R4
 }

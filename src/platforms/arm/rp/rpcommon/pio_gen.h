@@ -7,6 +7,7 @@
 #include "platforms/arm/rp/rpcommon/pio_asm.h"
 // IWYU pragma: begin_keep
 #include "hardware/pio.h"
+#include "fl/stl/noexcept.h"
 
 // IWYU pragma: end_keep
 /*
@@ -26,7 +27,7 @@
 // we have 4 bits to store delay in instruction encoding with one sideset bit, but we can accept up to 16 because 1 is always subtracted first
 #define CLOCKLESS_PIO_MAX_TIME_PERIOD (1 << (5 - CLOCKLESS_PIO_SIDESET_COUNT))
 
-static inline int add_clockless_pio_program(PIO pio, int T1, int T2, int T3) {
+static inline int add_clockless_pio_program(PIO pio, int T1, int T2, int T3) FL_NOEXCEPT {
     pio_instr clockless_pio_instr[] = {
         // wrap_target
         // out x, 1; read next bit to x
@@ -52,7 +53,7 @@ static inline int add_clockless_pio_program(PIO pio, int T1, int T2, int T3) {
     return (int)pio_add_program(pio, &clockless_pio_program);
 }
 
-static inline pio_sm_config clockless_pio_program_get_default_config(uint offset) {
+static inline pio_sm_config clockless_pio_program_get_default_config(uint offset) FL_NOEXCEPT {
     pio_sm_config c = pio_get_default_sm_config();
     sm_config_set_wrap(&c, offset + CLOCKLESS_PIO_WRAP_TARGET, offset + CLOCKLESS_PIO_WRAP);
     sm_config_set_sideset(&c, CLOCKLESS_PIO_SIDESET_COUNT, false, false);

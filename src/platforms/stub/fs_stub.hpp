@@ -24,6 +24,7 @@
   #include <unistd.h>
   #include <sys/stat.h>
   #include <dirent.h>   // For directory iteration
+#include "fl/stl/noexcept.h"
 #endif
 
 namespace fl {
@@ -36,7 +37,7 @@ private:
     fl::size_t mPos;
 
 public:
-    StubFileHandle(const fl::string& path) : mPath(path), mPos(0) {
+    StubFileHandle(const fl::string& path) FL_NOEXCEPT : mPath(path), mPos(0) {
         mFile.open(path.c_str(), fl::ios::binary | fl::ios::ate);
         if (mFile.is_open()) {
             mSize = mFile.tellg();
@@ -52,19 +53,19 @@ public:
         }
     }
 
-    bool is_open() const override {
+    bool is_open() const FL_NOEXCEPT override {
         return mFile.is_open();
     }
 
-    bool available() const override {
+    bool available() const FL_NOEXCEPT override {
         return mFile.is_open() && mPos < mSize;
     }
 
-    fl::size_t size() const override {
+    fl::size_t size() const FL_NOEXCEPT override {
         return mSize;
     }
 
-    fl::size_t read(char *dst, fl::size_t bytesToRead) override {
+    fl::size_t read(char *dst, fl::size_t bytesToRead) FL_NOEXCEPT override {
         if (!mFile.is_open() || mPos >= mSize) {
             return 0;
         }
@@ -80,20 +81,20 @@ public:
     }
     using filebuf::read; // Pull in u8 overload
 
-    fl::size_t write(const char *data, fl::size_t count) override {
+    fl::size_t write(const char *data, fl::size_t count) FL_NOEXCEPT override {
         (void)data; (void)count;
         return 0; // Read-only
     }
 
-    fl::size_t tell() override {
+    fl::size_t tell() FL_NOEXCEPT override {
         return mPos;
     }
 
-    const char* path() const override {
+    const char* path() const FL_NOEXCEPT override {
         return mPath.c_str();
     }
 
-    bool seek(fl::size_t pos, fl::seek_dir dir) override {
+    bool seek(fl::size_t pos, fl::seek_dir dir) FL_NOEXCEPT override {
         if (!mFile.is_open()) {
             return false;
         }
@@ -114,25 +115,25 @@ public:
     }
     using filebuf::seek; // Pull in single-arg overload
 
-    void close() override {
+    void close() FL_NOEXCEPT override {
         if (mFile.is_open()) {
             mFile.close();
         }
     }
 
-    bool is_eof() const override {
+    bool is_eof() const FL_NOEXCEPT override {
         return mPos >= mSize;
     }
 
-    bool has_error() const override {
+    bool has_error() const FL_NOEXCEPT override {
         return !mFile.is_open() && mSize == 0;
     }
 
-    void clear_error() override {}
+    void clear_error() FL_NOEXCEPT override {}
 
-    int error_code() const override { return 0; }
+    int error_code() const FL_NOEXCEPT override { return 0; }
 
-    const char* error_message() const override { return "No error"; }
+    const char* error_message() const FL_NOEXCEPT override { return "No error"; }
 };
 
 class StubFileSystem : public FsImpl {
@@ -143,7 +144,7 @@ public:
     StubFileSystem() = default;
     ~StubFileSystem() override = default;
 
-    void setRootPath(const fl::string& path) {
+    void setRootPath(const fl::string& path) FL_NOEXCEPT {
         mRootPath = path;
         // Ensure the path ends with a directory separator
         if (!mRootPath.empty() && mRootPath.back() != '/' && mRootPath.back() != '\\') {
@@ -153,7 +154,7 @@ public:
 
     // Static test utility functions for file/directory management
     // These are only available on the stub/test platform
-    static bool createDirectory(const fl::string& path) {
+    static bool createDirectory(const fl::string& path) FL_NOEXCEPT {
 #ifdef FL_IS_WIN
         return _mkdir(path.c_str()) == 0 || errno == EEXIST;
 #else
@@ -161,7 +162,7 @@ public:
 #endif
     }
 
-    static bool removeDirectory(const fl::string& path) {
+    static bool removeDirectory(const fl::string& path) FL_NOEXCEPT {
 #ifdef FL_IS_WIN
         return _rmdir(path.c_str()) == 0;
 #else
@@ -169,7 +170,7 @@ public:
 #endif
     }
 
-    static bool removeFile(const fl::string& path) {
+    static bool removeFile(const fl::string& path) FL_NOEXCEPT {
         // Silently succeed if file doesn't exist (cleanup idempotency)
         if (::remove(path.c_str()) == 0) {
             return true;
@@ -177,7 +178,7 @@ public:
         return errno == ENOENT; // Success if file didn't exist
     }
 
-    static void forceRemoveDirectory(const fl::string& path) {
+    static void forceRemoveDirectory(const fl::string& path) FL_NOEXCEPT {
         // Synchronously and recursively remove directory and all contents
         // This ensures cleanup completes before proceeding
 #ifdef FL_IS_WIN
@@ -242,12 +243,12 @@ public:
 #endif
     }
 
-    static bool createTextFile(const fl::string& path, const fl::string& content) {
+    static bool createTextFile(const fl::string& path, const fl::string& content) FL_NOEXCEPT {
         // Force remove any existing file first to ensure clean state
         removeFile(path.c_str());
 
         // Create new file with explicit truncate mode
-        fl::ofstream ofs(path.c_str(), fl::ios::binary | fl::ios::trunc);
+        fl::ofstream ofs(path.c_str(), fl::ios::binary | fl::ios::trunc) FL_NOEXCEPT;
         if (!ofs.is_open()) {
             return false;
         }
@@ -257,15 +258,15 @@ public:
         return success;
     }
 
-    bool begin() override {
+    bool begin() FL_NOEXCEPT override {
         return true;
     }
 
-    void end() override {
+    void end() FL_NOEXCEPT override {
         // Nothing to do
     }
 
-    filebuf_ptr openRead(const char* path) override {
+    filebuf_ptr openRead(const char* path) FL_NOEXCEPT override {
         fl::string full_path = mRootPath;
         full_path.append(path);
 
@@ -295,9 +296,9 @@ public:
 };
 
 // Function declarations - implementations are in fs_stub.cpp
-FsImplPtr make_sdcard_filesystem(int cs_pin);
-void setTestFileSystemRoot(const char* root_path);
-const char* getTestFileSystemRoot();
+FsImplPtr make_sdcard_filesystem(int cs_pin) FL_NOEXCEPT;
+void setTestFileSystemRoot(const char* root_path) FL_NOEXCEPT;
+const char* getTestFileSystemRoot() FL_NOEXCEPT;
 
 } // namespace fl
 

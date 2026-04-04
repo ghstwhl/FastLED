@@ -19,6 +19,7 @@
 #else
     // Libmaple or other cores without CMSIS - use our definitions
     #include "platforms/arm/stm32/cm3_regs.h"
+#include "fl/stl/noexcept.h"
 
 FL_DISABLE_WARNING_PUSH
 FL_DISABLE_WARNING_DEPRECATED_REGISTER
@@ -47,7 +48,7 @@ class ClocklessController : public CPixelLEDController<RGB_ORDER> {
     CMinWait<WAIT_TIME> mWait;
 
 public:
-    virtual void init() {
+    virtual void init() FL_NOEXCEPT {
         FastPin<DATA_PIN>::setOutput();
         mPinMask = FastPin<DATA_PIN>::mask();
         mPort = FastPin<DATA_PIN>::port();
@@ -56,7 +57,7 @@ public:
     virtual u16 getMaxRefreshRate() const { return 400; }
 
 protected:
-    virtual void showPixels(PixelController<RGB_ORDER> & pixels) {
+    virtual void showPixels(PixelController<RGB_ORDER> & pixels) FL_NOEXCEPT {
         mWait.wait();
 
         // Compute timing from actual CPU frequency (just-in-time per-frame calculation)
@@ -88,7 +89,7 @@ protected:
     inline static void writeBits(
         FASTLED_REGISTER u32 & next_mark, FASTLED_REGISTER data_ptr_t port,
         FASTLED_REGISTER data_t hi, FASTLED_REGISTER data_t lo, FASTLED_REGISTER u8 & b,
-        u32 t1_clocks, u32 t1t2_clocks, u32 t1t2t3_clocks)  {
+        u32 t1_clocks, u32 t1t2_clocks, u32 t1t2t3_clocks) FL_NOEXCEPT {
         for(FASTLED_REGISTER u32 i = BITS-1; i > 0; --i) {
             while(_CYCCNT < (t1t2t3_clocks-ADJ));
             FastPin<DATA_PIN>::fastset(port, hi);
@@ -118,7 +119,7 @@ protected:
 
     static u32 showRGBInternal(
             PixelController<RGB_ORDER> pixels, Rgbw rgbw,
-            u32 t1_clocks, u32 t2_clocks, u32 t3_clocks, u32 clks_per_us) {
+            u32 t1_clocks, u32 t2_clocks, u32 t3_clocks, u32 clks_per_us) FL_NOEXCEPT {
         // Pre-calculate combined timing values for the hot loop
         const u32 t1t2_clocks = t1_clocks + t2_clocks;
         const u32 t1t2t3_clocks = t1t2_clocks + t3_clocks;

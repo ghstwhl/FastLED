@@ -18,6 +18,7 @@
 #include "fl/task/promise.h"
 #include "fl/task/promise_result.h"
 #include "platforms/coroutine_runtime.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace platforms {
@@ -31,7 +32,7 @@ namespace platforms {
 /// checks via ICoroutineRuntime::suspendMainthread(). This method is safe to call
 /// from any execution context (main thread, coroutine, worker thread).
 template<typename T>
-fl::task::PromiseResult<T> await(fl::task::Promise<T> promise) {
+fl::task::PromiseResult<T> await(fl::task::Promise<T> promise) FL_NOEXCEPT {
     // Validate promise
     if (!promise.valid()) {
         return fl::task::PromiseResult<T>(fl::task::Error("Invalid promise"));

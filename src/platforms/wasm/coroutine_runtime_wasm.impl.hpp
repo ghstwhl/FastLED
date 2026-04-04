@@ -21,6 +21,7 @@
 #include "fl/stl/string.h"
 #include "fl/stl/unique_ptr.h"
 #include "fl/system/log.h"
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 
 namespace fl {
@@ -32,7 +33,7 @@ namespace platforms {
 
 class CoroutineRuntimeWasm : public ICoroutineRuntime {
 public:
-    void pumpCoroutines(fl::u32 us) override {
+    void pumpCoroutines(fl::u32 us) FL_NOEXCEPT override {
         if (CoroutineContext::isInsideCoroutine()) {
             // Called from within a coroutine — yield back to runner
             CoroutineContext::suspend();
@@ -49,7 +50,7 @@ public:
 
 namespace {
 struct WasmPlatformRegistrar {
-    WasmPlatformRegistrar() {
+    WasmPlatformRegistrar() FL_NOEXCEPT {
         ICoroutinePlatform::setInstance(
             &fl::Singleton<CoroutinePlatformWasm>::instance());
     }
@@ -57,7 +58,7 @@ struct WasmPlatformRegistrar {
 static WasmPlatformRegistrar sWasmPlatformRegistrar;
 }  // namespace
 
-ICoroutineRuntime& ICoroutineRuntime::instance() {
+ICoroutineRuntime& ICoroutineRuntime::instance() FL_NOEXCEPT {
     return fl::Singleton<CoroutineRuntimeWasm>::instance();
 }
 
@@ -70,7 +71,7 @@ public:
     static TaskCoroutinePtr create(fl::string name,
                                     TaskFunction function,
                                     size_t stack_size = 4096,
-                                    u8 priority = 5) {
+                                    u8 priority = 5) FL_NOEXCEPT {
         auto* ctx = CoroutineContext::create(fl::move(function), stack_size);
         if (!ctx) {
             FL_WARN("TaskCoroutineWasm: Failed to create context for '"
@@ -78,7 +79,7 @@ public:
             return nullptr;
         }
 
-        TaskCoroutinePtr task(new TaskCoroutineWasm());  // ok bare allocation
+        TaskCoroutinePtr task(new TaskCoroutineWasm()) FL_NOEXCEPT;  // ok bare allocation
         auto* impl = static_cast<TaskCoroutineWasm*>(task.get());
         impl->mName = fl::move(name);
         impl->mContext.reset(ctx);
@@ -91,13 +92,13 @@ public:
 
     ~TaskCoroutineWasm() override { stop(); }
 
-    void stop() override {
+    void stop() FL_NOEXCEPT override {
         if (!mContext) return;
         mContext->stop_and_complete();
         CoroutineRunner::instance().remove(mContext.get());
     }
 
-    bool isRunning() const override {
+    bool isRunning() const FL_NOEXCEPT override {
         if (!mContext) return false;
         return !mContext->is_completed();
     }
@@ -117,7 +118,7 @@ TaskCoroutinePtr createTaskCoroutine(fl::string name,
                                       ICoroutineTask::TaskFunction function,
                                       size_t stack_size,
                                       u8 priority,
-                                      int /*core_id*/) {
+                                      int /*core_id*/) FL_NOEXCEPT {
     return TaskCoroutineWasm::create(fl::move(name), fl::move(function),
                                      stack_size, priority);
 }
@@ -126,7 +127,7 @@ TaskCoroutinePtr createTaskCoroutine(fl::string name,
 // Static exitCurrent — suspend back to runner and mark completed
 //=============================================================================
 
-void ICoroutineTask::exitCurrent() {
+void ICoroutineTask::exitCurrent() FL_NOEXCEPT {
     CoroutineContext* ctx = CoroutineContext::runningCoroutine();
     if (ctx) {
         ctx->set_should_stop(true);

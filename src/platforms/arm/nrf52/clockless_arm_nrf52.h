@@ -12,6 +12,7 @@
 #include "fastled_delay.h"
 
 #include "eorder.h"
+#include "fl/stl/noexcept.h"
 namespace fl {
 
 #define FL_CLOCKLESS_CONTROLLER_DEFINED 1
@@ -66,7 +67,7 @@ private:
     static volatile u32 s_SequenceBufferInUse;
     static CMinWait<_WAIT_TIME_MICROSECONDS> mWait;  // ensure data has time to latch
 
-    FASTLED_NRF52_INLINE_ATTRIBUTE static void startPwmPlayback_InitializePinState() {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static void startPwmPlayback_InitializePinState() FL_NOEXCEPT {
         FastPin<_DATA_PIN>::setOutput();
         if (_INITIALIZE_PIN_HIGH) {
             FastPin<_DATA_PIN>::hi();
@@ -74,7 +75,7 @@ private:
             FastPin<_DATA_PIN>::lo();
         }
     }
-    FASTLED_NRF52_INLINE_ATTRIBUTE static void startPwmPlayback_InitializePwmInstance(NRF_PWM_Type * pwm) {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static void startPwmPlayback_InitializePwmInstance(NRF_PWM_Type * pwm) FL_NOEXCEPT {
 
         // Pins must be set before enabling the peripheral
         pwm->PSEL.OUT[0] = FastPin<_DATA_PIN>::nrf_pin();
@@ -97,7 +98,7 @@ private:
         nrf_pwm_event_clear(pwm, NRF_PWM_EVENT_PWMPERIODEND);
         nrf_pwm_event_clear(pwm, NRF_PWM_EVENT_LOOPSDONE);
     }
-    FASTLED_NRF52_INLINE_ATTRIBUTE static void startPwmPlayback_ConfigurePwmSequence(NRF_PWM_Type * pwm) {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static void startPwmPlayback_ConfigurePwmSequence(NRF_PWM_Type * pwm) FL_NOEXCEPT {
         // config is easy, using SEQ0, no loops...
         nrf_pwm_sequence_t sequenceConfig;
         sequenceConfig.values.p_common = &(s_SequenceBuffer[0]);
@@ -109,7 +110,7 @@ private:
         nrf_pwm_loop_set(pwm, 0);
 
     }
-    FASTLED_NRF52_INLINE_ATTRIBUTE static void startPwmPlayback_EnableInterruptsAndShortcuts(NRF_PWM_Type * pwm) {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static void startPwmPlayback_EnableInterruptsAndShortcuts(NRF_PWM_Type * pwm) FL_NOEXCEPT {
         IRQn_Type irqn = PWM_Arbiter<FASTLED_NRF52_PWM_ID>::getIRQn();
         // TODO: check API results...
         u32 result;
@@ -137,16 +138,16 @@ private:
         nrf_pwm_int_set(pwm, interruptsToEnable);
 
     }
-    FASTLED_NRF52_INLINE_ATTRIBUTE static void startPwmPlayback_StartTask(NRF_PWM_Type * pwm) {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static void startPwmPlayback_StartTask(NRF_PWM_Type * pwm) FL_NOEXCEPT {
         nrf_pwm_task_trigger(pwm, NRF_PWM_TASK_SEQSTART0);
     }
-    FASTLED_NRF52_INLINE_ATTRIBUTE static void spinAcquireSequenceBuffer() {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static void spinAcquireSequenceBuffer() FL_NOEXCEPT {
         while (!tryAcquireSequenceBuffer());
     }
-    FASTLED_NRF52_INLINE_ATTRIBUTE static bool tryAcquireSequenceBuffer() {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static bool tryAcquireSequenceBuffer() FL_NOEXCEPT {
         return __sync_bool_compare_and_swap(&s_SequenceBufferInUse, 0, 1);
     }
-    FASTLED_NRF52_INLINE_ATTRIBUTE static void releaseSequenceBuffer() {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static void releaseSequenceBuffer() FL_NOEXCEPT {
         u32 tmp = __sync_val_compare_and_swap(&s_SequenceBufferInUse, 1, 0);
         if (tmp != 1) {
             // TODO: Error / Assert / log ?
@@ -154,7 +155,7 @@ private:
     }
 
 public:
-    static void isr_handler() {
+    static void isr_handler() FL_NOEXCEPT {
         NRF_PWM_Type * pwm = PWM_Arbiter<FASTLED_NRF52_PWM_ID>::getPWM();
         IRQn_Type irqn = PWM_Arbiter<FASTLED_NRF52_PWM_ID>::getIRQn();
 
@@ -175,14 +176,14 @@ public:
             // disable the PWM instance
             nrf_pwm_disable(pwm);
             // may take up to 4 cycles for writes to propagate (APB bus @ 16MHz)
-            asm __volatile__ ( "NOP; NOP; NOP; NOP;" );
+            asm __volatile__ ( "NOP; NOP; NOP; NOP;" ) FL_NOEXCEPT;
             // release the PWM arbiter to be re-used by another LED string
             PWM_Arbiter<FASTLED_NRF52_PWM_ID>::releaseFromIsr();
         }
     }
 
 
-    virtual void init() {
+    virtual void init() FL_NOEXCEPT {
         FASTLED_NRF52_DEBUGPRINT("Clockless Timings:\n");
         FASTLED_NRF52_DEBUGPRINT("    T0H == %d", _T0H);
         FASTLED_NRF52_DEBUGPRINT("    T1H == %d", _T1H);
@@ -195,7 +196,7 @@ public:
     }
     virtual u16 getMaxRefreshRate() const { return 800; }
 
-    virtual void showPixels(PixelController<_RGB_ORDER> & pixels) {
+    virtual void showPixels(PixelController<_RGB_ORDER> & pixels) FL_NOEXCEPT {
         // wait for the only sequence buffer to become available
         spinAcquireSequenceBuffer();
         Rgbw rgbw = this->getRgbw();
@@ -207,11 +208,11 @@ public:
     }
 
     template<u8 _BIT>
-    FASTLED_NRF52_INLINE_ATTRIBUTE static void WriteBitToSequence(u8 byte, u16 * e) {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static void WriteBitToSequence(u8 byte, u16 * e) FL_NOEXCEPT {
         *e = _POLARITY_BIT | (((byte & (1u << _BIT)) == 0) ? _T0H : _T1H);
     }
 
-    FASTLED_NRF52_INLINE_ATTRIBUTE static void WriteByteToSequence(u8 byte, u16 * & e) {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static void WriteByteToSequence(u8 byte, u16 * & e) FL_NOEXCEPT {
         WriteBitToSequence<7>(byte, e); ++e;
         WriteBitToSequence<6>(byte, e); ++e;
         WriteBitToSequence<5>(byte, e); ++e;
@@ -226,7 +227,7 @@ public:
             }
         }
     }
-    FASTLED_NRF52_INLINE_ATTRIBUTE static void prepareSequenceBuffers(PixelController<_RGB_ORDER> & pixels, Rgbw rgbw) {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static void prepareSequenceBuffers(PixelController<_RGB_ORDER> & pixels, Rgbw rgbw) FL_NOEXCEPT {
         s_SequenceBufferValidElements = 0;
         i32    remainingSequenceElements = _PWM_BUFFER_COUNT;
         u16 * e = s_SequenceBuffer;
@@ -250,18 +251,18 @@ public:
                 u8 b0, b1, b2, b3;
                 pixels.loadAndScaleRGBW(rgbw, &b0, &b1, &b2, &b3);
 
-                WriteByteToSequence(b0, e);
-                WriteByteToSequence(b1, e);
-                WriteByteToSequence(b2, e);
-                WriteByteToSequence(b3, e);
+                WriteByteToSequence(b0, e) FL_NOEXCEPT;
+                WriteByteToSequence(b1, e) FL_NOEXCEPT;
+                WriteByteToSequence(b2, e) FL_NOEXCEPT;
+                WriteByteToSequence(b3, e) FL_NOEXCEPT;
             } else {
                 // RGB mode: load and write 3 bytes
                 u8 b0 = pixels.loadAndScale0();
-                WriteByteToSequence(b0, e);
+                WriteByteToSequence(b0, e) FL_NOEXCEPT;
                 u8 b1 = pixels.loadAndScale1();
-                WriteByteToSequence(b1, e);
+                WriteByteToSequence(b1, e) FL_NOEXCEPT;
                 u8 b2 = pixels.loadAndScale2();
-                WriteByteToSequence(b2, e);
+                WriteByteToSequence(b2, e) FL_NOEXCEPT;
             }
 
             // advance pixel and sequence pointers
@@ -273,7 +274,7 @@ public:
     }
 
 
-    FASTLED_NRF52_INLINE_ATTRIBUTE static void startPwmPlayback(u16 bytesToSend) {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static void startPwmPlayback(u16 bytesToSend) FL_NOEXCEPT {
         PWM_Arbiter<FASTLED_NRF52_PWM_ID>::acquire(isr_handler);
         NRF_PWM_Type * pwm = PWM_Arbiter<FASTLED_NRF52_PWM_ID>::getPWM();
 
@@ -293,11 +294,11 @@ public:
     FASTLED_NRF52_INLINE_ATTRIBUTE static u16* getRawSequenceBuffer() { return s_SequenceBuffer; }
     FASTLED_NRF52_INLINE_ATTRIBUTE static u16 getRawSequenceBufferSize() { return _PWM_BUFFER_COUNT; }
     FASTLED_NRF52_INLINE_ATTRIBUTE static u16 getSequenceBufferInUse() { return s_SequenceBufferInUse; }
-    FASTLED_NRF52_INLINE_ATTRIBUTE static void sendRawSequenceBuffer(u16 bytesToSend) {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static void sendRawSequenceBuffer(u16 bytesToSend) FL_NOEXCEPT {
         mWait.wait(); // ensure min time between updates
         startPwmPlayback(bytesToSend);
     }
-    FASTLED_NRF52_INLINE_ATTRIBUTE static void sendRawBytes(u8 * arrayOfBytes, u16 bytesToSend) {
+    FASTLED_NRF52_INLINE_ATTRIBUTE static void sendRawBytes(u8 * arrayOfBytes, u16 bytesToSend) FL_NOEXCEPT {
         // wait for sequence buffer to be available
         while (s_SequenceBufferInUse != 0);
 
@@ -313,7 +314,7 @@ public:
             s_SequenceBufferValidElements += bits_per_byte
             ) {
             u8 b = *nextByte;
-            WriteByteToSequence(b, e);
+            WriteByteToSequence(b, e) FL_NOEXCEPT;
             ++nextByte;
         }
         mWait.wait(); // ensure min time between updates

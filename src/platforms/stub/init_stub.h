@@ -1,6 +1,7 @@
 // ok no namespace fl
 // allow-include-after-namespace
 #pragma once
+#include "fl/stl/noexcept.h"
 
 // IWYU pragma: private
 
@@ -17,7 +18,7 @@ namespace platforms {
 ///
 /// This function does nothing and is used for platforms that don't require
 /// any special initialization during FastLED::init().
-inline void init() {
+inline void init() FL_NOEXCEPT {
     // No-op: Platforms using this stub don't need initialization
 }
 

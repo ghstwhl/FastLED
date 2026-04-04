@@ -37,6 +37,7 @@
 #include "platforms/arm/nrf52/fastspi_arm_nrf52.h"
 #include "fl/stl/stdint.h"
 #include "fl/stl/stddef.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -86,7 +87,7 @@ public:
 
     /// Initialize SPI device and register with bus manager
     /// Called by LED controller's init() method
-    void init() {
+    void init() FL_NOEXCEPT {
         if (mInitialized) {
             return;  // Already initialized
         }
@@ -118,7 +119,7 @@ public:
 
     /// Initialize bus manager (lazy initialization)
     /// Called on first transmit to allow all devices to register
-    void ensureBusInitialized() {
+    void ensureBusInitialized() FL_NOEXCEPT {
         if (mBusInitialized || !mBusManager || !mHandle.is_valid) {
             return;
         }
@@ -139,7 +140,7 @@ public:
 
     /// Begin SPI transaction
     /// Mirrors NRF52HardwareSPIOutput::select()
-    void select() {
+    void select() FL_NOEXCEPT {
         if (!mInitialized) {
             return;
         }
@@ -159,7 +160,7 @@ public:
 
     /// End SPI transaction
     /// Mirrors NRF52HardwareSPIOutput::release()
-    void release() {
+    void release() FL_NOEXCEPT {
         if (!mInitialized || !mInTransaction) {
             return;
         }
@@ -175,7 +176,7 @@ public:
 
     /// Write single byte
     /// Mirrors NRF52HardwareSPIOutput::writeByte()
-    void writeByte(u8 b) {
+    void writeByte(u8 b) FL_NOEXCEPT {
         if (!mInitialized || !mInTransaction) {
             return;
         }
@@ -195,7 +196,7 @@ public:
 
     /// Write 16-bit word (big-endian)
     /// Mirrors NRF52HardwareSPIOutput::writeWord()
-    void writeWord(u16 w) {
+    void writeWord(u16 w) FL_NOEXCEPT {
         if (!mInitialized || !mInTransaction) {
             return;
         }
@@ -216,7 +217,7 @@ public:
 
     /// Write byte values (repeated value)
     /// Mirrors NRF52HardwareSPIOutput::writeBytesValue()
-    void writeBytesValue(u8 value, int len) {
+    void writeBytesValue(u8 value, int len) FL_NOEXCEPT {
         if (!mInitialized) {
             return;
         }
@@ -242,7 +243,7 @@ public:
 
     /// Write byte buffer
     /// Mirrors NRF52HardwareSPIOutput::writeBytes()
-    void writeBytes(u8* data, int len) {
+    void writeBytes(u8* data, int len) FL_NOEXCEPT {
         if (!mInitialized) {
             return;
         }
@@ -269,7 +270,7 @@ public:
     /// Write byte buffer with adjustment
     /// Mirrors NRF52HardwareSPIOutput::writeBytes<D>()
     template<class D>
-    void writeBytes(u8* data, int len) {
+    void writeBytes(u8* data, int len) FL_NOEXCEPT {
         if (!mInitialized) {
             return;
         }
@@ -297,7 +298,7 @@ public:
     /// Write a single bit
     /// Mirrors NRF52HardwareSPIOutput::writeBit()
     template <u8 BIT>
-    void writeBit(u8 b) {
+    void writeBit(u8 b) FL_NOEXCEPT {
         if (!mInitialized || !mInTransaction) {
             return;
         }
@@ -317,19 +318,19 @@ public:
     }
 
     /// Wait for SPI to be ready (NOP for buffered writes)
-    static void wait() {
+    static void wait() FL_NOEXCEPT {
         // NOP for buffered multi-lane writes
         // Single-SPI instances handle their own waits
     }
 
-    static void waitFully() {
+    static void waitFully() FL_NOEXCEPT {
         // NOP for buffered multi-lane writes
         // Single-SPI instances handle their own waits
     }
 
     /// Raw byte write value (static for use by adjustment classes)
     /// Mirrors NRF52HardwareSPIOutput::writeBytesValueRaw()
-    static void writeBytesValueRaw(u8 value, int len) {
+    static void writeBytesValueRaw(u8 value, int len) FL_NOEXCEPT {
         // This is a static method used by adjustment classes
         // For the proxy, we can't easily support this in multi-lane mode
         // since we need the instance's buffer
@@ -340,7 +341,7 @@ public:
     /// Finalize transmission - flush buffered multi-lane SPI writes
     /// Must be called after all pixel data is written
     /// Called by chipset controller at end of showPixels()
-    void finalizeTransmission() {
+    void finalizeTransmission() FL_NOEXCEPT {
         if (!mInitialized) {
             return;
         }
@@ -358,7 +359,7 @@ public:
     }
 
     /// Check if device is enabled (not disabled due to conflicts)
-    bool isEnabled() const {
+    bool isEnabled() const FL_NOEXCEPT {
         if (!mBusManager || !mHandle.is_valid) {
             return false;
         }
@@ -366,7 +367,7 @@ public:
     }
 
     /// Get bus type for debugging/testing
-    SPIBusType getBusType() const {
+    SPIBusType getBusType() const FL_NOEXCEPT {
         if (!mBusManager || !mHandle.is_valid) {
             return SPIBusType::SOFT_SPI;
         }

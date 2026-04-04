@@ -69,7 +69,7 @@ public:
 private:
     friend class fl::Singleton<LcdRgbPeripheralEsp>;
 
-    LcdRgbPeripheralEsp();
+    LcdRgbPeripheralEsp() FL_NOEXCEPT;
 
     // Non-copyable
     LcdRgbPeripheralEsp(const LcdRgbPeripheralEsp&) = delete;

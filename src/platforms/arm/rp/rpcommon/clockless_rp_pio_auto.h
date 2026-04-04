@@ -70,6 +70,7 @@
 #include "cpixel_ledcontroller.h"
 #include "pixel_controller.h"
 #include "pixel_iterator.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -80,9 +81,9 @@ namespace fl {
 /// its pin number and delegates to the global group for actual output.
 class RP2040_PIO_Parallel {
   public:
-    void beginShowLeds(int data_pin, int nleds, bool is_rgbw);
-    void showPixels(u8 data_pin, PixelIterator& pixel_iterator);
-    void endShowLeds();
+    void beginShowLeds(int data_pin, int nleds, bool is_rgbw) FL_NOEXCEPT;
+    void showPixels(u8 data_pin, PixelIterator& pixel_iterator) FL_NOEXCEPT;
+    void endShowLeds() FL_NOEXCEPT;
 };
 
 /// @brief Base clockless controller for RP2040 with runtime pin
@@ -108,20 +109,20 @@ class ClocklessController_RP2040_PIO_WS2812Base
 
   protected:
     /// @brief Begin show cycle - queue this strip
-    virtual void* beginShowLeds(int nleds) override {
+    virtual void* beginShowLeds(int nleds) FL_NOEXCEPT override {
         void* data = Base::beginShowLeds(nleds);
         mRP2040_PIO.beginShowLeds(mPin, nleds, this->getRgbw().active());
         return data;
     }
 
     /// @brief Write pixel data to buffer
-    virtual void showPixels(PixelController<RGB_ORDER>& pixels) override {
+    virtual void showPixels(PixelController<RGB_ORDER>& pixels) FL_NOEXCEPT override {
         auto pixel_iterator = pixels.as_iterator(this->getRgbw());
         mRP2040_PIO.showPixels(mPin, pixel_iterator);
     }
 
     /// @brief End show cycle - trigger actual output
-    virtual void endShowLeds(void* data) override {
+    virtual void endShowLeds(void* data) FL_NOEXCEPT override {
         Base::endShowLeds(data);
         mRP2040_PIO.endShowLeds();
     }

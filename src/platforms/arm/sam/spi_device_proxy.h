@@ -27,6 +27,7 @@
 #include "platforms/arm/sam/fastspi_arm_sam.h"
 #include "fl/stl/stdint.h"
 #include "fl/stl/stddef.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -76,7 +77,7 @@ public:
 
     /// Initialize SPI device and register with bus manager
     /// Called by LED controller's init() method
-    void init() {
+    void init() FL_NOEXCEPT {
         if (mInitialized) {
             return;  // Already initialized
         }
@@ -109,7 +110,7 @@ public:
 
     /// Initialize bus manager (lazy initialization)
     /// Called on first transmit to allow all devices to register
-    void ensureBusInitialized() {
+    void ensureBusInitialized() FL_NOEXCEPT {
         if (mBusInitialized || !mBusManager || !mHandle.is_valid) {
             return;
         }
@@ -130,7 +131,7 @@ public:
 
     /// Begin SPI transaction
     /// Mirrors SAMHardwareSPIOutput::select()
-    void select() {
+    void select() FL_NOEXCEPT {
         if (!mInitialized) {
             return;
         }
@@ -150,7 +151,7 @@ public:
 
     /// End SPI transaction
     /// Mirrors SAMHardwareSPIOutput::release()
-    void release() {
+    void release() FL_NOEXCEPT {
         if (!mInitialized || !mInTransaction) {
             return;
         }
@@ -166,7 +167,7 @@ public:
 
     /// Write single byte
     /// Mirrors SAMHardwareSPIOutput::writeByte()
-    void writeByte(u8 b) {
+    void writeByte(u8 b) FL_NOEXCEPT {
         if (!mInitialized || !mInTransaction) {
             return;
         }
@@ -186,7 +187,7 @@ public:
 
     /// Write 16-bit word
     /// Mirrors SAMHardwareSPIOutput::writeWord()
-    void writeWord(u16 w) {
+    void writeWord(u16 w) FL_NOEXCEPT {
         if (!mInitialized || !mInTransaction) {
             return;
         }
@@ -202,7 +203,7 @@ public:
 
     /// Wait for SPI to be ready
     /// Mirrors SAMHardwareSPIOutput::waitFully()
-    void waitFully() {
+    void waitFully() FL_NOEXCEPT {
         if (mSingleSPI) {
             mSingleSPI->waitFully();
         }
@@ -212,7 +213,7 @@ public:
     /// Finalize transmission - flush buffered Dual/Quad-SPI writes
     /// Must be called after all pixel data is written
     /// Called by chipset controller at end of showPixels()
-    void finalizeTransmission() {
+    void finalizeTransmission() FL_NOEXCEPT {
         if (!mInitialized) {
             return;
         }
@@ -230,7 +231,7 @@ public:
     }
 
     /// Check if device is enabled (not disabled due to conflicts)
-    bool isEnabled() const {
+    bool isEnabled() const FL_NOEXCEPT {
         if (!mBusManager || !mHandle.is_valid) {
             return false;
         }
@@ -238,7 +239,7 @@ public:
     }
 
     /// Get bus type for debugging/testing
-    SPIBusType getBusType() const {
+    SPIBusType getBusType() const FL_NOEXCEPT {
         if (!mBusManager || !mHandle.is_valid) {
             return SPIBusType::SOFT_SPI;
         }

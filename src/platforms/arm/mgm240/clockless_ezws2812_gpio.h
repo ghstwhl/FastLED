@@ -20,6 +20,7 @@
 // Include frequency-specific implementations
 #include "platforms/arm/mgm240/clockless_ezws2812_39mhz.h"
 #include "platforms/arm/mgm240/clockless_ezws2812_78mhz.h"
+#include "fl/stl/noexcept.h"
 namespace fl {
 /// @brief Auto-selecting ezWS2812 GPIO controller
 ///
@@ -60,12 +61,12 @@ public:
     ClocklessController_ezWS2812_GPIO_Auto() = default;
 
     /// @brief Initialize the controller
-    virtual void init() override {
+    virtual void init() FL_NOEXCEPT override {
         mImpl.init();
     }
 
     /// @brief Get maximum refresh rate
-    virtual u16 getMaxRefreshRate() const override {
+    virtual u16 getMaxRefreshRate() const FL_NOEXCEPT override {
         return mImpl.getMaxRefreshRate();
     }
 
@@ -74,7 +75,7 @@ public:
 
 protected:
     /// @brief Show pixels (used by FastLED internally)
-    virtual void showPixels(PixelController<RGB_ORDER>& pixels) override {
+    virtual void showPixels(PixelController<RGB_ORDER>& pixels) FL_NOEXCEPT override {
         mImpl.showPixels(pixels);
     }
 };

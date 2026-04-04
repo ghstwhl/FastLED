@@ -14,6 +14,7 @@
 
 #include "fl/stl/isr/handler.h"
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace isr {
@@ -33,7 +34,7 @@ constexpr int ERR_NOT_IMPLEMENTED = -100;
  * Used when no platform-specific ISR implementation is available.
  */
 
-inline int null_attach_timer_handler(const isr_config_t& config, isr_handle_t* out_handle) {
+inline int null_attach_timer_handler(const isr_config_t& config, isr_handle_t* out_handle) FL_NOEXCEPT {
     (void)config;
     if (out_handle) {
         *out_handle = isr_handle_t();  // Invalid handle
@@ -41,7 +42,7 @@ inline int null_attach_timer_handler(const isr_config_t& config, isr_handle_t* o
     return ERR_NOT_IMPLEMENTED;  // Not implemented error
 }
 
-inline int null_attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t* out_handle) {
+inline int null_attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t* out_handle) FL_NOEXCEPT {
     (void)pin;
     (void)config;
     if (out_handle) {
@@ -50,27 +51,27 @@ inline int null_attach_external_handler(u8 pin, const isr_config_t& config, isr_
     return ERR_NOT_IMPLEMENTED;  // Not implemented error
 }
 
-inline int null_detach_handler(isr_handle_t& handle) {
+inline int null_detach_handler(isr_handle_t& handle) FL_NOEXCEPT {
     handle = isr_handle_t();  // Invalidate handle
     return ERR_NOT_IMPLEMENTED;  // Not implemented error
 }
 
-inline int null_enable_handler(isr_handle_t& handle) {
+inline int null_enable_handler(isr_handle_t& handle) FL_NOEXCEPT {
     (void)handle;
     return ERR_NOT_IMPLEMENTED;  // Not implemented error
 }
 
-inline int null_disable_handler(isr_handle_t& handle) {
+inline int null_disable_handler(isr_handle_t& handle) FL_NOEXCEPT {
     (void)handle;
     return ERR_NOT_IMPLEMENTED;  // Not implemented error
 }
 
-inline bool null_is_handler_enabled(const isr_handle_t& handle) {
+inline bool null_is_handler_enabled(const isr_handle_t& handle) FL_NOEXCEPT {
     (void)handle;
     return false;
 }
 
-inline const char* null_get_error_string(int error_code) {
+inline const char* null_get_error_string(int error_code) FL_NOEXCEPT {
     switch (error_code) {
         case 0: return "Success";
         case ERR_NOT_IMPLEMENTED: return "Not implemented (no platform ISR support)";
@@ -78,23 +79,23 @@ inline const char* null_get_error_string(int error_code) {
     }
 }
 
-inline const char* null_get_platform_name() {
+inline const char* null_get_platform_name() FL_NOEXCEPT {
     return "Null";
 }
 
-inline u32 null_get_max_timer_frequency() {
+inline u32 null_get_max_timer_frequency() FL_NOEXCEPT {
     return 0;  // No timer support
 }
 
-inline u32 null_get_min_timer_frequency() {
+inline u32 null_get_min_timer_frequency() FL_NOEXCEPT {
     return 0;  // No timer support
 }
 
-inline u8 null_get_max_priority() {
+inline u8 null_get_max_priority() FL_NOEXCEPT {
     return 0;  // No priority support
 }
 
-inline bool null_requires_assembly_handler(u8 priority) {
+inline bool null_requires_assembly_handler(u8 priority) FL_NOEXCEPT {
     (void)priority;
     return false;
 }
@@ -107,51 +108,51 @@ inline bool null_requires_assembly_handler(u8 priority) {
 namespace isr {
 namespace platforms {
 
-inline int attach_timer_handler(const isr_config_t& config, isr_handle_t* handle) {
+inline int attach_timer_handler(const isr_config_t& config, isr_handle_t* handle) FL_NOEXCEPT {
     return null_attach_timer_handler(config, handle);
 }
 
-inline int attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t* handle) {
+inline int attach_external_handler(u8 pin, const isr_config_t& config, isr_handle_t* handle) FL_NOEXCEPT {
     return null_attach_external_handler(pin, config, handle);
 }
 
-inline int detach_handler(isr_handle_t& handle) {
+inline int detach_handler(isr_handle_t& handle) FL_NOEXCEPT {
     return null_detach_handler(handle);
 }
 
-inline int enable_handler(isr_handle_t& handle) {
+inline int enable_handler(isr_handle_t& handle) FL_NOEXCEPT {
     return null_enable_handler(handle);
 }
 
-inline int disable_handler(isr_handle_t& handle) {
+inline int disable_handler(isr_handle_t& handle) FL_NOEXCEPT {
     return null_disable_handler(handle);
 }
 
-inline bool is_handler_enabled(const isr_handle_t& handle) {
+inline bool is_handler_enabled(const isr_handle_t& handle) FL_NOEXCEPT {
     return null_is_handler_enabled(handle);
 }
 
-inline const char* get_error_string(int error_code) {
+inline const char* get_error_string(int error_code) FL_NOEXCEPT {
     return null_get_error_string(error_code);
 }
 
-inline const char* get_platform_name() {
+inline const char* get_platform_name() FL_NOEXCEPT {
     return null_get_platform_name();
 }
 
-inline u32 get_max_timer_frequency() {
+inline u32 get_max_timer_frequency() FL_NOEXCEPT {
     return null_get_max_timer_frequency();
 }
 
-inline u32 get_min_timer_frequency() {
+inline u32 get_min_timer_frequency() FL_NOEXCEPT {
     return null_get_min_timer_frequency();
 }
 
-inline u8 get_max_priority() {
+inline u8 get_max_priority() FL_NOEXCEPT {
     return null_get_max_priority();
 }
 
-inline bool requires_assembly_handler(u8 priority) {
+inline bool requires_assembly_handler(u8 priority) FL_NOEXCEPT {
     return null_requires_assembly_handler(priority);
 }
 
@@ -167,12 +168,12 @@ inline bool requires_assembly_handler(u8 priority) {
 #ifndef FL_ISR_GLOBAL_INTERRUPTS_DEFINED
 
 /// No-op for null/unsupported platform
-inline void interruptsDisable() {
+inline void interruptsDisable() FL_NOEXCEPT {
     // No-op: platform doesn't have ISR support
 }
 
 /// No-op for null/unsupported platform
-inline void interruptsEnable() {
+inline void interruptsEnable() FL_NOEXCEPT {
     // No-op: platform doesn't have ISR support
 }
 

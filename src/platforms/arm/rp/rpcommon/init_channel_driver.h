@@ -1,4 +1,5 @@
 #pragma once
+#include "fl/stl/noexcept.h"
 
 // IWYU pragma: private
 
@@ -17,7 +18,7 @@ namespace platforms {
 /// This function is called lazily on first access to the ChannelManager singleton.
 ///
 /// @note Implementation is in src/platforms/arm/rp/rpcommon/init_channel_driver_rp.cpp.hpp
-void initChannelDrivers();
+void initChannelDrivers() FL_NOEXCEPT;
 
 }  // namespace platforms
 }  // namespace fl

@@ -11,18 +11,19 @@
 // IWYU pragma: end_keep
 #include "fl/stl/stdint.h"
 #include "fl/stl/cstddef.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace platforms {
 
 // Serial initialization (no-op on Windows)
-void begin(u32 baudRate) {
+void begin(u32 baudRate) FL_NOEXCEPT {
     (void)baudRate;
     // Windows host platform doesn't have serial ports - no-op
 }
 
 // Print functions
-void print(const char* str) {
+void print(const char* str) FL_NOEXCEPT {
     if (!str) return;
 
     // Windows: Use direct system calls to stderr
@@ -36,38 +37,38 @@ void print(const char* str) {
     _write(2, str, static_cast<unsigned int>(len));  // 2 = stderr
 }
 
-void println(const char* str) {
+void println(const char* str) FL_NOEXCEPT {
     if (!str) return;
     print(str);
     print("\n");
 }
 
 // Input functions
-int available() {
+int available() FL_NOEXCEPT {
     // Windows testing - no input available in most cases
     // This is mainly for testing environments
     return 0;
 }
 
-int peek() {
+int peek() FL_NOEXCEPT {
     // Windows testing - no peek support
     return -1;
 }
 
-int read() {
+int read() FL_NOEXCEPT {
     // Windows testing - no input available in most cases
     // This is mainly for testing environments
     return -1;
 }
 
 // Utility functions
-bool flush(u32 timeoutMs) {
+bool flush(u32 timeoutMs) FL_NOEXCEPT {
     (void)timeoutMs;
     // _write to stderr is unbuffered on Windows - no-op
     return true;
 }
 
-size_t write_bytes(const u8* buffer, size_t size) {
+size_t write_bytes(const u8* buffer, size_t size) FL_NOEXCEPT {
     if (!buffer || size == 0) return 0;
 
     // Write raw bytes to stderr
@@ -75,17 +76,17 @@ size_t write_bytes(const u8* buffer, size_t size) {
     return (written >= 0) ? static_cast<size_t>(written) : 0;
 }
 
-bool serial_ready() {
+bool serial_ready() FL_NOEXCEPT {
     // Windows host platform always "ready" (stderr always available)
     return true;
 }
 
-bool serial_is_buffered() {
+bool serial_is_buffered() FL_NOEXCEPT {
     // Windows stderr is always "buffered" (not ROM UART - that's ESP32-specific)
     return true;
 }
 
-int readLineNative(char delimiter, char* out, int outLen) {
+int readLineNative(char delimiter, char* out, int outLen) FL_NOEXCEPT {
     (void)delimiter; (void)out; (void)outLen;
     return -1;  // Not supported on Windows host builds
 }

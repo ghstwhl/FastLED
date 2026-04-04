@@ -15,6 +15,7 @@
 #else
 // All other processors (ARM, ESP32, etc.) are fast enough - use portable C version
 #include "platforms/shared/math8.h"
+#include "fl/stl/noexcept.h"
 #endif
 namespace fl {
     /// @file math8.h
@@ -40,7 +41,7 @@ namespace fl {
 /// Square root for 16-bit integers.
 /// About three times faster and five times smaller
 /// than Arduino's general `sqrt` on AVR.
-LIB8STATIC u8 sqrt16(u16 x) {
+LIB8STATIC u8 sqrt16(u16 x) FL_NOEXCEPT {
     if (x <= 1) {
         return x;
     }
@@ -69,7 +70,7 @@ LIB8STATIC u8 sqrt16(u16 x) {
     return low - 1;
 }
 
-FL_ALWAYS_INLINE u8 sqrt8(u8 x) {
+FL_ALWAYS_INLINE u8 sqrt8(u8 x) FL_NOEXCEPT {
     return sqrt16(map8_to_16(x));
 }
 

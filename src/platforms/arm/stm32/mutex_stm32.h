@@ -13,6 +13,7 @@
 #include "fl/stl/assert.h"
 // IWYU pragma: begin_keep
 #include <mutex>  // ok include - needed for std::unique_lock
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 
 namespace fl {
@@ -46,7 +47,7 @@ private:
     void* mHandle;  // SemaphoreHandle_t (opaque pointer to avoid including FreeRTOS headers)
 
 public:
-    MutexSTM32();
+    MutexSTM32() FL_NOEXCEPT;
     ~MutexSTM32();
 
     // Non-copyable and non-movable
@@ -55,9 +56,9 @@ public:
     MutexSTM32(MutexSTM32&&) = delete;
     MutexSTM32& operator=(MutexSTM32&&) = delete;
 
-    void lock();
-    void unlock();
-    bool try_lock();
+    void lock() FL_NOEXCEPT;
+    void unlock() FL_NOEXCEPT;
+    bool try_lock() FL_NOEXCEPT;
 };
 
 // STM32 FreeRTOS recursive mutex wrapper
@@ -66,7 +67,7 @@ private:
     void* mHandle;  // SemaphoreHandle_t (opaque pointer to avoid including FreeRTOS headers)
 
 public:
-    RecursiveMutexSTM32();
+    RecursiveMutexSTM32() FL_NOEXCEPT;
     ~RecursiveMutexSTM32();
 
     // Non-copyable and non-movable
@@ -75,9 +76,9 @@ public:
     RecursiveMutexSTM32(RecursiveMutexSTM32&&) = delete;
     RecursiveMutexSTM32& operator=(RecursiveMutexSTM32&&) = delete;
 
-    void lock();
-    void unlock();
-    bool try_lock();
+    void lock() FL_NOEXCEPT;
+    void unlock() FL_NOEXCEPT;
+    bool try_lock() FL_NOEXCEPT;
 };
 
 // Define FASTLED_MULTITHREADED for STM32 with FreeRTOS

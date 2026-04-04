@@ -13,6 +13,7 @@
 
 #include "fl/system/log.h"
 #include "fl/system/log.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -26,13 +27,13 @@ static constexpr u32 kFlexIOMaxPeriodNs = 2500;
 // ============================================================================
 
 ChannelEngineFlexIO::ChannelEngineFlexIO()
-    : mPeripheral(IFlexIOPeripheral::create()),
+ FL_NOEXCEPT : mPeripheral(IFlexIOPeripheral::create()),
       mHwInitialized(false), mCurrentPin(0xFF) {
     FL_LOG_FLEXIO("ChannelEngineFlexIO: created");
 }
 
 ChannelEngineFlexIO::ChannelEngineFlexIO(fl::shared_ptr<IFlexIOPeripheral> peripheral)
-    : mPeripheral(fl::move(peripheral)),
+ FL_NOEXCEPT : mPeripheral(fl::move(peripheral)),
       mHwInitialized(false), mCurrentPin(0xFF) {
     FL_LOG_FLEXIO("ChannelEngineFlexIO: created (injected peripheral)");
 }
@@ -44,7 +45,7 @@ ChannelEngineFlexIO::~ChannelEngineFlexIO() {
     FL_LOG_FLEXIO("ChannelEngineFlexIO: destroyed");
 }
 
-bool ChannelEngineFlexIO::canHandle(const ChannelDataPtr& data) const {
+bool ChannelEngineFlexIO::canHandle(const ChannelDataPtr& data) const FL_NOEXCEPT {
     if (!data || !data->isClockless()) {
         return false;
     }
@@ -63,14 +64,14 @@ bool ChannelEngineFlexIO::canHandle(const ChannelDataPtr& data) const {
     return mPeripheral->canHandlePin(pin);
 }
 
-void ChannelEngineFlexIO::enqueue(ChannelDataPtr channelData) {
+void ChannelEngineFlexIO::enqueue(ChannelDataPtr channelData) FL_NOEXCEPT {
     if (channelData) {
         channelData->setInUse(true);
         mEnqueuedChannels.push_back(fl::move(channelData));
     }
 }
 
-void ChannelEngineFlexIO::show() {
+void ChannelEngineFlexIO::show() FL_NOEXCEPT {
     if (!mPeripheral) {
         return;
     }
@@ -136,7 +137,7 @@ void ChannelEngineFlexIO::show() {
     mTransmittingChannels.clear();
 }
 
-IChannelDriver::DriverState ChannelEngineFlexIO::poll() {
+IChannelDriver::DriverState ChannelEngineFlexIO::poll() FL_NOEXCEPT {
     if (!mTransmittingChannels.empty()) {
         if (mPeripheral && mPeripheral->isDone()) {
             // Transfer complete — clean up

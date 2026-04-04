@@ -17,6 +17,7 @@
 #if defined(FL_IS_AVR)
 // IWYU pragma: begin_keep
 #include <avr/pgmspace.h>
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 #endif
 #else
@@ -48,12 +49,12 @@
 // lowers to a single load instruction — unlike fl::memcpy which is a
 // cross-TU call that the compiler cannot inline without LTO.
 #if !(defined(FL_IS_AVR))
-static inline fl::u16 _fl_progmem_aligned_read_2(const void* addr) {
+static inline fl::u16 _fl_progmem_aligned_read_2(const void* addr) FL_NOEXCEPT {
     fl::u16 result;
     FL_BUILTIN_MEMCPY(&result, addr, 2);
     return result;
 }
-static inline fl::u32 _fl_progmem_aligned_read_4(const void* addr) {
+static inline fl::u32 _fl_progmem_aligned_read_4(const void* addr) FL_NOEXCEPT {
     fl::u32 result;
     FL_BUILTIN_MEMCPY(&result, addr, 4);
     return result;

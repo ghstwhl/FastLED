@@ -7,6 +7,7 @@
 #include "eorder.h"
 #include "fl/chipsets/timing_traits.h"
 #include "fastled_delay.h"
+#include "fl/stl/noexcept.h"
 namespace fl {
 #define FL_CLOCKLESS_CONTROLLER_DEFINED 1
 
@@ -22,7 +23,7 @@ class ClocklessController : public CPixelLEDController<RGB_ORDER> {
   data_ptr_t mPort;
   CMinWait<WAIT_TIME> mWait;
 public:
-  virtual void init() {
+  virtual void init() FL_NOEXCEPT {
     FastPinBB<DATA_PIN>::setOutput();
     mPinMask = FastPinBB<DATA_PIN>::mask();
     mPort = FastPinBB<DATA_PIN>::port();
@@ -30,7 +31,7 @@ public:
 
   virtual u16 getMaxRefreshRate() const { return 400; }
 
-  virtual void showPixels(PixelController<RGB_ORDER> & pixels) {
+  virtual void showPixels(PixelController<RGB_ORDER> & pixels) FL_NOEXCEPT {
     mWait.wait();
     cli();
     u32 clocks = showRGBInternal(pixels);
@@ -46,7 +47,7 @@ public:
 
   // This method is made static to force making register Y available to use for data on AVR - if the method is non-static, then
   // gcc will use register Y for the this pointer.
-  static u32 showRGBInternal(PixelController<RGB_ORDER> pixels) {
+  static u32 showRGBInternal(PixelController<RGB_ORDER> pixels) FL_NOEXCEPT {
     struct M0ClocklessData data;
     data.d[0] = pixels.d[0];
     data.d[1] = pixels.d[1];

@@ -31,6 +31,7 @@
 #include "fl/stl/vector.h"
 #include "fl/stl/singleton.h"
 #include "fl/stl/map.h"
+#include "fl/stl/noexcept.h"
 
 #ifndef FASTLED_OBJECTFLED_LATCH_DELAY
 #define FASTLED_OBJECTFLED_LATCH_DELAY 300  // WS2812-5VB
@@ -48,18 +49,18 @@ template <typename TIMING> class ObjectFLEDGroup;
 /// Track all active chipset groups across all chipset types
 class ObjectFLEDRegistry {
 public:
-    static ObjectFLEDRegistry& getInstance() {
+    static ObjectFLEDRegistry& getInstance() FL_NOEXCEPT {
         return fl::Singleton<ObjectFLEDRegistry>::instance();
     }
 
     // Register a group for tracking
-    void registerGroup(void* groupPtr, void (*flushFunc)(void*));
+    void registerGroup(void* groupPtr, void (*flushFunc)(void*)) FL_NOEXCEPT;
 
     // Flush all pending groups
-    void flushAll();
+    void flushAll() FL_NOEXCEPT;
 
     // Flush all groups except the specified one
-    void flushAllExcept(void* exceptPtr);
+    void flushAllExcept(void* exceptPtr) FL_NOEXCEPT;
 
 private:
     struct GroupEntry {
@@ -73,7 +74,7 @@ private:
 
     fl::vector<GroupEntry> mGroups;
 
-    bool contains(const GroupEntry& entry);
+    bool contains(const GroupEntry& entry) FL_NOEXCEPT;
 };
 
 // ============================================================================
@@ -92,20 +93,20 @@ struct ObjectFLEDTimingConfig {
 /// This does all the real work - templates just delegate to this
 class ObjectFLEDGroupBase {
 public:
-    ObjectFLEDGroupBase(const ObjectFLEDTimingConfig& timing);
+    ObjectFLEDGroupBase(const ObjectFLEDTimingConfig& timing) FL_NOEXCEPT;
     ~ObjectFLEDGroupBase();
 
     // Called by proxy in beginShowLeds()
-    void onQueuingStart();
+    void onQueuingStart() FL_NOEXCEPT;
 
     // Called by proxy in showPixels()
-    void addStrip(u8 pin, PixelIterator& pixel_iterator);
+    void addStrip(u8 pin, PixelIterator& pixel_iterator) FL_NOEXCEPT;
 
     // Called by registry when chipset changes or frame ends
-    void flush();
+    void flush() FL_NOEXCEPT;
 
 private:
-    void rebuildObjectFLED();
+    void rebuildObjectFLED() FL_NOEXCEPT;
 
     ObjectFLEDTimingConfig mTiming;
     RectangularDrawBuffer mRectDrawBuffer;
@@ -118,7 +119,7 @@ private:
 template <typename TIMING>
 class ObjectFLEDGroup {
 public:
-    static ObjectFLEDGroup& getInstance() {
+    static ObjectFLEDGroup& getInstance() FL_NOEXCEPT {
         return fl::Singleton<ObjectFLEDGroup<TIMING>>::instance();
     }
 
@@ -134,7 +135,7 @@ public:
     }
 
     void onQueuingStart() { mBase.onQueuingStart(); }
-    void addStrip(u8 pin, PixelIterator& pixel_iterator) {
+    void addStrip(u8 pin, PixelIterator& pixel_iterator) FL_NOEXCEPT {
         mBase.addStrip(pin, pixel_iterator);
     }
     void flush() { mBase.flush(); }
@@ -155,11 +156,11 @@ class ClocklessController_ObjectFLED_Proxy
     typedef CPixelLEDController<RGB_ORDER> Base;
 
   public:
-    ClocklessController_ObjectFLED_Proxy();
+    ClocklessController_ObjectFLED_Proxy() FL_NOEXCEPT;
 
     void init() override {}
 
-    virtual u16 getMaxRefreshRate() const override {
+    virtual u16 getMaxRefreshRate() const FL_NOEXCEPT override {
         // Calculate based on timing: if total period > 2000ns, it's 400kHz, else 800kHz
         u32 total_ns = TIMING::T1 + TIMING::T2 + TIMING::T3;
         return (total_ns > 2000) ? 400 : 800;
@@ -167,8 +168,8 @@ class ClocklessController_ObjectFLED_Proxy
 
   protected:
     virtual void *beginShowLeds(int nleds) override;
-    virtual void showPixels(PixelController<RGB_ORDER> &pixels) override;
-    virtual void endShowLeds(void *data) override;
+    virtual void showPixels(PixelController<RGB_ORDER> &pixels) FL_NOEXCEPT override;
+    virtual void endShowLeds(void *data) FL_NOEXCEPT override;
 };
 
 // ============================================================================

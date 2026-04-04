@@ -23,6 +23,7 @@
 
 #include "fl/stl/stdint.h"
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 FL_EXTERN_C_BEGIN
 
@@ -34,16 +35,16 @@ typedef struct {
 } FL_GPIO_Event;
 
 /* Ring buffer management */
-void fl_gpio_sim_init(void);
-void fl_gpio_sim_clear(void);
-void fl_gpio_sim_tick(void);
-bool fl_gpio_sim_read_event(FL_GPIO_Event* out);
-fl::u32 fl_gpio_sim_get_event_count(void);
-fl::u32 fl_gpio_sim_get_overflow_count(void);
+void fl_gpio_sim_init(void) FL_NOEXCEPT;
+void fl_gpio_sim_clear(void) FL_NOEXCEPT;
+void fl_gpio_sim_tick(void) FL_NOEXCEPT;
+bool fl_gpio_sim_read_event(FL_GPIO_Event* out) FL_NOEXCEPT;
+fl::u32 fl_gpio_sim_get_event_count(void) FL_NOEXCEPT;
+fl::u32 fl_gpio_sim_get_overflow_count(void) FL_NOEXCEPT;
 
 /* Timer simulation */
-bool fl_spi_host_timer_is_running(void);
-fl::u32 fl_spi_host_timer_get_hz(void);
+bool fl_spi_host_timer_is_running(void) FL_NOEXCEPT;
+fl::u32 fl_spi_host_timer_get_hz(void) FL_NOEXCEPT;
 
 FL_EXTERN_C_END
 

@@ -8,6 +8,7 @@
 #include "fl/codec/idecoder.h"
 #include "fl/stl/string.h"
 #include "fl/stl/unique_ptr.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -15,17 +16,17 @@ namespace fl {
 // Wraps the esp_h264 component from ESP-IDF.
 class H264HwDecoder : public IDecoder {
 public:
-    H264HwDecoder();
+    H264HwDecoder() FL_NOEXCEPT;
     ~H264HwDecoder() override;
 
-    bool begin(fl::filebuf_ptr stream) override;
-    void end() override;
-    bool isReady() const override;
-    bool hasError(fl::string* msg = nullptr) const override;
+    bool begin(fl::filebuf_ptr stream) FL_NOEXCEPT override;
+    void end() FL_NOEXCEPT override;
+    bool isReady() const FL_NOEXCEPT override;
+    bool hasError(fl::string* msg = nullptr) const FL_NOEXCEPT override;
 
-    DecodeResult decode() override;
-    Frame getCurrentFrame() override;
-    bool hasMoreFrames() const override;
+    DecodeResult decode() FL_NOEXCEPT override;
+    Frame getCurrentFrame() FL_NOEXCEPT override;
+    bool hasMoreFrames() const FL_NOEXCEPT override;
 
 private:
     struct Impl;

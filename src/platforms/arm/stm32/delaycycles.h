@@ -5,6 +5,7 @@
 
 #include "platforms/cycle_type.h"
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 /// @file platforms/arm/stm32/delaycycles.h
 /// ARM Cortex-M3/M4 (STM32) platform-specific cycle-accurate delay utilities
@@ -14,7 +15,7 @@ constexpr fl::u32 ARM_DEMCR_ADDR = 0xE000EDFC;
 constexpr fl::u32 ARM_DWT_CTRL_ADDR = 0xE0001000;
 constexpr fl::u32 ARM_DWT_CYCCNT_ADDR = 0xE0001004;
 
-FASTLED_FORCE_INLINE void dwt_enable_cycle_counter() {
+FASTLED_FORCE_INLINE void dwt_enable_cycle_counter() FL_NOEXCEPT {
   volatile fl::u32* demcr = (volatile fl::u32*)ARM_DEMCR_ADDR;
   volatile fl::u32* dwt_ctrl = (volatile fl::u32*)ARM_DWT_CTRL_ADDR;
 
@@ -22,12 +23,12 @@ FASTLED_FORCE_INLINE void dwt_enable_cycle_counter() {
   *dwt_ctrl |= 1u;       // DWT.CYCCNTENA
 }
 
-FASTLED_FORCE_INLINE fl::u32 dwt_cyccnt_arm() {
+FASTLED_FORCE_INLINE fl::u32 dwt_cyccnt_arm() FL_NOEXCEPT {
   volatile fl::u32* cyccnt = (volatile fl::u32*)ARM_DWT_CYCCNT_ADDR;
   return *cyccnt;
 }
 
-FASTLED_FORCE_INLINE void delay_cycles_dwt_arm(fl::u32 cycles) {
+FASTLED_FORCE_INLINE void delay_cycles_dwt_arm(fl::u32 cycles) FL_NOEXCEPT {
   if (cycles == 0) return;
   fl::u32 start = dwt_cyccnt_arm();
   while ((fl::u32)(dwt_cyccnt_arm() - start) < cycles) { }

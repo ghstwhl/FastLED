@@ -24,6 +24,7 @@
 #include "platforms/arm/stm32/fastspi_arm_stm32.h"
 #include "fl/stl/stdint.h"
 #include "fl/stl/stddef.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -73,7 +74,7 @@ public:
 
     /// Initialize SPI device and register with bus manager
     /// Called by LED controller's init() method
-    void init() {
+    void init() FL_NOEXCEPT {
         if (mInitialized) {
             return;  // Already initialized
         }
@@ -104,7 +105,7 @@ public:
 
     /// Initialize bus manager (lazy initialization)
     /// Called on first transmit to allow all devices to register
-    void ensureBusInitialized() {
+    void ensureBusInitialized() FL_NOEXCEPT {
         if (mBusInitialized || !mBusManager || !mHandle.is_valid) {
             return;
         }
@@ -125,7 +126,7 @@ public:
 
     /// Begin SPI transaction
     /// Mirrors STM32SPIOutput::select()
-    void select() {
+    void select() FL_NOEXCEPT {
         if (!mInitialized) {
             return;
         }
@@ -145,7 +146,7 @@ public:
 
     /// End SPI transaction
     /// Mirrors STM32SPIOutput::release()
-    void release() {
+    void release() FL_NOEXCEPT {
         if (!mInitialized || !mInTransaction) {
             return;
         }
@@ -161,7 +162,7 @@ public:
 
     /// Write single byte
     /// Mirrors STM32SPIOutput::writeByte()
-    void writeByte(u8 b) {
+    void writeByte(u8 b) FL_NOEXCEPT {
         if (!mInitialized || !mInTransaction) {
             return;
         }
@@ -181,18 +182,18 @@ public:
 
     /// Write 16-bit word (big-endian)
     /// Mirrors STM32SPIOutput::writeWord()
-    void writeWord(u16 w) {
+    void writeWord(u16 w) FL_NOEXCEPT {
         writeByte(static_cast<u8>(w >> 8));
         writeByte(static_cast<u8>(w & 0xFF));
     }
 
     /// Write byte without wait (same as writeByte for proxy)
-    void writeByteNoWait(u8 b) {
+    void writeByteNoWait(u8 b) FL_NOEXCEPT {
         writeByte(b);
     }
 
     /// Write byte with post-wait (same as writeByte for proxy)
-    void writeBytePostWait(u8 b) {
+    void writeBytePostWait(u8 b) FL_NOEXCEPT {
         writeByte(b);
     }
 
@@ -204,7 +205,7 @@ public:
     /// Finalize transmission - flush buffered Multi-lane SPI writes
     /// Must be called after all pixel data is written
     /// Called by chipset controller at end of showPixels()
-    void finalizeTransmission() {
+    void finalizeTransmission() FL_NOEXCEPT {
         if (!mInitialized) {
             return;
         }
@@ -222,7 +223,7 @@ public:
     }
 
     /// Check if device is enabled (not disabled due to conflicts)
-    bool isEnabled() const {
+    bool isEnabled() const FL_NOEXCEPT {
         if (!mBusManager || !mHandle.is_valid) {
             return false;
         }
@@ -230,7 +231,7 @@ public:
     }
 
     /// Get bus type for debugging/testing
-    SPIBusType getBusType() const {
+    SPIBusType getBusType() const FL_NOEXCEPT {
         if (!mBusManager || !mHandle.is_valid) {
             return SPIBusType::SOFT_SPI;
         }

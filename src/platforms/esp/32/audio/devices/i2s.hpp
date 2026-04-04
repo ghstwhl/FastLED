@@ -24,6 +24,7 @@
     #elif ESP_IDF_VERSION_4_OR_HIGHER
         #define FASTLED_ESP32_I2S_SUPPORTED 1
         #include "platforms/esp/32/audio/devices/idf4_i2s_context.hpp"
+#include "fl/stl/noexcept.h"
     #else
         #define FASTLED_ESP32_I2S_SUPPORTED 0
     #endif
@@ -42,7 +43,7 @@ class I2S_Audio : public audio::IInput {
 
     ~I2S_Audio() {}
 
-    void start() override {
+    void start() FL_NOEXCEPT override {
         if (mI2sContextOpt) {
             FL_WARN("I2S channel is already initialized");
             return;
@@ -52,7 +53,7 @@ class I2S_Audio : public audio::IInput {
         mTotalSamplesRead = 0;  // Reset sample counter on start
     }
 
-    void stop() override {
+    void stop() FL_NOEXCEPT override {
         if (!mI2sContextOpt) {
             FL_WARN("I2S channel is not initialized");
             return;
@@ -62,14 +63,14 @@ class I2S_Audio : public audio::IInput {
         mTotalSamplesRead = 0;  // Reset sample counter on stop
     }
 
-    bool error(fl::string *msg = nullptr) override {
+    bool error(fl::string *msg = nullptr) FL_NOEXCEPT override {
         if (msg && mHasError) {
             *msg = mErrorMessage;
         }
         return mHasError;
     }
 
-    audio::Sample read() override {
+    audio::Sample read() FL_NOEXCEPT override {
         if (!mI2sContextOpt) {
             FL_WARN("I2S channel is not initialized");
             return audio::Sample();  // Invalid sample
@@ -90,7 +91,7 @@ class I2S_Audio : public audio::IInput {
         // Update total samples counter
         mTotalSamplesRead += samples_read;
 
-        fl::span<const i16> data(buf, samples_read);
+        fl::span<const i16> data(buf, samples_read) FL_NOEXCEPT;
         
         // Create audio::Sample with pooled audio::SampleImpl (pooling handled internally)
         return audio::Sample(data, timestamp_ms);

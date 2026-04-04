@@ -48,28 +48,28 @@ public:
   inline static void setInput() { pinMode(PIN, PinMode::Input); }
 
   // Set pin HIGH - use BSRR lower 16 bits (same as F1)
-  inline static void hi() __attribute__ ((always_inline)) {
+  inline static void hi() FL_NOEXCEPT __attribute__ ((always_inline)) {
     _GPIO::r()->BSRR = _MASK;
   }
 
   // Set pin LOW - use BSRR upper 16 bits (NOT BRR - doesn't exist on F4!)
   // CRITICAL: This is the key difference from STM32F1
-  inline static void lo() __attribute__ ((always_inline)) {
+  inline static void lo() FL_NOEXCEPT __attribute__ ((always_inline)) {
     _GPIO::r()->BSRR = (_MASK << 16);
   }
 
-  inline static void set(FASTLED_REGISTER port_t val) __attribute__ ((always_inline)) {
+  inline static void set(FASTLED_REGISTER port_t val) FL_NOEXCEPT __attribute__ ((always_inline)) {
     _GPIO::r()->ODR = val;
   }
 
   inline static void strobe() __attribute__ ((always_inline)) { toggle(); toggle(); }
-  inline static void toggle() __attribute__ ((always_inline)) {
+  inline static void toggle() FL_NOEXCEPT __attribute__ ((always_inline)) {
     if(_GPIO::r()->ODR & _MASK) { lo(); } else { hi(); }
   }
 
   inline static void hi(FASTLED_REGISTER port_ptr_t port) __attribute__ ((always_inline)) { hi(); }
   inline static void lo(FASTLED_REGISTER port_ptr_t port) __attribute__ ((always_inline)) { lo(); }
-  inline static void fastset(FASTLED_REGISTER port_ptr_t port, FASTLED_REGISTER port_t val) __attribute__ ((always_inline)) {
+  inline static void fastset(FASTLED_REGISTER port_ptr_t port, FASTLED_REGISTER port_t val) FL_NOEXCEPT __attribute__ ((always_inline)) {
     *port = val;
   }
 
@@ -80,7 +80,7 @@ public:
 
   // cport() returns BSRR for reset (NOT BRR) - F4 compatibility
   // Caller must shift mask by 16 bits when using this
-  inline static port_ptr_t cport() __attribute__ ((always_inline)) {
+  inline static port_ptr_t cport() FL_NOEXCEPT __attribute__ ((always_inline)) {
     return &_GPIO::r()->BSRR;
   }
 
@@ -140,6 +140,7 @@ _IO32(A); _IO32(B); _IO32(C); _IO32(D); _IO32(E);
 #elif defined(ARDUINO_NUCLEO_F446RE)
   #include "platforms/arm/stm32/pins/boards/f4/f446re_nucleo.h"  // nolint
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 FL_DISABLE_WARNING_PUSH
 FL_DISABLE_WARNING_DEPRECATED_REGISTER

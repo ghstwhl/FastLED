@@ -10,6 +10,7 @@
 #include "fl/system/delay.h"
 // IWYU pragma: begin_keep
 #include <nrf_spim.h>
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 
 namespace fl {
@@ -80,7 +81,7 @@ namespace fl {
 #endif
 
         } m_SpiSavedConfig;
-        void saveSpimConfig() {
+        void saveSpimConfig() FL_NOEXCEPT {
             m_SpiSavedConfig.inten          = FASTLED_NRF52_SPIM->INTENSET;
             m_SpiSavedConfig.shorts         = FASTLED_NRF52_SPIM->SHORTS;
             m_SpiSavedConfig.sck_pin        = FASTLED_NRF52_SPIM->PSEL.SCK;
@@ -98,7 +99,7 @@ namespace fl {
             m_SpiSavedConfig.dcx_config     = FASTLED_NRF52_SPIM->DCXCNT;
 #endif
         }
-        void restoreSpimConfig() {
+        void restoreSpimConfig() FL_NOEXCEPT {
             // 0. ASSERT() the SPIM instance is not enabled
 
             FASTLED_NRF52_SPIM->INTENCLR        = 0xFFFFFFFF;
@@ -128,7 +129,7 @@ namespace fl {
         static_assert(!FastPin<_CLOCK_PIN>::LowSpeedOnlyRecommended(), "Invalid (low-speed only) pin specified");
 
         /// initialize the SPI subssytem
-        void init() {
+        void init() FL_NOEXCEPT {
             // 0. ASSERT() the SPIM instance is not enabled / in use
             //ASSERT(m_SPIM->ENABLE != (SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos));
 
@@ -162,7 +163,7 @@ namespace fl {
         }
 
         /// latch the CS select
-        void select() {
+        void select() FL_NOEXCEPT {
             //ASSERT(!s_InUse);
             saveSpimConfig();
             s_InUse = true;
@@ -170,20 +171,20 @@ namespace fl {
         }
 
         /// release the CS select
-        void release() {
+        void release() FL_NOEXCEPT {
             //ASSERT(s_InUse);
             waitFully();
             s_InUse = false;
             restoreSpimConfig();
         }
 
-        void endTransaction() {
+        void endTransaction() FL_NOEXCEPT {
             waitFully();
             release();
         }
 
         /// wait until all queued up data has been written
-        static void waitFully() {
+        static void waitFully() FL_NOEXCEPT {
             if (!s_NeedToWait) return;
             // else, need to wait for END event
             while(!FASTLED_NRF52_SPIM->EVENTS_END) {};
@@ -195,7 +196,7 @@ namespace fl {
         }
         // wait only until we can add a new transaction into the registers
         // (caller must still waitFully() before actually starting this next transaction)
-        static void wait() {
+        static void wait() FL_NOEXCEPT {
             if (!s_NeedToWait) return;
             while (!FASTLED_NRF52_SPIM->EVENTS_STARTED) {};
             // leave the event set here... caller must waitFully() and start next transaction
@@ -203,7 +204,7 @@ namespace fl {
         }
 
         /// write a byte out via SPI (returns immediately on writing register)
-        static void writeByte(u8 b) {
+        static void writeByte(u8 b) FL_NOEXCEPT {
             wait();
             // cannot use pointer to stack, so copy to m_buffer[]
             u8 i = (s_BufferIndex ? 1u : 0u);
@@ -225,7 +226,7 @@ namespace fl {
         }
 
         /// write a word out via SPI (returns immediately on writing register)
-        static void writeWord(u16 w) {
+        static void writeWord(u16 w) FL_NOEXCEPT {
             wait();
             // cannot use pointer to stack, so copy to m_buffer[]
             u8 i = (s_BufferIndex ? 1u : 0u);
@@ -248,12 +249,12 @@ namespace fl {
         }
 
         /// A raw set of writing byte values, assumes setup/init/waiting done elsewhere (static for use by adjustment classes)
-        static void writeBytesValueRaw(u8 value, int len) {
+        static void writeBytesValueRaw(u8 value, int len) FL_NOEXCEPT {
             while (len--) { writeByte(value); }
         }
 
         /// A full cycle of writing a value for len bytes, including select, release, and waiting
-        void writeBytesValue(u8 value, int len) {
+        void writeBytesValue(u8 value, int len) FL_NOEXCEPT {
             select();
             writeBytesValueRaw(value, len);
             waitFully();
@@ -261,7 +262,7 @@ namespace fl {
         }
 
         /// A full cycle of writing a raw block of data out, including select, release, and waiting
-        void writeBytes(u8 *data, int len) {
+        void writeBytes(u8 *data, int len) FL_NOEXCEPT {
             // This is a special-case, with no adjustment of the bytes... write them directly...
             select();
             wait();
@@ -280,7 +281,7 @@ namespace fl {
         }
 
         /// A full cycle of writing a raw block of data out, including select, release, and waiting
-        template<class D> void writeBytes(u8 *data, int len) {
+        template<class D> void writeBytes(u8 *data, int len) FL_NOEXCEPT {
             u8 * end = data + len;
             select();
             wait();
@@ -297,7 +298,7 @@ namespace fl {
         //}
 
         /// write a single bit out, which bit from the passed in byte is determined by template parameter
-        template <u8 BIT> inline static void writeBit(u8 b) {
+        template <u8 BIT> inline static void writeBit(u8 b) FL_NOEXCEPT {
             // SPIM instance must be finished transmitting and then disabled
             waitFully();
             nrf_spim_disable(FASTLED_NRF52_SPIM);
@@ -322,7 +323,7 @@ namespace fl {
         static void finalizeTransmission() { }
 
         /// write out pixel data from the given PixelController object, including select, release, and waiting
-        template <u8 FLAGS, class D, EOrder RGB_ORDER> void writePixels(PixelController<RGB_ORDER> pixels, void* context = nullptr) {
+        template <u8 FLAGS, class D, EOrder RGB_ORDER> void writePixels(PixelController<RGB_ORDER> pixels, void* context = nullptr) FL_NOEXCEPT {
             select();
             int len = pixels.mLen;
             // TODO: If user indicates a pre-allocated double-buffer,

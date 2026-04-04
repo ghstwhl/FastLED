@@ -20,9 +20,10 @@ extern "C" {
     // IWYU pragma: begin_keep
     #include <esp8266_peri.h>
     #include <osapi.h>
+#include "fl/stl/noexcept.h"
     // IWYU pragma: end_keep
     // ADC function from ESP8266 SDK (user_interface.h)
-    fl::u16 system_adc_read(void);
+    fl::u16 system_adc_read(void) FL_NOEXCEPT;
 }
 FL_EXTERN_C_END
 
@@ -79,7 +80,7 @@ namespace platforms {
 // Digital Pin Functions
 // ============================================================================
 
-inline void pinMode(int pin, PinMode mode) {
+inline void pinMode(int pin, PinMode mode) FL_NOEXCEPT {
     if (pin < 0) {
         return;  // Invalid pin
     }
@@ -156,7 +157,7 @@ inline void pinMode(int pin, PinMode mode) {
     // Pins > 16 are invalid, silently ignore
 }
 
-inline void digitalWrite(int pin, PinValue val) {
+inline void digitalWrite(int pin, PinValue val) FL_NOEXCEPT {
     if (pin < 0) {
         return;  // Invalid pin
     }
@@ -181,7 +182,7 @@ inline void digitalWrite(int pin, PinValue val) {
     // Pins > 16 are invalid, silently ignore
 }
 
-inline PinValue digitalRead(int pin) {
+inline PinValue digitalRead(int pin) FL_NOEXCEPT {
     if (pin < 0) {
         return PinValue::Low;  // Invalid pin
     }
@@ -207,7 +208,7 @@ inline PinValue digitalRead(int pin) {
 // A0 pin constant (matches Arduino ESP8266 core definition)
 #define A0 17
 
-inline u16 analogRead(int pin) {
+inline u16 analogRead(int pin) FL_NOEXCEPT {
     // ESP8266 has only one ADC on A0/TOUT pin (pin 17 or 0)
     // Pin 17 is the standard A0 constant, pin 0 is accepted for compatibility
     if (pin == 17 || pin == 0) {
@@ -221,7 +222,7 @@ inline u16 analogRead(int pin) {
     return static_cast<u16>(platforms::digitalRead(pin) == PinValue::High ? 1023 : 0);
 }
 
-inline void analogWrite(int pin, u16 val) {
+inline void analogWrite(int pin, u16 val) FL_NOEXCEPT {
     // ESP8266 does not have true analog output (no DAC)
     // The Arduino core implements PWM via software waveform generation using
     // TIMER1 and GPIO manipulation, which is complex and requires:
@@ -253,7 +254,7 @@ inline void analogWrite(int pin, u16 val) {
     // True PWM would require timer-based implementation
 }
 
-inline void setPwm16(int pin, u16 val) {
+inline void setPwm16(int pin, u16 val) FL_NOEXCEPT {
     // ESP8266 hardware supports up to 14-bit PWM via TIMER1
     // However, implementing true PWM requires complex timer configuration
     // Provide digital fallback similar to analogWrite
@@ -274,7 +275,7 @@ inline void setPwm16(int pin, u16 val) {
     // True 16-bit PWM would require TIMER1-based implementation
 }
 
-inline void setAdcRange(AdcRange range) {
+inline void setAdcRange(AdcRange range) FL_NOEXCEPT {
     // ESP8266 ADC reference voltage is fixed at 1.0V (internal reference)
     // This function has no effect on ESP8266 hardware - reference cannot be changed
     //

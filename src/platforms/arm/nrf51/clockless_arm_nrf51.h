@@ -26,6 +26,7 @@
 
 #include "platforms/arm/common/m0clockless.h"
 #include "fl/chipsets/timing_traits.h"
+#include "fl/stl/noexcept.h"
 template <fl::u8 DATA_PIN, typename TIMING, EOrder RGB_ORDER = RGB, int XTRA0 = 0, bool FLIP = false, int WAIT_TIME = 75>
 class ClocklessController : public CPixelLEDController<RGB_ORDER> {
     typedef typename FastPinBB<DATA_PIN>::port_ptr_t data_ptr_t;
@@ -41,7 +42,7 @@ class ClocklessController : public CPixelLEDController<RGB_ORDER> {
     CMinWait<WAIT_TIME> mWait;
 
 public:
-    virtual void init() {
+    virtual void init() FL_NOEXCEPT {
         FastPinBB<DATA_PIN>::setOutput();
         mPinMask = FastPinBB<DATA_PIN>::mask();
         mPort = FastPinBB<DATA_PIN>::port();
@@ -49,7 +50,7 @@ public:
 
 	virtual fl::u16 getMaxRefreshRate() const { return 400; }
 
-    virtual void showPixels(PixelController<RGB_ORDER> & pixels) {
+    virtual void showPixels(PixelController<RGB_ORDER> & pixels) FL_NOEXCEPT {
         mWait.wait();
         cli();
         if(!showRGBInternal(pixels)) {
@@ -62,7 +63,7 @@ public:
 
     // This method is made static to force making register Y available to use for data on AVR - if the method is non-static, then
     // gcc will use register Y for the this pointer.
-    static fl::u32 showRGBInternal(PixelController<RGB_ORDER> pixels) {
+    static fl::u32 showRGBInternal(PixelController<RGB_ORDER> pixels) FL_NOEXCEPT {
         struct M0ClocklessData data;
         data.d[0] = pixels.d[0];
         data.d[1] = pixels.d[1];

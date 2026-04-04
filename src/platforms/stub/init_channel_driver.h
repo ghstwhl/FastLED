@@ -12,6 +12,7 @@
 #include "fl/channels/channel.h"
 #include "fl/stl/shared_ptr.h"
 #include "platforms/stub/clockless_channel_engine_stub.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace platforms {
@@ -21,7 +22,7 @@ namespace platforms {
 /// Registers ClocklessChannelEngineStub with the ChannelManager so that
 /// the FastLED.add() API (Channel objects) drives stub GPIO simulation and
 /// fires SimEdgeObserver callbacks that NativeRxDevice uses for validation.
-inline void initChannelDrivers() {
+inline void initChannelDrivers() FL_NOEXCEPT {
     fl::ChannelManager& manager = fl::ChannelManager::instance();
 
     // Register the stub clockless driver with priority 1.

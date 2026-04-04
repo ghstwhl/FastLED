@@ -4,6 +4,7 @@
 // IWYU pragma: private
 
 #include "fl/stl/stdint.h"
+#include "fl/stl/noexcept.h"
 
 
 // Needed or the wasm compiler will strip them out.
@@ -11,8 +12,8 @@
 // NOTE: millis(), micros(), delayMicroseconds() moved to platform_time.cpp.hpp
 extern "C" {
 // Timer functions declared in timer.cpp.hpp
-fl::u32 millis();
-fl::u32 micros();
+fl::u32 millis() FL_NOEXCEPT;
+fl::u32 micros() FL_NOEXCEPT;
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -8,6 +8,7 @@
 #include "fl/stl/singleton.h"
 #include "fl/stl/span.h"
 #include "fl/id_tracker.h"
+#include "fl/stl/noexcept.h"
 namespace fl {
 class CLEDController;
 }  // namespace fl
@@ -23,37 +24,37 @@ class ActiveStripData : public fl::EngineEvents::Listener {
     typedef fl::flat_map<int, SliceUint8> StripDataMap;
     typedef fl::flat_map<int, ScreenMap> ScreenMapMap;
 
-    static ActiveStripData &Instance();
-    void update(int id, u32 now, fl::span<const u8> pixel_data);
-    void updateScreenMap(int id, const ScreenMap &screenmap);
+    static ActiveStripData &Instance() FL_NOEXCEPT;
+    void update(int id, u32 now, fl::span<const u8> pixel_data) FL_NOEXCEPT;
+    void updateScreenMap(int id, const ScreenMap &screenmap) FL_NOEXCEPT;
 
     // JSON creation methods
-    fl::string infoJsonString(); // Legacy implementation (working)
-    fl::string infoJsonStringNew(); // New fl::json API (when creation is fixed)
+    fl::string infoJsonString() FL_NOEXCEPT; // Legacy implementation (working)
+    fl::string infoJsonStringNew() FL_NOEXCEPT; // New fl::json API (when creation is fixed)
 
     // JSON parsing methods (NEW - using working fl::json parsing API)
-    bool parseStripJsonInfo(const char* jsonStr); // Parse strip configuration from JSON
+    bool parseStripJsonInfo(const char* jsonStr) FL_NOEXCEPT; // Parse strip configuration from JSON
     
-    const StripDataMap &getData() const { return mStripMap; }
-    const ScreenMapMap &getScreenMaps() const { return mScreenMap; }
+    const StripDataMap &getData() const FL_NOEXCEPT { return mStripMap; }
+    const ScreenMapMap &getScreenMaps() const FL_NOEXCEPT { return mScreenMap; }
 
     ~ActiveStripData() { fl::EngineEvents::removeListener(this); }
 
-    void onBeginFrame() override { mStripMap.clear(); }
+    void onBeginFrame() FL_NOEXCEPT override { mStripMap.clear(); }
 
     void onCanvasUiSet(CLEDController *strip,
-                       const ScreenMap &screenmap) override;
+                       const ScreenMap &screenmap) FL_NOEXCEPT override;
 
-    bool hasScreenMap(int id) const { return mScreenMap.has(id); }
+    bool hasScreenMap(int id) const FL_NOEXCEPT { return mScreenMap.has(id); }
 
     /**
      * Get the ID tracker for strip ID management
      */
-    IdTracker& getIdTracker() { return mIdTracker; }
+    IdTracker& getIdTracker() FL_NOEXCEPT { return mIdTracker; }
 
   private:
     friend class fl::Singleton<ActiveStripData>;
-    ActiveStripData() {
+    ActiveStripData() FL_NOEXCEPT {
         fl::EngineEvents::Listener *listener = this;
         fl::EngineEvents::addListener(listener);
     }

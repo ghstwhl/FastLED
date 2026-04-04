@@ -20,6 +20,7 @@
 #include "fl/chipsets/chipset_timing_config.h"
 #include "fl/stl/vector.h"
 #include "fl/stl/shared_ptr.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -40,35 +41,35 @@ class IFlexIOPeripheral;
 class ChannelEngineFlexIO : public IChannelDriver {
 public:
     /// @brief Construct with platform-default peripheral
-    ChannelEngineFlexIO();
+    ChannelEngineFlexIO() FL_NOEXCEPT;
 
     /// @brief Construct with injected peripheral (for testing)
-    explicit ChannelEngineFlexIO(fl::shared_ptr<IFlexIOPeripheral> peripheral);
+    explicit ChannelEngineFlexIO(fl::shared_ptr<IFlexIOPeripheral> peripheral) FL_NOEXCEPT;
 
     ~ChannelEngineFlexIO() override;
 
     /// @brief Check if this engine can handle the given channel data
     /// @return true for clockless chipsets on FlexIO2-capable pins with period 1000-2500ns
-    bool canHandle(const ChannelDataPtr& data) const override;
+    bool canHandle(const ChannelDataPtr& data) const FL_NOEXCEPT override;
 
     /// @brief Enqueue channel data for transmission
-    void enqueue(ChannelDataPtr channelData) override;
+    void enqueue(ChannelDataPtr channelData) FL_NOEXCEPT override;
 
     /// @brief Trigger transmission of enqueued data (asynchronous DMA)
-    void show() override;
+    void show() FL_NOEXCEPT override;
 
     /// @brief Query engine state
     /// @return READY when idle, BUSY during DMA transfer
-    DriverState poll() override;
+    DriverState poll() FL_NOEXCEPT override;
 
     /// @brief Get engine name
     /// @return "FLEXIO"
-    fl::string getName() const override {
+    fl::string getName() const FL_NOEXCEPT override {
         return fl::string::from_literal("FLEXIO");
     }
 
     /// @brief Get capabilities (clockless only)
-    Capabilities getCapabilities() const override {
+    Capabilities getCapabilities() const FL_NOEXCEPT override {
         return Capabilities(true, false);
     }
 

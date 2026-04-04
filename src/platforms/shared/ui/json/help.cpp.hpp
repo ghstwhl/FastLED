@@ -5,6 +5,7 @@
 #include "platforms/shared/ui/json/ui_internal.h"
 
 #include "fl/stl/json.h"
+#include "fl/stl/noexcept.h"
 namespace fl {
 
 class JsonUiHelpInternal : public JsonUiInternal {
@@ -16,10 +17,10 @@ class JsonUiHelpInternal : public JsonUiInternal {
     // help content.
     JsonUiHelpInternal(const fl::string &name,
                        const fl::string &markdownContent)
-        : JsonUiInternal(name), mMarkdownContent(markdownContent) {}
+ FL_NOEXCEPT : JsonUiInternal(name), mMarkdownContent(markdownContent) {}
 
     // Override toJson to serialize the help's data directly.
-    void toJson(fl::json &json) const override {
+    void toJson(fl::json &json) const FL_NOEXCEPT override {
         json.set("name", name());
         json.set("type", "help");
         json.set("group", groupName());
@@ -29,19 +30,19 @@ class JsonUiHelpInternal : public JsonUiInternal {
 
     // Override updateInternal. Help components typically don't have update
     // functionality from the UI, so this can be a no-op.
-    void updateInternal(const fl::json &json) override {
+    void updateInternal(const fl::json &json) FL_NOEXCEPT override {
         // No update needed for help components
         FL_UNUSED(json);
     }
 
     // Accessors for the help content.
-    const fl::string &markdownContent() const { return mMarkdownContent; }
-    void setMarkdownContent(const fl::string &markdownContent) {
+    const fl::string &markdownContent() const FL_NOEXCEPT { return mMarkdownContent; }
+    void setMarkdownContent(const fl::string &markdownContent) FL_NOEXCEPT {
         mMarkdownContent = markdownContent;
     }
 };
 
-JsonHelpImpl::JsonHelpImpl(const string &markdownContent) {
+JsonHelpImpl::JsonHelpImpl(const string &markdownContent) FL_NOEXCEPT {
     // Create an instance of the new internal class
     mInternal = fl::make_shared<JsonUiHelpInternal>("help", markdownContent);
 
@@ -54,27 +55,27 @@ JsonHelpImpl::~JsonHelpImpl() {
     removeJsonUiComponent(fl::weak_ptr<JsonUiInternal>(mInternal));
 }
 
-JsonHelpImpl &JsonHelpImpl::Group(const fl::string &name) {
+JsonHelpImpl &JsonHelpImpl::Group(const fl::string &name) FL_NOEXCEPT {
     mInternal->setGroup(name);
     return *this;
 }
 
-const fl::string &JsonHelpImpl::markdownContent() const {
+const fl::string &JsonHelpImpl::markdownContent() const FL_NOEXCEPT {
     return mInternal->markdownContent();
 }
 
-void JsonHelpImpl::toJson(fl::json &json) const { mInternal->toJson(json); }
+void JsonHelpImpl::toJson(fl::json &json) const FL_NOEXCEPT { mInternal->toJson(json); }
 
-const string &JsonHelpImpl::name() const { return mInternal->name(); }
+const string &JsonHelpImpl::name() const FL_NOEXCEPT { return mInternal->name(); }
 
-fl::string JsonHelpImpl::groupName() const {
+fl::string JsonHelpImpl::groupName() const FL_NOEXCEPT {
     return mInternal->groupName();
 }
 
-void JsonHelpImpl::setGroup(const fl::string &groupName) {
+void JsonHelpImpl::setGroup(const fl::string &groupName) FL_NOEXCEPT {
     mInternal->setGroup(groupName);
 }
 
-int JsonHelpImpl::id() const { return mInternal->id(); }
+int JsonHelpImpl::id() const FL_NOEXCEPT { return mInternal->id(); }
 
 } // namespace fl

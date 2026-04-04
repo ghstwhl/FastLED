@@ -19,6 +19,7 @@
 #include "fl/stl/unique_ptr.h"
 #include "fl/stl/shared_ptr.h"
 #include "fl/stl/string.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -41,35 +42,35 @@ class IObjectFLEDPeripheral;
 class ChannelEngineObjectFLED : public IChannelDriver {
 public:
     /// @brief Construct with platform-default peripheral
-    ChannelEngineObjectFLED();
+    ChannelEngineObjectFLED() FL_NOEXCEPT;
 
     /// @brief Construct with injected peripheral (for testing)
-    explicit ChannelEngineObjectFLED(fl::shared_ptr<IObjectFLEDPeripheral> peripheral);
+    explicit ChannelEngineObjectFLED(fl::shared_ptr<IObjectFLEDPeripheral> peripheral) FL_NOEXCEPT;
 
     ~ChannelEngineObjectFLED() override;
 
     /// @brief Check if this engine can handle the given channel data
     /// @return true for clockless chipsets with total period 1000-2500ns
-    bool canHandle(const ChannelDataPtr& data) const override;
+    bool canHandle(const ChannelDataPtr& data) const FL_NOEXCEPT override;
 
     /// @brief Enqueue channel data for transmission
-    void enqueue(ChannelDataPtr channelData) override;
+    void enqueue(ChannelDataPtr channelData) FL_NOEXCEPT override;
 
     /// @brief Trigger transmission of enqueued data (synchronous DMA)
-    void show() override;
+    void show() FL_NOEXCEPT override;
 
     /// @brief Query engine state
     /// @return READY (ObjectFLED show() is synchronous, always completes before returning)
-    DriverState poll() override;
+    DriverState poll() FL_NOEXCEPT override;
 
     /// @brief Get engine name
     /// @return "OBJECTFLED"
-    fl::string getName() const override {
+    fl::string getName() const FL_NOEXCEPT override {
         return fl::string::from_literal("OBJECTFLED");
     }
 
     /// @brief Get capabilities (clockless only)
-    Capabilities getCapabilities() const override {
+    Capabilities getCapabilities() const FL_NOEXCEPT override {
         return Capabilities(true, false);
     }
 

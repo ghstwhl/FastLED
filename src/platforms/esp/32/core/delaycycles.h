@@ -16,13 +16,14 @@
 /// Already included via platforms/esp/32/core/clock_cycles.h
 // IWYU pragma: begin_keep
 #include "platforms/esp/32/core/clock_cycles.h"
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 
-FASTLED_FORCE_INLINE fl::u32 get_ccount() {
+FASTLED_FORCE_INLINE fl::u32 get_ccount() FL_NOEXCEPT {
   return __clock_cycles();
 }
 
-FASTLED_FORCE_INLINE void delay_cycles_ccount(fl::u32 cycles) {
+FASTLED_FORCE_INLINE void delay_cycles_ccount(fl::u32 cycles) FL_NOEXCEPT {
   if (cycles == 0) return;
   fl::u32 start = get_ccount();
   while ((fl::u32)(get_ccount() - start) < cycles) { }

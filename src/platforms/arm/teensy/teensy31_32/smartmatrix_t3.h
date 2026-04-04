@@ -6,6 +6,7 @@
 #ifdef SmartMatrix_h
 // IWYU pragma: begin_keep
 #include <SmartMatrix.h>
+#include "fl/stl/noexcept.h"
 // IWYU pragma: end_keep
 namespace fl {
 extern SmartMatrix *pSmartMatrix;
@@ -16,7 +17,7 @@ class CSmartMatrixController : public CPixelLEDController<RGB_ORDER> {
 
 public:
     // initialize the LED controller
-    virtual void init() {
+    virtual void init() FL_NOEXCEPT {
         // Initialize 32x32 LED Matrix
         matrix.begin();
         matrix.setBrightness(255);
@@ -28,7 +29,7 @@ public:
         pSmartMatrix = &matrix;
     }
 
-    virtual void showPixels(PixelController<RGB_ORDER> & pixels) {
+    virtual void showPixels(PixelController<RGB_ORDER> & pixels) FL_NOEXCEPT {
         if(SMART_MATRIX_CAN_TRIPLE_BUFFER) {
             rgb24 *md = matrix.getRealBackBuffer();
         } else {

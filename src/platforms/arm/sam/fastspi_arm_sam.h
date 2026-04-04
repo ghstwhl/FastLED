@@ -19,6 +19,7 @@
 // IWYU pragma: end_keep
 #include "fl/system/pin.h"  // For PinMode, PinValue enums
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 FL_DISABLE_WARNING_PUSH
 FL_DISABLE_WARNING_DEPRECATED_REGISTER
@@ -41,14 +42,14 @@ class SAMHardwareSPIOutput {
 	void disableSPI() { m_SPI->SPI_CR = SPI_CR_SPIDIS; }
 	void resetSPI() { m_SPI->SPI_CR = SPI_CR_SWRST; }
 
-	static inline void readyTransferBits(FASTLED_REGISTER u32 bits) {
+	static inline void readyTransferBits(FASTLED_REGISTER u32 bits) FL_NOEXCEPT {
 		bits -= 8;
 		// don't change the number of transfer bits while data is still being transferred from TDR to the shift register
 		waitForEmpty();
 		m_SPI->SPI_CSR[0] = SPI_CSR_NCPHA | SPI_CSR_CSAAT | (bits << SPI_CSR_BITS_Pos) | SPI_CSR_DLYBCT(1) | SPI_CSR_SCBR(_SPI_CLOCK_DIVIDER);
 	}
 
-	template<int BITS> static inline void writeBits(u16 w) {
+	template<int BITS> static inline void writeBits(u16 w) FL_NOEXCEPT {
 		waitForEmpty();
 		m_SPI->SPI_TDR = (u32)w | SPI_PCS(0);
 	}
@@ -61,14 +62,14 @@ public:
 	void setSelect(Selectable *pSelect) { /* TODO */ }
 
 	// initialize the SPI subssytem
-	void init() {
+	void init() FL_NOEXCEPT {
 		// m_SPI = SPI0;
 
 		// set the output pins master out, master in, clock.  Note doing this here because I still don't
 		// know how I want to expose this type of functionality in FastPin.
-		PIO_Configure(PIOA, PIO_PERIPH_A, FastPin<_DATA_PIN>::mask(), PIO_DEFAULT);
-		PIO_Configure(PIOA, PIO_PERIPH_A, FastPin<_DATA_PIN-1>::mask(), PIO_DEFAULT);
-		PIO_Configure(PIOA, PIO_PERIPH_A, FastPin<_CLOCK_PIN>::mask(), PIO_DEFAULT);
+		PIO_Configure(PIOA, PIO_PERIPH_A, FastPin<_DATA_PIN>::mask(), PIO_DEFAULT) FL_NOEXCEPT;
+		PIO_Configure(PIOA, PIO_PERIPH_A, FastPin<_DATA_PIN-1>::mask(), PIO_DEFAULT) FL_NOEXCEPT;
+		PIO_Configure(PIOA, PIO_PERIPH_A, FastPin<_CLOCK_PIN>::mask(), PIO_DEFAULT) FL_NOEXCEPT;
 
 		release();
 
@@ -97,7 +98,7 @@ public:
 	// release the CS select
 	void inline release() __attribute__((always_inline)) { if(mPSelect != nullptr) { mPSelect->release(); } }
 
-	void endTransaction() {
+	void endTransaction() FL_NOEXCEPT {
 		waitFully();
 		release();
 	}
@@ -106,26 +107,26 @@ public:
 	void waitFully() { while((m_SPI->SPI_SR & SPI_SR_TXEMPTY) == 0); }
 
 	// write a byte out via SPI (returns immediately on writing register)
-	static void writeByte(u8 b) {
+	static void writeByte(u8 b) FL_NOEXCEPT {
 		writeBits<8>(b);
 	}
 
 	// write a word out via SPI (returns immediately on writing register)
-	static void writeWord(u16 w) {
+	static void writeWord(u16 w) FL_NOEXCEPT {
 		writeBits<16>(w);
 	}
 
 	// A raw set of writing byte values, assumes setup/init/waiting done elsewhere
-	static void writeBytesValueRaw(u8 value, int len) {
+	static void writeBytesValueRaw(u8 value, int len) FL_NOEXCEPT {
 		while(len--) { writeByte(value); }
 	}
 
 	// A full cycle of writing a value for len bytes, including select, release, and waiting
-	void writeBytesValue(u8 value, int len) {
+	void writeBytesValue(u8 value, int len) FL_NOEXCEPT {
 		select(); writeBytesValueRaw(value, len); release();
 	}
 
-	template <class D> void writeBytes(FASTLED_REGISTER u8 *data, int len) {
+	template <class D> void writeBytes(FASTLED_REGISTER u8 *data, int len) FL_NOEXCEPT {
 		u8 *end = data + len;
 		select();
 		// could be optimized to write 16bit words out instead of 8bit bytes
@@ -141,7 +142,7 @@ public:
 
 	// write a single bit out, which bit from the passed in byte is determined by template parameter
 	// not the most efficient mechanism in the world - but should be enough for sm16716 and friends
-	template <u8 BIT> inline void writeBit(u8 b) {
+	template <u8 BIT> inline void writeBit(u8 b) FL_NOEXCEPT {
 		// need to wait for all exisiting data to go out the door, first
 		waitFully();
 		disableSPI();
@@ -158,7 +159,7 @@ public:
 
 	// write a block of uint8_ts out in groups of three.  len is the total number of uint8_ts to write out.  The template
 	// parameters indicate how many uint8_ts to skip at the beginning and/or end of each grouping
-	template <u8 FLAGS, class D, EOrder RGB_ORDER> void writePixels(PixelController<RGB_ORDER> pixels, void* context = nullptr) {
+	template <u8 FLAGS, class D, EOrder RGB_ORDER> void writePixels(PixelController<RGB_ORDER> pixels, void* context = nullptr) FL_NOEXCEPT {
 		select();
 		int len = pixels.mLen;
 
@@ -205,11 +206,11 @@ private:
 	u8 mSercomNum;
 	bool mInitialized;
 
-	static inline void waitForEmpty(Sercom* spi) {
+	static inline void waitForEmpty(Sercom* spi) FL_NOEXCEPT {
 		while (!spi->SPI.INTFLAG.bit.DRE);
 	}
 
-	static inline void waitForComplete(Sercom* spi) {
+	static inline void waitForComplete(Sercom* spi) FL_NOEXCEPT {
 		while (!spi->SPI.INTFLAG.bit.TXC);
 	}
 
@@ -223,7 +224,7 @@ public:
 	// Helper to get SERCOM instance from Arduino's SPI object
 	// On SAMD, the default SPI object uses a specific SERCOM
 	// We'll use Arduino's built-in SPI functionality if available
-	void init() {
+	void init() FL_NOEXCEPT {
 		if (mInitialized) {
 			return;
 		}
@@ -261,7 +262,7 @@ public:
 	}
 
 	// latch the CS select
-	void inline select() __attribute__((always_inline)) {
+	void inline select() FL_NOEXCEPT __attribute__((always_inline)) {
 		if(mPSelect != nullptr) {
 			mPSelect->select();
 		}
@@ -273,7 +274,7 @@ public:
 	}
 
 	// release the CS select
-	void inline release() __attribute__((always_inline)) {
+	void inline release() FL_NOEXCEPT __attribute__((always_inline)) {
 		if (mInitialized) {
 			::SPI.endTransaction();
 		}
@@ -282,39 +283,39 @@ public:
 		}
 	}
 
-	void endTransaction() {
+	void endTransaction() FL_NOEXCEPT {
 		waitFully();
 		release();
 	}
 
 	// wait until all queued up data has been written
-	void waitFully() {
+	void waitFully() FL_NOEXCEPT {
 		// Arduino SPI is blocking, so no need to wait
 	}
 
 	// write a byte out via SPI (returns immediately on writing register)
-	static void writeByte(u8 b) {
+	static void writeByte(u8 b) FL_NOEXCEPT {
 		::SPI.transfer(b);
 	}
 
 	// write a word out via SPI (returns immediately on writing register)
-	static void writeWord(u16 w) {
+	static void writeWord(u16 w) FL_NOEXCEPT {
 		::SPI.transfer16(w);
 	}
 
 	// A raw set of writing byte values, assumes setup/init/waiting done elsewhere
-	static void writeBytesValueRaw(u8 value, int len) {
+	static void writeBytesValueRaw(u8 value, int len) FL_NOEXCEPT {
 		while(len--) { writeByte(value); }
 	}
 
 	// A full cycle of writing a value for len bytes, including select, release, and waiting
-	void writeBytesValue(u8 value, int len) {
+	void writeBytesValue(u8 value, int len) FL_NOEXCEPT {
 		select();
 		writeBytesValueRaw(value, len);
 		release();
 	}
 
-	template <class D> void writeBytes(FASTLED_REGISTER u8 *data, int len) {
+	template <class D> void writeBytes(FASTLED_REGISTER u8 *data, int len) FL_NOEXCEPT {
 		u8 *end = data + len;
 		select();
 		while(data != end) {
@@ -325,12 +326,12 @@ public:
 		release();
 	}
 
-	void writeBytes(FASTLED_REGISTER u8 *data, int len) {
+	void writeBytes(FASTLED_REGISTER u8 *data, int len) FL_NOEXCEPT {
 		writeBytes<DATA_NOP>(data, len);
 	}
 
 	// write a single bit out, which bit from the passed in byte is determined by template parameter
-	template <u8 BIT> inline void writeBit(u8 b) {
+	template <u8 BIT> inline void writeBit(u8 b) FL_NOEXCEPT {
 		// For bit-banging, we need to temporarily disable SPI and use GPIO
 		::SPI.endTransaction();
 
@@ -351,7 +352,7 @@ public:
 	}
 
 	// write a block of uint8_ts out in groups of three.  len is the total number of uint8_ts to write out.
-	template <u8 FLAGS, class D, EOrder RGB_ORDER> void writePixels(PixelController<RGB_ORDER> pixels, void* context = nullptr) {
+	template <u8 FLAGS, class D, EOrder RGB_ORDER> void writePixels(PixelController<RGB_ORDER> pixels, void* context = nullptr) FL_NOEXCEPT {
 		select();
 		int len = pixels.mLen;
 

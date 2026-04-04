@@ -7,6 +7,7 @@
 #include "platforms/shared/ui/json/ui_internal.h"
 #include "fl/stl/json.h"
 #include "fl/stl/shared_ptr.h" // For fl::shared_ptr
+#include "fl/stl/noexcept.h"
 
 
 
@@ -17,23 +18,23 @@ class JsonUiHelpInternal;
 
 class JsonHelpImpl {
   public:
-    JsonHelpImpl(const fl::string &markdownContent);
+    JsonHelpImpl(const fl::string &markdownContent) FL_NOEXCEPT;
     ~JsonHelpImpl();
-    JsonHelpImpl &Group(const fl::string &name);
+    JsonHelpImpl &Group(const fl::string &name) FL_NOEXCEPT;
 
-    const fl::string &markdownContent() const;
+    const fl::string &markdownContent() const FL_NOEXCEPT;
 
-    const fl::string &name() const;
-    void toJson(fl::json &json) const;
-    fl::string groupName() const;
+    const fl::string &name() const FL_NOEXCEPT;
+    void toJson(fl::json &json) const FL_NOEXCEPT;
+    fl::string groupName() const FL_NOEXCEPT;
     
     // Method to allow parent UIElement class to set the group
-    void setGroup(const fl::string &groupName);
+    void setGroup(const fl::string &groupName) FL_NOEXCEPT;
 
-    int id() const;
+    int id() const FL_NOEXCEPT;
 
-    bool operator==(const fl::string& other) const { return groupName() == other; }
-    bool operator!=(const fl::string& other) const { return groupName() != other; }
+    bool operator==(const fl::string& other) const FL_NOEXCEPT { return groupName() == other; }
+    bool operator!=(const fl::string& other) const FL_NOEXCEPT { return groupName() != other; }
 
 
   private:

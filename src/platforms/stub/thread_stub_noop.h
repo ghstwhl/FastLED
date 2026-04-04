@@ -38,15 +38,15 @@ class ThreadFake {
       private:
         int mId;
         friend class ThreadFake;
-        explicit id(int val) : mId(val) {}
+        explicit id(int val) FL_NOEXCEPT : mId(val) {}
       public:
-        id() : mId(0) {}
-        bool operator==(const id& other) const { return mId == other.mId; }
-        bool operator!=(const id& other) const { return mId != other.mId; }
-        bool operator<(const id& other) const { return mId < other.mId; }
-        bool operator<=(const id& other) const { return mId <= other.mId; }
-        bool operator>(const id& other) const { return mId > other.mId; }
-        bool operator>=(const id& other) const { return mId >= other.mId; }
+        id() FL_NOEXCEPT : mId(0) {}
+        bool operator==(const id& other) const FL_NOEXCEPT { return mId == other.mId; }
+        bool operator!=(const id& other) const FL_NOEXCEPT { return mId != other.mId; }
+        bool operator<(const id& other) const FL_NOEXCEPT { return mId < other.mId; }
+        bool operator<=(const id& other) const FL_NOEXCEPT { return mId <= other.mId; }
+        bool operator>(const id& other) const FL_NOEXCEPT { return mId > other.mId; }
+        bool operator>=(const id& other) const FL_NOEXCEPT { return mId >= other.mId; }
     };
 
     ThreadFake() = default;
@@ -60,7 +60,7 @@ class ThreadFake {
     /// In single-threaded mode, the function executes immediately and
     /// synchronously. The thread is marked as not joinable after execution.
     template<typename Function, typename... Args>
-    explicit ThreadFake(Function&& f, Args&&... args) : mJoinable(true), mThreadId(1) {
+    explicit ThreadFake(Function&& f, Args&&... args) FL_NOEXCEPT : mJoinable(true), mThreadId(1) {
         // In single-threaded mode, execute immediately
         fl::invoke(fl::forward<Function>(f), fl::forward<Args>(args)...);
         // Immediately mark as not joinable since we executed synchronously
@@ -95,12 +95,12 @@ class ThreadFake {
     ///
     /// Since the function executed synchronously in the constructor,
     /// join() is a no-op.
-    void join() {
+    void join() FL_NOEXCEPT {
         mJoinable = false;
     }
 
     /// @brief Detach (no-op in single-threaded mode)
-    void detach() {
+    void detach() FL_NOEXCEPT {
         mJoinable = false;
     }
 
@@ -138,7 +138,7 @@ class ThreadFake {
 
     /// @brief Get native handle (returns nullptr in fake mode)
     /// @return nullptr
-    native_handle_type native_handle() {
+    native_handle_type native_handle() FL_NOEXCEPT {
         return nullptr;
     }
 };
@@ -172,7 +172,7 @@ namespace this_thread {
     /// @tparam Period Duration period type (unused)
     /// @param sleep_duration Duration to sleep (unused)
     template<typename Rep, typename Period>
-    void sleep_for(const Rep& /* sleep_duration */) {
+    void sleep_for(const Rep& /* sleep_duration */) FL_NOEXCEPT {
         // No-op - can't actually sleep in single-threaded mode
     }
 
@@ -181,7 +181,7 @@ namespace this_thread {
     /// @tparam Duration Duration type (unused)
     /// @param sleep_time Time point to sleep until (unused)
     template<typename Clock, typename Duration>
-    void sleep_until(const Clock& /* sleep_time */) {
+    void sleep_until(const Clock& /* sleep_time */) FL_NOEXCEPT {
         // No-op - can't actually sleep in single-threaded mode
     }
 } // namespace this_thread

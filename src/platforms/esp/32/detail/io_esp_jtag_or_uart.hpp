@@ -12,6 +12,7 @@
 #include "fl/stl/singleton.h"
 #include "platforms/esp/32/drivers/uart_esp32.h"
 #include "platforms/esp/32/drivers/usb_serial_jtag_esp32.h"
+#include "fl/stl/noexcept.h"
 // Note: Implementation files are included via _build.hpp, not here
 
 // Detect if USB-Serial JTAG is available at compile time
@@ -49,12 +50,12 @@ namespace platforms {
 class EspIO {
 public:
     // Get singleton instance
-    static EspIO& instance() {
+    static EspIO& instance() FL_NOEXCEPT {
         return fl::Singleton<EspIO>::instance();
     }
 
     // Initialize/reconfigure serial
-    void begin(u32 baudRate) {
+    void begin(u32 baudRate) FL_NOEXCEPT {
         // Both drivers are already initialized in constructor with default baud rate
         // USB-Serial JTAG doesn't support baud rate configuration (fixed USB speed)
         // UART reconfiguration after initialization is not currently supported
@@ -63,7 +64,7 @@ public:
     }
 
     // Print string to serial
-    void print(const char* str) {
+    void print(const char* str) FL_NOEXCEPT {
 #if FL_ESP_HAS_USB_SERIAL_JTAG
         if (mUseUsbSerialJtag) {
             mUsbSerialJtag.write(str);
@@ -76,7 +77,7 @@ public:
     }
 
     // Print string with newline to serial
-    void println(const char* str) {
+    void println(const char* str) FL_NOEXCEPT {
 #if FL_ESP_HAS_USB_SERIAL_JTAG
         if (mUseUsbSerialJtag) {
             mUsbSerialJtag.writeln(str);
@@ -89,7 +90,7 @@ public:
     }
 
     // Check input availability
-    int available() {
+    int available() FL_NOEXCEPT {
 #if FL_ESP_HAS_USB_SERIAL_JTAG
         if (mUseUsbSerialJtag) {
             return mUsbSerialJtag.available();
@@ -102,7 +103,7 @@ public:
     }
 
     // Peek at next character without removing it
-    int peek() {
+    int peek() FL_NOEXCEPT {
         if (mHasPeek) {
             return mPeekByte;
         }
@@ -121,7 +122,7 @@ public:
     }
 
     // Read single character
-    int read() {
+    int read() FL_NOEXCEPT {
         // Return peeked byte if available
         if (mHasPeek) {
             mHasPeek = false;
@@ -136,7 +137,7 @@ public:
     }
 
     // Write raw bytes to serial (binary data)
-    size_t writeBytes(const u8* buffer, size_t size) {
+    size_t writeBytes(const u8* buffer, size_t size) FL_NOEXCEPT {
 #if FL_ESP_HAS_USB_SERIAL_JTAG
         if (mUseUsbSerialJtag) {
             return mUsbSerialJtag.write(buffer, size);
@@ -149,7 +150,7 @@ public:
     }
 
     // Flush TX buffer and wait for transmission to complete
-    bool flush(u32 timeoutMs = 1000) {
+    bool flush(u32 timeoutMs = 1000) FL_NOEXCEPT {
 #if FL_ESP_HAS_USB_SERIAL_JTAG
         if (mUseUsbSerialJtag) {
             return mUsbSerialJtag.flush(timeoutMs);
@@ -162,7 +163,7 @@ public:
     }
 
     // Check if serial is ready
-    bool isReady() const {
+    bool isReady() const FL_NOEXCEPT {
 #if FL_ESP_HAS_USB_SERIAL_JTAG
         return mUseUsbSerialJtag ? mUsbSerialJtag.isBuffered() : mUart.isBuffered();
 #else
@@ -171,7 +172,7 @@ public:
     }
 
     // Check if using buffered mode (for testing/diagnostics)
-    bool isBufferedMode() const {
+    bool isBufferedMode() const FL_NOEXCEPT {
 #if FL_ESP_HAS_USB_SERIAL_JTAG
         return mUseUsbSerialJtag ? mUsbSerialJtag.isBuffered() : mUart.isBuffered();
 #else
@@ -181,7 +182,7 @@ public:
 
     // Get reference to underlying UART driver (for advanced use)
     // Note: May throw if USB-Serial JTAG is active instead
-    UartEsp32& getUart() {
+    UartEsp32& getUart() FL_NOEXCEPT {
 #if FL_ESP_HAS_USB_SERIAL_JTAG
         FL_ASSERT(!mUseUsbSerialJtag, "Cannot get UART driver - using USB-Serial JTAG instead");
 #endif
@@ -191,13 +192,13 @@ public:
 #if FL_ESP_HAS_USB_SERIAL_JTAG
     // Get reference to USB-Serial JTAG driver (for advanced use)
     // Note: May throw if UART is active instead
-    UsbSerialJtagEsp32& getUsbSerialJtag() {
+    UsbSerialJtagEsp32& getUsbSerialJtag() FL_NOEXCEPT {
         FL_ASSERT(mUseUsbSerialJtag, "Cannot get USB-Serial JTAG driver - using UART instead");
         return mUsbSerialJtag;
     }
 
     // Check if currently using USB-Serial JTAG
-    bool isUsingUsbSerialJtag() const {
+    bool isUsingUsbSerialJtag() const FL_NOEXCEPT {
         return mUseUsbSerialJtag;
     }
 #endif

@@ -7,6 +7,7 @@
 #include "fastled_config.h"
 #include "fl/math/lib8static.h"
 #include "fl/stl/compiler_control.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -24,7 +25,7 @@ namespace fl {
 
 /// Scale one byte by a second one (ATtiny shift-and-add assembly)
 /// Using inline instead of FL_ALWAYS_INLINE to reduce register pressure on ATtiny
-inline u8 scale8(u8 i, fract8 scale) {
+inline u8 scale8(u8 i, fract8 scale) FL_NOEXCEPT {
 #if (FASTLED_SCALE8_FIXED == 1)
     u8 work = i;
 #else
@@ -52,14 +53,14 @@ inline u8 scale8(u8 i, fract8 scale) {
 }
 
 /// The "video" version of scale8() (C implementation for ATtiny)
-inline u8 scale8_video(u8 i, fract8 scale) {
+inline u8 scale8_video(u8 i, fract8 scale) FL_NOEXCEPT {
     u8 j = (((int)i * (int)scale) >> 8) + ((i && scale) ? 1 : 0);
     return j;
 }
 
 /// This version of scale8() does not clean up the R1 register (C implementation for ATtiny)
 /// @warning You **MUST** call cleanup_R1() after using this function!
-inline u8 scale8_LEAVING_R1_DIRTY(u8 i, fract8 scale) {
+inline u8 scale8_LEAVING_R1_DIRTY(u8 i, fract8 scale) FL_NOEXCEPT {
 #if (FASTLED_SCALE8_FIXED == 1)
     return (((u16)i) * ((u16)(scale) + 1)) >> 8;
 #else
@@ -69,7 +70,7 @@ inline u8 scale8_LEAVING_R1_DIRTY(u8 i, fract8 scale) {
 
 /// In place modifying version of scale8() that does not clean up the R1 (C implementation for ATtiny)
 /// @warning You **MUST** call cleanup_R1() after using this function!
-inline void nscale8_LEAVING_R1_DIRTY(u8 &i, fract8 scale) {
+inline void nscale8_LEAVING_R1_DIRTY(u8 &i, fract8 scale) FL_NOEXCEPT {
 #if (FASTLED_SCALE8_FIXED == 1)
     i = (((u16)i) * ((u16)(scale) + 1)) >> 8;
 #else
@@ -79,24 +80,24 @@ inline void nscale8_LEAVING_R1_DIRTY(u8 &i, fract8 scale) {
 
 /// This version of scale8_video() does not clean up the R1 register (C implementation for ATtiny)
 /// @warning You **MUST** call cleanup_R1() after using this function!
-inline u8 scale8_video_LEAVING_R1_DIRTY(u8 i, fract8 scale) {
+inline u8 scale8_video_LEAVING_R1_DIRTY(u8 i, fract8 scale) FL_NOEXCEPT {
     u8 j = (((int)i * (int)scale) >> 8) + ((i && scale) ? 1 : 0);
     return j;
 }
 
 /// In place modifying version of scale8_video() that does not clean up the R1 (C implementation for ATtiny)
 /// @warning You **MUST** call cleanup_R1() after using this function!
-inline void nscale8_video_LEAVING_R1_DIRTY(u8 &i, fract8 scale) {
+inline void nscale8_video_LEAVING_R1_DIRTY(u8 &i, fract8 scale) FL_NOEXCEPT {
     i = (((int)i * (int)scale) >> 8) + ((i && scale) ? 1 : 0);
 }
 
 /// Clean up the r1 register after a series of *LEAVING_R1_DIRTY calls (no-op for ATtiny C implementations)
-inline void cleanup_R1() {
+inline void cleanup_R1() FL_NOEXCEPT {
     // No-op for C implementations - no r1 register to clean up
 }
 
 /// Scale a 16-bit unsigned value by an 8-bit value (C implementation for ATtiny)
-inline u16 scale16by8(u16 i, fract8 scale) {
+inline u16 scale16by8(u16 i, fract8 scale) FL_NOEXCEPT {
     if (scale == 0) {
         return 0;
     }
@@ -112,7 +113,7 @@ inline u16 scale16by8(u16 i, fract8 scale) {
 }
 
 /// Scale a 16-bit unsigned value by an 16-bit value (C implementation for ATtiny)
-LIB8STATIC u16 scale16(u16 i, fract16 scale) {
+LIB8STATIC u16 scale16(u16 i, fract16 scale) FL_NOEXCEPT {
 #if FASTLED_SCALE8_FIXED == 1
     u16 result;
     result = ((u32)(i) * (1 + (u32)(scale))) / 65536;
@@ -126,7 +127,7 @@ LIB8STATIC u16 scale16(u16 i, fract16 scale) {
 
 /// Scale a 32-bit unsigned value by an 8-bit value (C implementation for ATtiny)
 /// Promotes to 64-bit to prevent overflow during multiplication
-FL_ALWAYS_INLINE u32 scale32by8(u32 i, fract8 scale) {
+FL_ALWAYS_INLINE u32 scale32by8(u32 i, fract8 scale) FL_NOEXCEPT {
     if (scale == 0) {
         return 0;
     }

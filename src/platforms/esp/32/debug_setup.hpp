@@ -19,6 +19,7 @@
 #if defined(FL_IS_ESP32) && defined(FASTLED_DEBUG)
 
 #include "esp_log.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 namespace detail {
@@ -28,7 +29,7 @@ namespace detail {
 /// Call this function from your setup() to enable verbose logging.
 /// This was previously called automatically via FL_INIT, but now requires
 /// manual invocation for explicit control over debug initialization.
-inline void fastled_debug_init() {
+inline void fastled_debug_init() FL_NOEXCEPT {
     // Set all ESP-IDF components to VERBOSE logging
     esp_log_level_set("*", ESP_LOG_VERBOSE);
 

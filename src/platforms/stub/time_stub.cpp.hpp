@@ -14,6 +14,7 @@
 #include "platforms/wasm/is_wasm.h"
 #ifndef FL_IS_WASM
 #include "fl/stl/thread.h"
+#include "fl/stl/noexcept.h"
 #endif
 
 // Global delay function override for fast testing (accessed from CoroutineRuntimeStub)
@@ -27,15 +28,15 @@ extern "C" {
 
 // Global millis() and micros() forward to fl:: layer (which handles time injection in tests)
 // These are needed for Arduino API compatibility
-fl::u32 millis() {
+fl::u32 millis() FL_NOEXCEPT {
     return fl::millis();
 }
 
-fl::u32 micros() {
+fl::u32 micros() FL_NOEXCEPT {
     return fl::micros();
 }
 
-void yield() {
+void yield() FL_NOEXCEPT {
 #ifdef FASTLED_USE_PTHREAD_YIELD
     // POSIX thread yield to allow other threads to run
     sched_yield();
@@ -49,17 +50,17 @@ void yield() {
 } // extern "C"
 
 // Function to set delay override (C++ linkage for test runner)
-void setDelayFunction(const fl::function<void(fl::u32)>& delayFunc) {
+void setDelayFunction(const fl::function<void(fl::u32)>& delayFunc) FL_NOEXCEPT {
     g_delay_override = delayFunc;
 }
 
 // Clear the delay override (must be called before unloading DLLs that set it)
-void clearDelayFunction() {
+void clearDelayFunction() FL_NOEXCEPT {
     g_delay_override.clear();
 }
 
 // Check if delay override is active
-bool isDelayOverrideActive(void) {
+bool isDelayOverrideActive(void) FL_NOEXCEPT {
     return static_cast<bool>(g_delay_override);
 }
 

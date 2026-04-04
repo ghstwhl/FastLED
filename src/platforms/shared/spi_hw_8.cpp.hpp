@@ -9,12 +9,13 @@
 #include "platforms/shared/spi_hw_8.h"
 #include "fl/stl/compiler_control.h"
 #include "platforms/init_spi_hw.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
 namespace {
     /// Static registry of all registered instances
-    fl::vector<fl::shared_ptr<SpiHw8>>& getRegistrySpiHw8() {
+    fl::vector<fl::shared_ptr<SpiHw8>>& getRegistrySpiHw8() FL_NOEXCEPT {
         static fl::vector<fl::shared_ptr<SpiHw8>> registry;
         return registry;
     }
@@ -22,14 +23,14 @@ namespace {
 
 /// Register a platform-specific instance
 /// Called by platform implementations during static initialization
-void SpiHw8::registerInstance(fl::shared_ptr<SpiHw8> instance) {
+void SpiHw8::registerInstance(fl::shared_ptr<SpiHw8> instance) FL_NOEXCEPT {
     if (instance) {
         getRegistrySpiHw8().push_back(instance);
     }
 }
 
 /// Remove a registered instance
-bool SpiHw8::removeInstance(const fl::shared_ptr<SpiHw8>& instance) {
+bool SpiHw8::removeInstance(const fl::shared_ptr<SpiHw8>& instance) FL_NOEXCEPT {
     auto& registry = getRegistrySpiHw8();
     for (size_t i = 0; i < registry.size(); ++i) {
         if (registry[i] == instance) {
@@ -41,13 +42,13 @@ bool SpiHw8::removeInstance(const fl::shared_ptr<SpiHw8>& instance) {
 }
 
 /// Clear all registered instances (primarily for testing)
-void SpiHw8::clearInstances() {
+void SpiHw8::clearInstances() FL_NOEXCEPT {
     getRegistrySpiHw8().clear();
 }
 
 /// Get all registered instances
 /// This is moved out of the header to avoid __cxa_guard conflicts on some platforms
-const fl::vector<fl::shared_ptr<SpiHw8>>& SpiHw8::getAll() {
+const fl::vector<fl::shared_ptr<SpiHw8>>& SpiHw8::getAll() FL_NOEXCEPT {
     // Lazy initialization of platform-specific SPI instances
     // C++11 guarantees thread-safe static initialization
     static bool sInitialized = false;

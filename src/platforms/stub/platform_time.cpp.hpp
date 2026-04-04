@@ -11,6 +11,7 @@
 #include "fl/stl/compiler_control.h"
 #include "fl/stl/function.h"
 #include "fl/stl/chrono.h"  // platform-specific time implementation
+#include "fl/stl/noexcept.h"
 
 // Forward declare delay override (defined in time_stub.cpp.hpp)
 extern fl::function<void(fl::u32)> g_delay_override;
@@ -26,7 +27,7 @@ namespace {
 namespace fl {
 namespace platforms {
 
-void delay(fl::u32 ms) {
+void delay(fl::u32 ms) FL_NOEXCEPT {
     // Check for test override first (for fast testing)
     if (g_delay_override) {
         g_delay_override(ms);
@@ -35,19 +36,19 @@ void delay(fl::u32 ms) {
     fl::this_thread::sleep_for(fl::chrono::milliseconds(ms));
 }
 
-void delayMicroseconds(fl::u32 us) {
+void delayMicroseconds(fl::u32 us) FL_NOEXCEPT {
     // No override for microseconds (precise hardware timing)
     fl::this_thread::sleep_for(fl::chrono::microseconds(us));
 }
 
-fl::u32 millis() {
+fl::u32 millis() FL_NOEXCEPT {
     auto current = std::chrono::system_clock::now();  // okay std namespace
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(  // okay std namespace
         current - start_time);
     return static_cast<fl::u32>(elapsed.count());
 }
 
-fl::u32 micros() {
+fl::u32 micros() FL_NOEXCEPT {
     auto current = std::chrono::system_clock::now();  // okay std namespace
     auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(  // okay std namespace
         current - start_time);

@@ -15,6 +15,7 @@
 #include "fl/stl/int.h"
 #include "fl/stl/sstream.h"
 #include "fl/audio/audio_input.h"
+#include "fl/stl/noexcept.h"
 
 
 #define I2S_INTR_ALLOC_FLAGS 0
@@ -31,7 +32,7 @@ struct I2SContext {
     i2s_port_t i2s_port;
 };
 
-I2SContext make_context(const audio::ConfigI2S &config) {
+I2SContext make_context(const audio::ConfigI2S &config) FL_NOEXCEPT {
     auto convert_channel = [](audio::AudioChannel value) -> int {
         switch (value) {
         case audio::AudioChannel::Left:
@@ -92,7 +93,7 @@ I2SContext make_context(const audio::ConfigI2S &config) {
     return out;
 }
 
-I2SContext i2s_audio_init(const audio::ConfigI2S &config) {
+I2SContext i2s_audio_init(const audio::ConfigI2S &config) FL_NOEXCEPT {
     I2SContext ctx = make_context(config);
     i2s_driver_install(ctx.i2s_port, &ctx.i2s_config, 0, nullptr);
     i2s_set_pin(ctx.i2s_port, &ctx.pin_config);
@@ -101,7 +102,7 @@ I2SContext i2s_audio_init(const audio::ConfigI2S &config) {
 }
 
 size_t i2s_read_raw_samples(const I2SContext &ctx,
-                            audio_sample_t (&buffer)[I2S_AUDIO_BUFFER_LEN]) {
+                            audio_sample_t (&buffer)[I2S_AUDIO_BUFFER_LEN]) FL_NOEXCEPT {
     size_t bytes_read = 0;
     i2s_event_t event;
 
@@ -117,7 +118,7 @@ size_t i2s_read_raw_samples(const I2SContext &ctx,
     return 0;
 }
 
-void i2s_audio_destroy(const I2SContext &ctx) {
+void i2s_audio_destroy(const I2SContext &ctx) FL_NOEXCEPT {
     i2s_driver_uninstall(ctx.i2s_port);
 }
 

@@ -18,6 +18,7 @@
 #include "pixel_iterator.h"
 #include "fl/system/log.h"
 #include "platforms/shared/active_strip_tracker/active_strip_tracker.h"
+#include "fl/stl/noexcept.h"
 
 namespace fl {
 
@@ -92,7 +93,7 @@ protected:
         mDriver->enqueue(mChannelData);
     }
 
-    static fl::shared_ptr<IChannelDriver> getWasmEngine() {
+    static fl::shared_ptr<IChannelDriver> getWasmEngine() FL_NOEXCEPT {
         return ChannelManager::instance().getDriverByName("STUB");
     }
 };
