@@ -42,7 +42,7 @@ PDMContext pdm_audio_init(const audio::ConfigPdm &config) FL_NOEXCEPT {
     // Create RX channel
     esp_err_t ret = i2s_new_channel(&chan_cfg, nullptr, &ctx.rx_handle);
     if (ret != ESP_OK) {
-        FL_LOGE("Failed to create PDM I2S channel: %d", ret);
+        FL_WARN("Failed to create PDM I2S channel: " << ret);
         return ctx;
     }
 
@@ -65,7 +65,7 @@ PDMContext pdm_audio_init(const audio::ConfigPdm &config) FL_NOEXCEPT {
     // Initialize channel with PDM RX mode configuration
     ret = i2s_channel_init_pdm_rx_mode(ctx.rx_handle, &pdm_rx_cfg);
     if (ret != ESP_OK) {
-        FL_LOGE("Failed to initialize PDM RX mode: %d", ret);
+        FL_WARN("Failed to initialize PDM RX mode: " << ret);
         i2s_del_channel(ctx.rx_handle);
         ctx.rx_handle = nullptr;
         return ctx;
@@ -74,7 +74,7 @@ PDMContext pdm_audio_init(const audio::ConfigPdm &config) FL_NOEXCEPT {
     // Enable the channel
     ret = i2s_channel_enable(ctx.rx_handle);
     if (ret != ESP_OK) {
-        FL_LOGE("Failed to enable PDM channel: %d", ret);
+        FL_WARN("Failed to enable PDM channel: " << ret);
         i2s_del_channel(ctx.rx_handle);
         ctx.rx_handle = nullptr;
         return ctx;
