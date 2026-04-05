@@ -115,9 +115,17 @@ void run(fl::u32 microseconds, ExecFlags flags) {
             Executor::instance().update_all();
         }
 
-        // SYSTEM: Pure OS-level yield (vTaskDelay(0), thread yield, etc.)
+        // SYSTEM: OS-level yield. Normally uses fl::yield() which maps to
+        // vTaskDelay(0) on ESP32 — only yields to same-or-higher priority.
+        // When WiFi is active, ESP32 needs vTaskDelay(1) (1 FreeRTOS tick)
+        // to give lower-priority WiFi/lwIP tasks CPU time.
         if (do_system) {
-            fl::yield();
+            if (microseconds > 0 &&
+                fl::platforms::ICoroutineRuntime::instance().needsDeepYield()) {
+                fl::platforms::ICoroutineRuntime::instance().pumpCoroutines(1000);
+            } else {
+                fl::yield();
+            }
         }
 
         // COROUTINES: Platform cooperative coroutines (pumpCoroutines)

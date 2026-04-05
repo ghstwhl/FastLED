@@ -11,6 +11,10 @@
 #include "fl/trace.h"
 #include "fl/channels/driver.h"  // for IChannelDriver
 #include "fl/system/delay.h"  // for delayMicroseconds
+#include "fl/system/sketch_macros.h"
+#if SKETCH_HAS_LARGE_MEMORY
+#include "fl/task/executor.h"  // for task::run (WiFi yield in show() spin loop)
+#endif
 #include "fl/system/log.h"  // for FL_WARN
 #include "fl/stl/assert.h"  // for FL_ASSERT
 #include "fl/audio/audio_manager.h"  // for AudioManager
@@ -227,7 +231,11 @@ static void* gControllersData[MAX_CLED_CONTROLLERS];
 FL_KEEP_ALIVE void CFastLED::show(fl::u8 scale) {
 	FL_SCOPED_TRACE;
 	onBeginFrame();
-	while(mNMinMicros && ((fl::micros()-lastshow) < mNMinMicros));
+	while(mNMinMicros && ((fl::micros()-lastshow) < mNMinMicros)) {
+#if SKETCH_HAS_LARGE_MEMORY
+		fl::task::run(250, fl::task::ExecFlags::SYSTEM);
+#endif
+	}
 	lastshow = fl::micros();
 
 	// If we have a function for computing power, use it!
@@ -302,7 +310,11 @@ CLEDController & CFastLED::operator[](int x) {
 }
 
 void CFastLED::showColor(const CRGB & color, fl::u8 scale) {
-	while(mNMinMicros && ((fl::micros()-lastshow) < mNMinMicros));
+	while(mNMinMicros && ((fl::micros()-lastshow) < mNMinMicros)) {
+#if SKETCH_HAS_LARGE_MEMORY
+		fl::task::run(250, fl::task::ExecFlags::SYSTEM);
+#endif
+	}
 	lastshow = fl::micros();
 
 	// If we have a function for computing power, use it!
