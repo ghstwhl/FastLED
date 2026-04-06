@@ -4,7 +4,7 @@
 /// @brief fl::net::rpc — RPC transport type aliases
 ///
 /// Provides RPC-related transport type aliases under fl::net::rpc.
-/// The Remote RPC server itself lives in fl/control/remote.h and
+/// The Remote RPC server itself lives in fl/remote/remote.h and
 /// depends on RPC — not the other way around.
 
 #include "fl/net/http/stream_client.h"

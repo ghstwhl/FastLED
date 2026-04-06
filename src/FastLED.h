@@ -1545,7 +1545,7 @@ extern CFastLED FastLED;
 #include "fl/system/serial.h"  // Arduino-compatible Serial API: fl::Serial.print(), fl::Serial.read(), etc.
 #include "fl/stl/assert.h"  // FASTLED_ASSERT(condition, "message");
 #include "fl/stl/sstream.h"  // fl::sstream for string stream operations
-#include "fl/control/remote.h"  // Remote RPC system for JSON-based function calls
+#include "fl/remote/remote.h"  // Remote RPC system for JSON-based function calls
 
 // provides:
 //   fl::vector<T> - Standard heap vector

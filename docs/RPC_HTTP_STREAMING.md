@@ -60,8 +60,8 @@ This enables real-time communication between FastLED devices and web-based or de
 
 ```cpp
 #include <FastLED.h>
-#include "fl/control/remote.h"
-#include "fl/control/rpc/response_send.h"
+#include "fl/remote/remote.h"
+#include "fl/remote/rpc/response_send.h"
 #include "fl/stl/asio/http/stream_server.h"
 
 // Include implementations
@@ -162,8 +162,8 @@ fetch('http://localhost:8080/rpc', {
 #### Serial Transport (Old)
 
 ```cpp
-#include "fl/control/remote.h"
-#include "fl/control/transport/serial.h"
+#include "fl/remote/remote.h"
+#include "fl/remote/transport/serial.h"
 
 // Create Serial-based Remote
 fl::Remote remote = fl::Remote::createSerial(Serial);
@@ -180,7 +180,7 @@ void loop() {
 #### HTTP Streaming Transport (New)
 
 ```cpp
-#include "fl/control/remote.h"
+#include "fl/remote/remote.h"
 #include "fl/stl/asio/http/stream_server.h"
 // ... include .cpp.hpp files
 
@@ -949,7 +949,7 @@ bash test --docker --cpp loopback  # Runs with ASAN enabled
 ## See Also
 
 - [Protocol Specification](../src/fl/stl/asio/http/PROTOCOL.md) - Detailed HTTP streaming RPC protocol
-- [Architecture Document](../src/fl/control/ARCHITECTURE.md) - fl::Remote architecture overview
+- [Architecture Document](../src/fl/remote/ARCHITECTURE.md) - fl::Remote architecture overview
 - [RpcServer Example](../examples/Asio/RpcServer/RpcServer.ino) - Complete server example
 - [RpcClient Example](../examples/Asio/RpcClient/RpcClient.ino) - Complete client example
 - [RpcBidirectional Example](../examples/Asio/RpcBidirectional/RpcBidirectional.ino) - Bidirectional example

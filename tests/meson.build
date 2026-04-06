@@ -247,7 +247,7 @@ foreach test_name : test_names
   # Register test: runner.exe loads the DLL and executes it
 
   # Skipped tests: still compile but don't run in the test suite.
-  # Previously fl_control_* tests were skipped due to timeouts under parallel load.
+  # Previously fl_remote_* tests were skipped due to timeouts under parallel load.
   # All three now run in parallel with the default 20s timeout (fast enough).
   skipped_tests = []
 
@@ -256,7 +256,7 @@ foreach test_name : test_names
   endif
 
   # Some tests have race conditions when run in parallel (use wall-clock time via micros())
-  is_serial = test_name in ['fl_file_system', 'channel_driver_uart', 'fl_control_loopback']
+  is_serial = test_name in ['fl_file_system', 'channel_driver_uart', 'fl_remote_loopback']
 
   # Configure timeout with deadlock detection
   # Default timeout is 20 seconds per test (generous for most tests)

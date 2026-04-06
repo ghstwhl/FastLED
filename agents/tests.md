@@ -281,7 +281,7 @@ Some test directories use a **consolidation pattern** where multiple `.cpp` file
   - `tests/fl/detail/`
   - `tests/fl/audio/detectors/`
   - `tests/fl/channels/detail/validation/`
-  - `tests/fl/control/rpc/`
+  - `tests/fl/remote/rpc/`
   - `tests/fl/codec/`
 
 ### TEST FILE PLACEMENT

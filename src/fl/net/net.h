@@ -5,7 +5,7 @@
 ///
 /// Includes all fl::net sub-namespace headers:
 ///   - fl::net::OTA     — Over-the-air firmware updates (primary class at fl::net)
-///   - fl::net::rpc     — RPC transport aliases (Remote server: see fl/control/remote.h)
+///   - fl::net::rpc     — RPC transport aliases (Remote server: see fl/remote/remote.h)
 ///   - fl::net::http::* — HTTP client (fetch) and server (facade)
 ///   - fl::net::ble::*  — BLE GATT transport (collection)
 ///

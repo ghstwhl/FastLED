@@ -3,8 +3,8 @@
 // Uses MockHttpServer + MockHttpClient + Remote (same pattern as rpc_http_stream.cpp)
 
 #include "test.h"
-#include "fl/control/remote.h"
-#include "fl/control/rpc/response_send.h"
+#include "fl/remote/remote.h"
+#include "fl/remote/rpc/response_send.h"
 #include "fl/stl/json.h"
 #include "fl/task/promise.h"
 #include "fl/stl/vector.h"

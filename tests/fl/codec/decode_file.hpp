@@ -13,8 +13,8 @@
 
 #include "test.h"
 
-#include "fl/control/remote.h"
-#include "fl/control/rpc/base64.h"
+#include "fl/remote/remote.h"
+#include "fl/remote/rpc/base64.h"
 #include "fl/stl/json.h"
 #include "fl/stl/string.h"
 #include "fl/stl/vector.h"
@@ -34,7 +34,7 @@
 FL_TEST_FILE(FL_FILEPATH) {
 
 // ---------------------------------------------------------------------------
-// TestIO — same pattern as tests/fl/control/remote.cpp
+// TestIO — same pattern as tests/fl/remote/remote.cpp
 // ---------------------------------------------------------------------------
 
 struct TestIO {

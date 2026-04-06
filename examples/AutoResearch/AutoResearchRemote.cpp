@@ -15,7 +15,7 @@
 #include "AutoResearchBle.h"
 #include "AutoResearchNet.h"
 #include "AutoResearchOta.h"
-#include "fl/control/transport/serial.h"
+#include "fl/remote/transport/serial.h"
 #include "fl/system/heap.h"
 #include "Common.h"
 #include "AutoResearchTest.h"

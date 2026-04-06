@@ -52,7 +52,7 @@ EXCLUDED_TEST_FILES = {
     "encoders.cpp",  # Aggregates tests/fl/chipsets/encoders/*.hpp
     "2d.cpp",  # Aggregates tests/fl/fx/2d/*.hpp
     "validation.cpp",  # Aggregates tests/fl/channels/detail/validation/*.hpp
-    "rpc.cpp",  # Aggregates tests/fl/control/rpc/*.hpp
+    "rpc.cpp",  # Aggregates tests/fl/remote/rpc/*.hpp
 }
 
 # Test directories that don't follow the 1:1 mapping (legacy code)

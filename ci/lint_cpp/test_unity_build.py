@@ -73,6 +73,7 @@ EXPECTED_BUILD_FILES = {
     "fl/build/fl.math+.cpp",
     "fl/build/fl.net+.cpp",
     "fl/build/fl.control+.cpp",
+    "fl/build/fl.remote+.cpp",
     "fl/build/fl.sensors+.cpp",
     "fl/build/fl.stl+.cpp",
     "fl/build/fl.system+.cpp",

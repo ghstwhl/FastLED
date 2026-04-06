@@ -19,7 +19,7 @@
 ///     {"function":"getStatus","args":[]} -> returns system status
 ///     {"function":"getLed","args":[0]} -> returns LED color
 ///
-/// @see fl/control/remote.h for full API documentation
+/// @see fl/remote/remote.h for full API documentation
 
 #include <FastLED.h>
 

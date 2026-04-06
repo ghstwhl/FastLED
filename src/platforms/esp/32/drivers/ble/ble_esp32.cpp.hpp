@@ -16,7 +16,7 @@
 #include "fl/stl/cctype.h"
 #include "fl/stl/string_view.h"
 #include "fl/system/log.h"
-#include "fl/control/transport/serial.h" // for formatJsonResponse
+#include "fl/remote/transport/serial.h" // for formatJsonResponse
 #include "fl/stl/noexcept.h"
 
 // NimBLE C headers (all ESP-IDF, no Arduino dependency)

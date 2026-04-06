@@ -66,7 +66,7 @@ EXCLUDED_TEST_FILES = {
     "wave8_spi.cpp",  # Tests wave8 SPI encoding
     # Remote tests (test remote subsystem integration)
     "loopback.cpp",  # Tests remote loopback
-    "rpc.cpp",  # Aggregates tests/fl/control/rpc/*.hpp
+    "rpc.cpp",  # Aggregates tests/fl/remote/rpc/*.hpp
     "rpc_http_stream.cpp",  # Tests RPC HTTP streaming
     # Audio sub-component tests
     "adversarial.cpp",  # Tests audio adversarial conditions

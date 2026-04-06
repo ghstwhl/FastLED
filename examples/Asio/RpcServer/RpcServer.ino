@@ -29,12 +29,12 @@
 ///       -H "Transfer-Encoding: chunked" \
 ///       -d '{"jsonrpc":"2.0","method":"streamData","params":[10],"id":3}'
 ///
-/// @see fl/control/remote.h for full API documentation
+/// @see fl/remote/remote.h for full API documentation
 /// @see fl/stl/asio/http/PROTOCOL.md for protocol specification
 
 #include <FastLED.h>
-#include "fl/control/remote.h"
-#include "fl/control/rpc/response_send.h"
+#include "fl/remote/remote.h"
+#include "fl/remote/rpc/response_send.h"
 #include "fl/net/http/stream_server.h"
 #include "fl/net/http/stream_server.cpp.hpp"
 #include "fl/net/http/stream_transport.cpp.hpp"

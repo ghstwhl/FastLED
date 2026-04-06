@@ -14,12 +14,12 @@
 ///   1. Start RpcServer.ino first (on localhost:8080)
 ///   2. Then run this client to connect and send requests
 ///
-/// @see fl/control/remote.h for full API documentation
+/// @see fl/remote/remote.h for full API documentation
 /// @see fl/stl/asio/http/PROTOCOL.md for protocol specification
 
 #include <FastLED.h>
-#include "fl/control/remote.h"
-#include "fl/control/rpc/response_send.h"
+#include "fl/remote/remote.h"
+#include "fl/remote/rpc/response_send.h"
 #include "fl/stl/unique_ptr.h"
 #include "fl/net/http/stream_client.h"
 #include "fl/net/http/stream_client.cpp.hpp"

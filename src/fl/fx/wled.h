@@ -1,6 +1,6 @@
 #pragma once
 
-#include "fl/control/remote.h"
+#include "fl/remote/remote.h"
 #include "fl/stl/vector.h"
 #include "fl/stl/span.h"  // IWYU pragma: keep
 #include "fl/stl/memory.h"  // IWYU pragma: keep
