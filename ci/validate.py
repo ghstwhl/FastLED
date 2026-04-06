@@ -585,7 +585,7 @@ class Args:
     rmt: bool
     spi: bool
     uart: bool
-    i2s: bool
+    lcd: bool
     lcd_rgb: bool
     object_fled: bool
     all: bool
@@ -665,10 +665,10 @@ Examples:
   %(prog)s --all                       # Test all drivers
   %(prog)s --parlio --skip-lint        # Skip linting for faster iteration
   %(prog)s --rmt --timeout 120         # Custom timeout (default: 60s)
-  %(prog)s --i2s --lanes 2 --strip-sizes 100,300  # Test I2S with 2 lanes, strips of 100 and 300 LEDs
+  %(prog)s --lcd --lanes 2 --strip-sizes 100,300  # Test I2S with 2 lanes, strips of 100 and 300 LEDs
   %(prog)s --parlio --lanes 1-4        # Test PARLIO with 1-4 lanes
   %(prog)s --rmt --strip-sizes small   # Test RMT with 'small' preset (100/500 LEDs)
-  %(prog)s --i2s --lane-counts 100,200,300  # Test I2S with 3 lanes (100, 200, 300 LEDs per lane)
+  %(prog)s --lcd --lane-counts 100,200,300  # Test I2S with 3 lanes (100, 200, 300 LEDs per lane)
   %(prog)s --parlio --color-pattern 0xff00aa  # Test PARLIO with custom color pattern (RGB hex)
   %(prog)s --help                      # Show this help message
 
@@ -763,7 +763,7 @@ See Also:
             help="Test only UART driver",
         )
         driver_group.add_argument(
-            "--i2s",
+            "--lcd",
             action="store_true",
             help="Test only I2S LCD_CAM driver (ESP32-S3 only)",
         )
@@ -780,7 +780,7 @@ See Also:
         driver_group.add_argument(
             "--all",
             action="store_true",
-            help="Test all drivers (equivalent to --parlio --rmt --spi --uart --i2s --lcd-rgb --object-fled)",
+            help="Test all drivers (equivalent to --parlio --rmt --spi --uart --lcd --lcd-rgb --object-fled)",
         )
         driver_group.add_argument(
             "--simd",
@@ -1034,7 +1034,7 @@ See Also:
             rmt=parsed.rmt,
             spi=parsed.spi,
             uart=parsed.uart,
-            i2s=parsed.i2s,
+            lcd=parsed.lcd,
             lcd_rgb=parsed.lcd_rgb,
             object_fled=parsed.object_fled,
             all=parsed.all,
@@ -1258,11 +1258,11 @@ async def run(args: Args | None = None) -> int:  # pyright: ignore[reportGeneral
     # Resolve environment: positional argument takes precedence over --env flag
     final_environment = args.environment_positional or args.environment
 
-    # If --i2s is specified but no environment, force esp32s3
+    # If --lcd is specified but no environment, force esp32s3
     # I2S LCD_CAM driver is only available on ESP32-S3
-    if args.i2s and not final_environment:
+    if args.lcd and not final_environment:
         final_environment = "esp32s3"
-        print("ℹ️  --i2s flag requires ESP32-S3, auto-selecting 'esp32s3' environment")
+        print("ℹ️  --lcd flag requires ESP32-S3, auto-selecting 'esp32s3' environment")
 
     # If --lcd-rgb is specified but no environment, force esp32p4
     # LCD RGB driver is only available on ESP32-P4
@@ -1295,7 +1295,7 @@ async def run(args: Args | None = None) -> int:  # pyright: ignore[reportGeneral
             drivers.append("SPI")
         if args.uart:
             drivers.append("UART")
-        if args.i2s:
+        if args.lcd:
             drivers.append("I2S")
         if args.lcd_rgb:
             drivers.append("LCD_RGB")
