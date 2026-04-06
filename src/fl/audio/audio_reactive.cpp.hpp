@@ -1,5 +1,6 @@
 #include "fl/audio/audio_reactive.h"
 #include "fl/audio/audio_processor.h"
+#include "fl/stl/assert.h"
 #include "fl/audio/detector/musical_beat_detector.h"
 #include "fl/audio/detector/multiband_beat_detector.h"
 #include "fl/audio/mic_response_data.h"
@@ -133,11 +134,13 @@ void Reactive::begin(const ReactiveConfig& config) {
     // Update Context sample rate
     mContext->setSampleRate(config.sampleRate);
 
-    // Reset internal Processor if it exists
-    if (mAudioProcessor) {
-        mAudioProcessor->setSampleRate(config.sampleRate);
-        mAudioProcessor->reset();
-    }
+    // Ensure internal Processor exists and is configured.
+    // Eager creation so processSample() can always source volume from it.
+    ensureAudioProcessor();
+    mAudioProcessor->setSampleRate(config.sampleRate);
+    mAudioProcessor->reset();
+    // Force EnergyAnalyzer detector registration so updateFromContext() updates it
+    mAudioProcessor->getEnergy();
 }
 
 void Reactive::setConfig(const ReactiveConfig& config) {
@@ -174,6 +177,12 @@ void Reactive::processSample(const Sample& sample) {
 
     // Process the conditioned Sample - timing is gated by sample availability
     processFFT(processedSample);
+
+    // Update internal Processor BEFORE populating Data fields,
+    // so updateVolumeAndPeak() can source normalized volume.
+    ensureAudioProcessor();
+    mAudioProcessor->updateFromContext(mContext);
+
     updateVolumeAndPeak(processedSample);
 
     // Enhanced processing pipeline
@@ -210,11 +219,7 @@ void Reactive::processSample(const Sample& sample) {
 
     mCurrentData.timestamp = currentTimeMs;
 
-    // Forward to internal Processor for detector-based polling getters.
-    // Share our Context so Processor's detectors reuse the cached FFT.
-    if (mAudioProcessor) {
-        mAudioProcessor->updateFromContext(mContext);
-    }
+    // Processor was already updated earlier in this method (before updateVolumeAndPeak).
 }
 
 void Reactive::update(fl::u32 currentTimeMs) {
@@ -289,22 +294,26 @@ void Reactive::updateVolumeAndPeak(const Sample& sample) {
         return;
     }
     
-    // Use Sample's built-in RMS calculation
+    // Raw volume: simple bounded normalization (no adaptive smoothing)
+    // 23170 ≈ max RMS of a full-scale 16-bit sine wave (32767 / √2).
+    // Clamp so clipped/square-wave input stays at 1.0.
     float rms = sample.rms();
-    
-    // Calculate peak from PCM data
+    float raw = rms / 23170.0f;
+    mCurrentData.volumeRaw = (raw > 1.0f) ? 1.0f : raw;
+
+    // Normalized volume from Processor's EnergyAnalyzer (adaptive 0.0-1.0).
+    // mAudioProcessor is guaranteed non-null: ensureAudioProcessor() is called
+    // in processSample() immediately before this method.
+    FL_ASSERT(mAudioProcessor, "mAudioProcessor is null — was begin() called before processSample()?");
+    mCurrentData.volume = mAudioProcessor->getEnergy();
+
+    // Peak: simple bounded normalization
     float maxSample = 0.0f;
     for (fl::i16 pcmSample : pcmData) {
-        float absSample = (pcmSample < 0) ? -pcmSample : pcmSample;
+        float absSample = (pcmSample < 0) ? -static_cast<float>(pcmSample) : static_cast<float>(pcmSample);
         maxSample = (maxSample > absSample) ? maxSample : absSample;
     }
-    
-    // Scale to 0-255 range (approximately)
-    mCurrentData.volumeRaw = rms / 128.0f;  // Rough scaling
-    mCurrentData.volume = mCurrentData.volumeRaw;
-    
-    // Peak detection
-    mCurrentData.peak = maxSample / 32768.0f * 255.0f;
+    mCurrentData.peak = maxSample / 32768.0f;
 }
 
 void Reactive::detectBeat(fl::u32 currentTimeMs) {
@@ -314,12 +323,15 @@ void Reactive::detectBeat(fl::u32 currentTimeMs) {
         return;
     }
     
-    // Simple beat detection based on volume increase
-    float currentVolume = mCurrentData.volume;
+    // Use raw volume for beat detection — it is proportional to amplitude.
+    // Adaptive volume (mCurrentData.volume) converges toward a steady state,
+    // masking the transient jumps that indicate beats.
+    // NOTE: this runs BEFORE applyGain(), so beat detection is gain-independent.
+    float currentVolume = mCurrentData.volumeRaw;
     
     // Beat detected if volume significantly increased
     if (currentVolume > mPreviousVolume + mVolumeThreshold && 
-        currentVolume > 5.0f) {  // Minimum volume threshold
+        currentVolume > 0.02f) {  // Minimum volume threshold
         mCurrentData.beatDetected = true;
         mLastBeatTime = currentTimeMs;
     } else {
@@ -343,9 +355,14 @@ void Reactive::applyGain() {
     // Apply gain setting (0-255 maps to 0.0-2.0 multiplier)
     float gainMultiplier = static_cast<float>(mConfig.gain) / 128.0f;
 
-    mCurrentData.volume *= gainMultiplier;
+    // Don't apply gain to adaptive volume — it's self-normalizing (converges
+    // to 1.0 regardless of amplitude), so scaling it is meaningless.
     mCurrentData.volumeRaw *= gainMultiplier;
     mCurrentData.peak *= gainMultiplier;
+
+    // Clamp to documented 0.0-1.0 range after gain
+    if (mCurrentData.volumeRaw > 1.0f) mCurrentData.volumeRaw = 1.0f;
+    if (mCurrentData.peak > 1.0f) mCurrentData.peak = 1.0f;
 
     for (int i = 0; i < 16; ++i) {
         mCurrentData.frequencyBins[i] *= gainMultiplier;
@@ -395,17 +412,10 @@ void Reactive::smoothResults() {
     float attackFactor = 1.0f - (mConfig.attack / 255.0f * 0.9f);  // Range: 0.1 to 1.0
     float decayFactor = 1.0f - (mConfig.decay / 255.0f * 0.95f);   // Range: 0.05 to 1.0
     
-    // Apply attack/decay smoothing to volume
-    if (mCurrentData.volume > mSmoothedData.volume) {
-        // Rising - use attack time (faster response)
-        mSmoothedData.volume = mSmoothedData.volume * (1.0f - attackFactor) + 
-                              mCurrentData.volume * attackFactor;
-    } else {
-        // Falling - use decay time (slower response)
-        mSmoothedData.volume = mSmoothedData.volume * (1.0f - decayFactor) + 
-                              mCurrentData.volume * decayFactor;
-    }
-    
+    // volume is already adaptively smoothed by EnergyAnalyzer — copy directly
+    // to avoid double-smoothing which would make it sluggish.
+    mSmoothedData.volume = mCurrentData.volume;
+
     // Apply attack/decay smoothing to volumeRaw
     if (mCurrentData.volumeRaw > mSmoothedData.volumeRaw) {
         mSmoothedData.volumeRaw = mSmoothedData.volumeRaw * (1.0f - attackFactor) + 
@@ -442,6 +452,15 @@ void Reactive::smoothResults() {
     mSmoothedData.dominantFrequency = mCurrentData.dominantFrequency;
     mSmoothedData.magnitude = mCurrentData.magnitude;
     mSmoothedData.timestamp = mCurrentData.timestamp;
+
+    // Copy enhanced beat detection fields
+    mSmoothedData.bassBeatDetected = mCurrentData.bassBeatDetected;
+    mSmoothedData.midBeatDetected = mCurrentData.midBeatDetected;
+    mSmoothedData.trebleBeatDetected = mCurrentData.trebleBeatDetected;
+    mSmoothedData.spectralFlux = mCurrentData.spectralFlux;
+    mSmoothedData.bassEnergy = mCurrentData.bassEnergy;
+    mSmoothedData.midEnergy = mCurrentData.midEnergy;
+    mSmoothedData.trebleEnergy = mCurrentData.trebleEnergy;
 }
 
 const Data& Reactive::getData() const {
@@ -504,8 +523,10 @@ float Reactive::getTrebleEnergy() const {
 }
 
 fl::u8 Reactive::volumeToScale255() const {
-    float vol = (mCurrentData.volume < 0.0f) ? 0.0f : ((mCurrentData.volume > 255.0f) ? 255.0f : mCurrentData.volume);
-    return static_cast<fl::u8>(vol);
+    float scaled = mCurrentData.volume * 255.0f;
+    if (scaled < 0.0f) scaled = 0.0f;
+    if (scaled > 255.0f) scaled = 255.0f;
+    return static_cast<fl::u8>(scaled);
 }
 
 CRGB Reactive::volumeToColor(const CRGBPalette16& /* palette */) const {
@@ -516,9 +537,11 @@ CRGB Reactive::volumeToColor(const CRGBPalette16& /* palette */) const {
 
 fl::u8 Reactive::frequencyToScale255(fl::u8 binIndex) const {
     if (binIndex >= 16) return 0;
-    
-    float value = (mCurrentData.frequencyBins[binIndex] < 0.0f) ? 0.0f : 
-                  ((mCurrentData.frequencyBins[binIndex] > 255.0f) ? 255.0f : mCurrentData.frequencyBins[binIndex]);
+    // Bin values have no fixed upper bound (depend on FFT output, scaling
+    // mode, gain, and equalization).  Best-effort clamp to 0-255.
+    float value = mCurrentData.frequencyBins[binIndex];
+    if (value < 0.0f) value = 0.0f;
+    if (value > 255.0f) value = 255.0f;
     return static_cast<fl::u8>(value);
 }
 
@@ -548,17 +571,26 @@ void Reactive::applySpectralEqualization() {
 }
 
 void Reactive::updateSpectralFlux() {
-    if (!mSpectralFluxDetector) {
-        mCurrentData.spectralFlux = 0.0f;
-        return;
+    // Compute spectral flux from Reactive's own previous magnitudes.
+    //
+    // IMPORTANT ordering contract (called from processSample):
+    //   Step 7: updateSpectralFlux()   — uses & updates Reactive::mPreviousMagnitudes
+    //   Step 9: detectEnhancedBeats()  — calls SpectralFluxDetector::detectOnset()
+    //           which uses & updates SpectralFluxDetector::mPreviousMagnitudes
+    //
+    // Both arrays converge to the same values (both set to mCurrentData.frequencyBins
+    // each frame), but they are separate to avoid a state-ordering bug: calling
+    // mSpectralFluxDetector->calculateSpectralFlux() here would update the
+    // detector's internal state and cause detectOnset() to see zero flux.
+    float flux = 0.0f;
+    for (int i = 0; i < 16; ++i) {
+        float diff = mCurrentData.frequencyBins[i] - mPreviousMagnitudes[i];
+        if (diff > 0.0f) {
+            flux += diff;
+        }
     }
-    
-    // Calculate spectral flux from current and previous frequency bins
-    mCurrentData.spectralFlux = mSpectralFluxDetector->calculateSpectralFlux(
-        mCurrentData.frequencyBins, 
-        mPreviousMagnitudes.data()
-    );
-    
+    mCurrentData.spectralFlux = flux;
+
     // Update previous magnitudes for next frame
     for (int i = 0; i < 16; ++i) {
         mPreviousMagnitudes[i] = mCurrentData.frequencyBins[i];
@@ -588,15 +620,15 @@ void Reactive::detectEnhancedBeats(fl::u32 currentTimeMs) {
 
     if (mConfig.enableSpectralFlux && mSpectralFluxDetector) {
         onsetDetected = mSpectralFluxDetector->detectOnset(
-            mCurrentData.frequencyBins,
-            mPreviousMagnitudes.data()
+            mCurrentData.frequencyBins
         );
 
+        // Use already-computed spectral flux for onset strength.
+        // Do NOT call calculateSpectralFlux() again — detectOnset() already
+        // updated the detector's internal state, so a second call would see
+        // current == previous and return 0.
         if (onsetDetected) {
-            onsetStrength = mSpectralFluxDetector->calculateSpectralFlux(
-                mCurrentData.frequencyBins,
-                mPreviousMagnitudes.data()
-            );
+            onsetStrength = mCurrentData.spectralFlux;
         }
     }
 
@@ -649,7 +681,7 @@ void Reactive::applyAWeighting() {
 
 void Reactive::applyLoudnessCompensation() {
     if (mPerceptualWeighting) {
-        mPerceptualWeighting->applyLoudnessCompensation(mCurrentData, 50.0f);
+        mPerceptualWeighting->applyLoudnessCompensation(mCurrentData, 0.28f);
     }
 }
 
@@ -716,8 +748,8 @@ void SpectralFluxDetector::reset() {
 #endif
 }
 
-bool SpectralFluxDetector::detectOnset(const float* currentBins, const float* /* previousBins */) {
-    float flux = calculateSpectralFlux(currentBins, mPreviousMagnitudes.data());
+bool SpectralFluxDetector::detectOnset(span<const float, 16> currentBins) {
+    float flux = calculateSpectralFlux(currentBins, span<const float, 16>(mPreviousMagnitudes.data(), 16));
     
 #if SKETCH_HAS_LARGE_MEMORY
     // Store flux in history for adaptive threshold calculation
@@ -732,9 +764,9 @@ bool SpectralFluxDetector::detectOnset(const float* currentBins, const float* /*
 #endif
 }
 
-float SpectralFluxDetector::calculateSpectralFlux(const float* currentBins, const float* previousBins) {
+float SpectralFluxDetector::calculateSpectralFlux(span<const float, 16> currentBins, span<const float, 16> previousBins) {
     float flux = 0.0f;
-    
+
     // Calculate spectral flux as sum of positive differences
     for (int i = 0; i < 16; ++i) {
         float diff = currentBins[i] - previousBins[i];
@@ -742,7 +774,7 @@ float SpectralFluxDetector::calculateSpectralFlux(const float* currentBins, cons
             flux += diff;
         }
     }
-    
+
     // Update previous magnitudes for next calculation
     for (int i = 0; i < 16; ++i) {
         mPreviousMagnitudes[i] = currentBins[i];
@@ -799,23 +831,16 @@ void BeatDetectors::reset() {
     mPreviousTrebleEnergy = 0.0f;
 }
 
-void BeatDetectors::detectBeats(const float* frequencyBins, Data& audioData) {
+void BeatDetectors::detectBeats(span<const float, 16> frequencyBins, Data& audioData) {
     // Calculate current band energies
     mBassEnergy = (frequencyBins[0] + frequencyBins[1]) / 2.0f;
     mMidEnergy = (frequencyBins[6] + frequencyBins[7]) / 2.0f;
     mTrebleEnergy = (frequencyBins[14] + frequencyBins[15]) / 2.0f;
     
-#if SKETCH_HAS_LARGE_MEMORY
-    // Use separate detector for each band
-    audioData.bassBeatDetected = bass.detectOnset(&mBassEnergy, &mPreviousBassEnergy);
-    audioData.midBeatDetected = mid.detectOnset(&mMidEnergy, &mPreviousMidEnergy);
-    audioData.trebleBeatDetected = treble.detectOnset(&mTrebleEnergy, &mPreviousTrebleEnergy);
-#else
-    // Use simple threshold detection for memory-constrained platforms
+    // Simple threshold-based detection using per-band energy deltas.
     audioData.bassBeatDetected = (mBassEnergy > mPreviousBassEnergy * 1.3f) && (mBassEnergy > 0.1f);
     audioData.midBeatDetected = (mMidEnergy > mPreviousMidEnergy * 1.25f) && (mMidEnergy > 0.08f);
     audioData.trebleBeatDetected = (mTrebleEnergy > mPreviousTrebleEnergy * 1.2f) && (mTrebleEnergy > 0.05f);
-#endif
     
     // Update previous energies
     mPreviousBassEnergy = mBassEnergy;
@@ -859,8 +884,10 @@ void PerceptualWeighting::applyAWeighting(Data& data) const {
 }
 
 void PerceptualWeighting::applyLoudnessCompensation(Data& data, float referenceLevel) const {
-    // Calculate current loudness level
-    float currentLoudness = data.volume;
+    // Calculate current loudness level from raw (non-adaptive) volume.
+    // data.volume is adaptive (converges to ~1.0) and cannot distinguish
+    // quiet from loud signals.  volumeRaw preserves actual amplitude.
+    float currentLoudness = data.volumeRaw;
     
     // Calculate compensation factor based on difference from reference
     float compensationFactor = 1.0f;
@@ -908,6 +935,10 @@ bool Reactive::isSpectralEqualizerEnabled() const {
 }
 
 const SpectralEqualizer::Stats& Reactive::getSpectralEqualizerStats() const {
+    if (!mSpectralEqualizer) {
+        static const SpectralEqualizer::Stats kEmpty{};
+        return kEmpty;
+    }
     return mSpectralEqualizer->getStats();
 }
 

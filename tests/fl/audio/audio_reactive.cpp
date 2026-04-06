@@ -57,7 +57,10 @@ FL_TEST_CASE("audio::Reactive basic functionality") {
     // Check that we detected some audio
     const audio::Data& processedData = audio.getData();
     FL_CHECK(processedData.volume > 0.0f);
-    
+    FL_CHECK_LE(processedData.volume, 1.0f);
+    FL_CHECK_LE(processedData.volumeRaw, 1.0f);
+    FL_CHECK_LE(processedData.peak, 1.0f);
+
     // Verify that the timestamp was properly captured from the audio::Sample
     FL_CHECK(processedData.timestamp == testTimestamp);
     
@@ -501,7 +504,7 @@ FL_TEST_CASE("audio::Reactive - silence pipeline no NaN") {
 
     // Should not crash, volume should be zero or near-zero
     const auto& data = audio.getData();
-    FL_CHECK_LT(data.volume, 100.0f);
+    FL_CHECK_LE(data.volume, 1.0f);
     FL_CHECK_FALSE(data.volume != data.volume); // NaN check
 }
 
@@ -1388,10 +1391,10 @@ FL_TEST_CASE("audio::Reactive - setGain before begin returns 1.0") {
 }
 
 FL_TEST_CASE("audio::Reactive - setGain affects processing") {
-    // setGain() affects the internal audio::Processor path. The legacy
-    // audio::Reactive volume pipeline uses the old u8 config gain separately.
-    // Verify gain has a measurable effect by applying gain before feeding
-    // to audio::Reactive and comparing volumes through the legacy pipeline.
+    // Verify gain has a measurable effect on raw volume.
+    // Note: Data::volume uses adaptive normalization (converges to ~1.0
+    // regardless of amplitude), so we check volumeRaw which preserves
+    // the absolute amplitude relationship.
     vector<i16> samples = generateSineWave(512, 440.0f, 44100.0f, 3000);
 
     // No external gain
@@ -1399,7 +1402,7 @@ FL_TEST_CASE("audio::Reactive - setGain affects processing") {
     audio1.begin();
     audio::Sample s1 = createSample(samples, 100);
     audio1.processSample(s1);
-    float vol1 = audio1.getVolume();
+    float vol1 = audio1.getData().volumeRaw;
 
     // Apply external gain via applyGain before feeding
     audio::Reactive audio2;
@@ -1407,7 +1410,7 @@ FL_TEST_CASE("audio::Reactive - setGain affects processing") {
     audio::Sample s2 = createSample(samples, 200);
     s2.applyGain(5.0f);
     audio2.processSample(s2);
-    float vol2 = audio2.getVolume();
+    float vol2 = audio2.getData().volumeRaw;
 
     FL_CHECK_GT(vol2, vol1);
 }

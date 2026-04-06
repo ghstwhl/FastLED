@@ -9,6 +9,7 @@
 #include "fl/audio/frequency_bin_mapper.h"
 #include "fl/audio/spectral_equalizer.h"
 #include "fl/stl/array.h"
+#include "fl/stl/span.h"
 #include "fl/stl/shared_ptr.h"
 #include "fl/stl/unique_ptr.h"
 #include "fl/system/sketch_macros.h"
@@ -32,9 +33,9 @@ class MultiBandBeat;
 
 // Audio data structure - matches original WLED output with extensions
 struct Data {
-    float volume = 0.0f;                    // Overall volume level (0-255)
-    float volumeRaw = 0.0f;                 // Raw volume without smoothing
-    float peak = 0.0f;                      // Peak level (0-255) 
+    float volume = 0.0f;                    // Overall volume level (0.0-1.0, adaptive normalized)
+    float volumeRaw = 0.0f;                 // Raw volume without smoothing (0.0-1.0)
+    float peak = 0.0f;                      // Peak level (0.0-1.0)
     bool beatDetected = false;              // Beat detection flag
     float frequencyBins[16] = {0};          // 16 frequency bins (matches WLED NUM_GEQ_CHANNELS)
     float dominantFrequency = 0.0f;         // Major peak frequency (Hz)
@@ -253,7 +254,7 @@ private:
     
     // Volume tracking for beat detection
     float mPreviousVolume = 0.0f;
-    float mVolumeThreshold = 10.0f;
+    float mVolumeThreshold = 0.04f;
     
     // Pink noise compensation: √(f_center / f_ref) normalized so geometric mean ≈ 1.0.
     // Compensates for 1/f spectral tilt of natural audio (music, speech).
@@ -290,8 +291,8 @@ public:
     ~SpectralFluxDetector() FL_NOEXCEPT;
     
     void reset();
-    bool detectOnset(const float* currentBins, const float* previousBins);
-    float calculateSpectralFlux(const float* currentBins, const float* previousBins);
+    bool detectOnset(span<const float, 16> currentBins);
+    float calculateSpectralFlux(span<const float, 16> currentBins, span<const float, 16> previousBins);
     void setThreshold(float threshold);
     float getThreshold() const;
     
@@ -312,7 +313,7 @@ struct BeatDetectors {
     ~BeatDetectors() FL_NOEXCEPT;
     
     void reset();
-    void detectBeats(const float* frequencyBins, Data& audioData);
+    void detectBeats(span<const float, 16> frequencyBins, Data& audioData);
     void setThresholds(float bassThresh, float midThresh, float trebleThresh);
     
 private:

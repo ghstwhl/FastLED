@@ -13,17 +13,23 @@
 1. NEVER pass raw `(pointer, size)` pairs between FastLED functions when `fl::span` can be used
    - Bad: `void process(const u8* data, size_t len)`
    - Good: `void process(fl::span<const u8> data)`
-2. NEVER use Arduino `String` type in FastLED code
+2. NEVER pass raw `T*` for fixed-size arrays when the size is known at compile time — use `fl::span<T, N>` (static extent)
+   - Bad: `void processFFT(const float* bins)` (caller must know it's 16 elements)
+   - Good: `void processFFT(fl::span<const float, 16> bins)` (size enforced by compiler)
+   - This prevents buffer overreads where a single-element pointer is passed to a function expecting N elements
+   - `float arr[16]` and `fl::array<T, 16>` both implicitly convert to `fl::span<T, 16>`
+3. NEVER use Arduino `String` type in FastLED code
    - Use `fl::string` instead
    - Exception: Unavoidable when calling external library APIs
    - In such cases, convert to `fl::string` immediately at the API boundary
-3. Raw pointer+size is OK for external API boundaries
-4. `fl::span` auto-converts from containers — pass containers directly
+4. Raw pointer+size is OK for external API boundaries
+5. `fl::span` auto-converts from containers — pass containers directly
 
 **Check Process**:
 1. Scan for function signatures with `(const u8* data, size_t size)` or similar
-2. Scan for `Arduino String` usage
-3. Scan for raw pointer casts passed directly without span intermediary
+2. Scan for function signatures with `(const T* ptr)` that iterate a fixed number of elements — suggest `span<const T, N>`
+3. Scan for `Arduino String` usage
+4. Scan for raw pointer casts passed directly without span intermediary
 
 ## examples/** changes - QUALITY CONTROL
 1. Check for new *.ino files (newly added files)
