@@ -46,7 +46,7 @@ ChannelDriverLcdSpi::ChannelDriverLcdSpi(
     fl::shared_ptr<detail::ILcdSpiPeripheral> peripheral) FL_NOEXCEPT
     : mPeripheral(fl::move(peripheral)), mInitialized(false),
       mEnqueuedChannels(), mTransmittingChannels(), mBuffer(nullptr),
-      mBufferSize(0), mBusy(false) {}
+      mBufferSize(0), mNumLanes(0), mBusy(false) {}
 
 ChannelDriverLcdSpi::~ChannelDriverLcdSpi() {
     // Block until DMA completes — mBuffer is the DMA source for LCD_CAM,
@@ -182,10 +182,19 @@ bool ChannelDriverLcdSpi::beginTransmission(
     size_t totalWords = maxSize * 8;
     size_t bufferBytes = totalWords * sizeof(u16);
 
-    if (!mInitialized || mBufferSize < bufferBytes) {
+    // Only reinitialize the peripheral when hardware config changes
+    // (lane count). Buffer growth is handled independently below.
+    // This avoids tearing down the I80 bus GPIO matrix routing on
+    // ESP32-S3 which breaks data output after deinit+reinit.
+    bool needPeripheralInit = !mInitialized || (numLanes != mNumLanes);
+
+    if (needPeripheralInit) {
+        // Free buffer when peripheral reinits — the old buffer may not be
+        // compatible with the new I80 bus configuration.
         if (mBuffer != nullptr) {
             mPeripheral->freeBuffer(mBuffer);
             mBuffer = nullptr;
+            mBufferSize = 0;
         }
 
         if (mInitialized) {
@@ -195,7 +204,12 @@ bool ChannelDriverLcdSpi::beginTransmission(
 
         detail::LcdSpiConfig config;
         config.num_lanes = numLanes;
-        config.max_transfer_bytes = bufferBytes;
+        // Over-provision DMA capacity so buffer growth doesn't require
+        // tearing down the I80 bus. 256KB covers ~4000 LEDs per lane.
+        static constexpr size_t kMinMaxTransfer = 256 * 1024;
+        config.max_transfer_bytes = bufferBytes > kMinMaxTransfer
+                                        ? bufferBytes
+                                        : kMinMaxTransfer;
         config.use_psram = true;
 
         for (size_t i = 0; i < channels.size() && i < 16; i++) {
@@ -222,13 +236,34 @@ bool ChannelDriverLcdSpi::beginTransmission(
             return false;
         }
 
-        mBuffer = mPeripheral->allocateBuffer(bufferBytes);
+        mNumLanes = numLanes;
+        mInitialized = true;
+    }
+
+    // Allocate buffer at generous size on first use to avoid
+    // reallocation. On ESP32-S3, freeing and reallocating PSRAM
+    // DMA buffers can cause cache coherence issues that silently
+    // break subsequent LCD_CAM I80 transmits.
+    if (mBuffer == nullptr) {
+        static constexpr size_t kMinBufferSize = 256 * 1024;
+        size_t allocSize =
+            bufferBytes > kMinBufferSize ? bufferBytes : kMinBufferSize;
+        mBuffer = mPeripheral->allocateBuffer(allocSize);
         if (mBuffer == nullptr) {
             FL_WARN("ChannelDriverLcdSpi: Failed to allocate buffer");
             return false;
         }
+        mBufferSize = allocSize;
+    } else if (mBufferSize < bufferBytes) {
+        // Buffer too small and already allocated — must reallocate.
+        // This path shouldn't normally be hit due to over-provisioning.
+        mPeripheral->freeBuffer(mBuffer);
+        mBuffer = mPeripheral->allocateBuffer(bufferBytes);
+        if (mBuffer == nullptr) {
+            FL_WARN("ChannelDriverLcdSpi: Failed to reallocate buffer");
+            return false;
+        }
         mBufferSize = bufferBytes;
-        mInitialized = true;
     }
 
     fl::memset(mBuffer, 0, bufferBytes);

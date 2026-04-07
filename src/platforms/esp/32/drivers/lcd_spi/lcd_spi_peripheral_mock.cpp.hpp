@@ -54,6 +54,7 @@ class LcdSpiPeripheralMockImpl : public LcdSpiPeripheralMock {
     fl::span<const u16> getLastTransmitData() const FL_NOEXCEPT override;
     bool isEnabled() const FL_NOEXCEPT override;
     size_t getTransmitCount() const FL_NOEXCEPT override;
+    size_t getDeinitCount() const FL_NOEXCEPT override;
     void reset() FL_NOEXCEPT override;
 
   private:
@@ -75,6 +76,7 @@ class LcdSpiPeripheralMockImpl : public LcdSpiPeripheralMock {
     bool mFiringCallbacks;
     size_t mDeferredCallbackCount;
     bool mAutoComplete;
+    size_t mDeinitCount;
 };
 
 LcdSpiPeripheralMock &LcdSpiPeripheralMock::instance() FL_NOEXCEPT {
@@ -86,7 +88,7 @@ LcdSpiPeripheralMockImpl::LcdSpiPeripheralMockImpl() FL_NOEXCEPT
       mConfig(), mCallback(nullptr), mUserCtx(nullptr), mTransmitDelayUs(0),
       mShouldFailTransmit(false), mHistory(), mPendingTransmits(0),
       mSimulatedTimeUs(0), mFiringCallbacks(false), mDeferredCallbackCount(0),
-      mAutoComplete(false) {
+      mAutoComplete(false), mDeinitCount(0) {
 }
 
 LcdSpiPeripheralMockImpl::~LcdSpiPeripheralMockImpl() {}
@@ -109,6 +111,7 @@ void LcdSpiPeripheralMockImpl::deinitialize() FL_NOEXCEPT {
     mEnabled = false;
     mBusy = false;
     mPendingTransmits = 0;
+    mDeinitCount++;
 }
 
 bool LcdSpiPeripheralMockImpl::isInitialized() const FL_NOEXCEPT {
@@ -261,6 +264,10 @@ size_t LcdSpiPeripheralMockImpl::getTransmitCount() const FL_NOEXCEPT {
     return mTransmitCount;
 }
 
+size_t LcdSpiPeripheralMockImpl::getDeinitCount() const FL_NOEXCEPT {
+    return mDeinitCount;
+}
+
 void LcdSpiPeripheralMockImpl::reset() FL_NOEXCEPT {
     mInitialized = false;
     mEnabled = false;
@@ -277,6 +284,7 @@ void LcdSpiPeripheralMockImpl::reset() FL_NOEXCEPT {
     mFiringCallbacks = false;
     mDeferredCallbackCount = 0;
     mAutoComplete = false;
+    mDeinitCount = 0;
 }
 
 void LcdSpiPeripheralMockImpl::pumpDeferredCallbacks() FL_NOEXCEPT {

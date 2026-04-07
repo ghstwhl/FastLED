@@ -62,6 +62,7 @@ class ChannelDriverLcdSpi : public IChannelDriver {
 
     u16 *mBuffer;
     size_t mBufferSize;
+    int mNumLanes;
     volatile bool mBusy;
 };
 

@@ -153,7 +153,9 @@ bool LcdSpiPeripheralEsp::initialize(const LcdSpiConfig &config) FL_NOEXCEPT {
         if (i < config.num_lanes) {
             bus_config.data_gpio_nums[i] = config.data_gpios[i];
         } else {
-            bus_config.data_gpio_nums[i] = -1;
+            // I80 bus requires valid GPIOs for all bus_width pins.
+            // Use GPIO 0 for unused lanes (matches I2S LCD_CAM convention).
+            bus_config.data_gpio_nums[i] = 0;
         }
     }
 
@@ -258,6 +260,15 @@ bool LcdSpiPeripheralEsp::transmit(const u16 *buffer,
                                    size_t size_bytes) FL_NOEXCEPT {
     if (!mInitialized || mPanelIo == nullptr) {
         return false;
+    }
+
+    // Drain stale semaphore from a previous transmit whose completion
+    // was detected via isBusy() rather than waitTransmitDone().
+    // Without this, esp_lcd_panel_io_tx_color may silently fail to
+    // start DMA on the second call because the I80 transaction queue
+    // (depth=1) still holds the completed-but-unconsumed transaction.
+    if (mCompleteSem) {
+        xSemaphoreTake(mCompleteSem, 0);
     }
 
     mBusy = true;

@@ -60,6 +60,7 @@ class LcdSpiPeripheralMock : public ILcdSpiPeripheral {
 
     virtual bool isEnabled() const FL_NOEXCEPT = 0;
     virtual size_t getTransmitCount() const FL_NOEXCEPT = 0;
+    virtual size_t getDeinitCount() const FL_NOEXCEPT = 0;
     virtual void reset() FL_NOEXCEPT = 0;
 };
 

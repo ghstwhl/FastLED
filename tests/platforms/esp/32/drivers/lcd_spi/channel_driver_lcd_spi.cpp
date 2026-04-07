@@ -576,6 +576,93 @@ FL_TEST_CASE("ChannelDriverLcdSpi - second show waits for first") {
     FL_CHECK(driver.poll() == IChannelDriver::DriverState::READY);
 }
 
+//=============================================================================
+// Buffer growth without peripheral reinit
+//=============================================================================
+
+FL_TEST_CASE("ChannelDriverLcdSpi - buffer growth without peripheral reinit") {
+    resetMockState();
+    auto peripheral = createMockPeripheral();
+    ChannelDriverLcdSpi driver(peripheral);
+    auto &mock = LcdSpiPeripheralMock::instance();
+
+    SpiEncoder encoder = SpiEncoder::apa102();
+
+    // First show: small data (1 byte)
+    {
+        SpiChipsetConfig cfg{5, 18, encoder};
+        fl::vector_psram<u8> d;
+        d.resize(1); d[0] = 0xFF;
+        driver.enqueue(ChannelData::create(cfg, fl::move(d)));
+        driver.show();
+        mock.simulateTransmitComplete();
+        FL_CHECK(driver.poll() == IChannelDriver::DriverState::READY);
+    }
+
+    FL_CHECK(mock.getTransmitCount() == 1);
+    size_t deinitsBefore = mock.getDeinitCount();
+
+    // Second show: larger data (48 bytes, same lane count)
+    // This should NOT deinitialize the peripheral — only reallocate the buffer.
+    {
+        SpiChipsetConfig cfg{5, 18, encoder};
+        fl::vector_psram<u8> d;
+        d.resize(48);
+        for (size_t i = 0; i < 48; i++) d[i] = static_cast<u8>(i);
+        driver.enqueue(ChannelData::create(cfg, fl::move(d)));
+        driver.show();
+    }
+
+    FL_CHECK(mock.getTransmitCount() == 2);
+    FL_CHECK(mock.getDeinitCount() == deinitsBefore);
+
+    fl::span<const u16> tx = mock.getLastTransmitData();
+    FL_CHECK(tx.size() == 48 * 8);
+}
+
+FL_TEST_CASE("ChannelDriverLcdSpi - lane count change triggers reinit") {
+    resetMockState();
+    auto peripheral = createMockPeripheral();
+    ChannelDriverLcdSpi driver(peripheral);
+    auto &mock = LcdSpiPeripheralMock::instance();
+
+    SpiEncoder encoder = SpiEncoder::apa102();
+
+    // First show: 1 lane
+    {
+        SpiChipsetConfig cfg{5, 18, encoder};
+        fl::vector_psram<u8> d;
+        d.resize(1); d[0] = 0xFF;
+        driver.enqueue(ChannelData::create(cfg, fl::move(d)));
+        driver.show();
+        mock.simulateTransmitComplete();
+        FL_CHECK(driver.poll() == IChannelDriver::DriverState::READY);
+    }
+
+    size_t deinitsBefore = mock.getDeinitCount();
+
+    // Second show: 2 lanes — peripheral MUST be reinitialized
+    {
+        SpiChipsetConfig cfg0{5, 18, encoder};
+        SpiChipsetConfig cfg1{6, 18, encoder};
+        fl::vector_psram<u8> d0, d1;
+        d0.resize(1); d0[0] = 0xFF;
+        d1.resize(1); d1[0] = 0xFF;
+        driver.enqueue(ChannelData::create(cfg0, fl::move(d0)));
+        driver.enqueue(ChannelData::create(cfg1, fl::move(d1)));
+        driver.show();
+    }
+
+    FL_CHECK(mock.getTransmitCount() == 2);
+    FL_CHECK(mock.getDeinitCount() == deinitsBefore + 1);
+
+    fl::span<const u16> tx = mock.getLastTransmitData();
+    FL_REQUIRE(tx.size() == 8);
+    for (size_t i = 0; i < 8; i++) {
+        FL_CHECK(tx[i] == 0x0003); // bits 0 and 1
+    }
+}
+
 #endif // FASTLED_STUB_IMPL
 
 } // FL_TEST_FILE
