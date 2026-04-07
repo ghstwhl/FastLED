@@ -100,6 +100,8 @@ def _init_platformio_build(
             )
 
     board_with_sketch_include = board.clone()
+    if board_with_sketch_include.build_flags is None:
+        board_with_sketch_include.build_flags = []
 
     # Make the staged source roots available as include roots so sketch-relative
     # includes resolve consistently under both PlatformIO and fbuild.
