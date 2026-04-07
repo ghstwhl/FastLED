@@ -119,4 +119,4 @@ for arg in "$@"; do
 done
 
 # Run the Python autoresearch script with all arguments
-exec uv run ci/autoresearch.py "$@"
+exec uv run -m ci.autoresearch "$@"

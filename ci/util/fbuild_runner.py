@@ -8,6 +8,7 @@ Usage:
     from ci.util.fbuild_runner import (
         run_fbuild_compile,
         run_fbuild_upload,
+        run_fbuild_deploy,
     )
 
     # Compile using fbuild
@@ -15,10 +16,18 @@ Usage:
 
     # Upload using fbuild
     success = run_fbuild_upload(build_dir, environment="esp32s3", port="COM3")
+
+    # Combined build+deploy (enables firmware ledger skip)
+    success = run_fbuild_deploy(build_dir, environment="esp32s3", upload_port="COM3")
 """
 
+from __future__ import annotations
+
+import io
+import sys
+import time
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 
 from fbuild import Daemon, connect_daemon
 
@@ -28,12 +37,23 @@ def ensure_fbuild_daemon() -> None:
     Daemon.ensure_running()
 
 
+def _get_output(quiet: bool, log_file: IO[str] | None) -> IO[str]:
+    """Return the appropriate output stream."""
+    if quiet and log_file is not None:
+        return log_file
+    if quiet:
+        return io.StringIO()  # discard
+    return sys.stdout
+
+
 def run_fbuild_compile(
     build_dir: Path,
     environment: str | None = None,
     verbose: bool = False,
     clean: bool = False,
     timeout: float = 1800,
+    quiet: bool = False,
+    log_file: IO[str] | None = None,
 ) -> bool:
     """Compile the project using fbuild CLI subprocess.
 
@@ -46,6 +66,8 @@ def run_fbuild_compile(
         verbose: Enable verbose output
         clean: Perform clean build
         timeout: Maximum build time in seconds (default: 30 minutes)
+        quiet: Suppress verbose output (emit single summary line)
+        log_file: File to redirect verbose output to in quiet mode
 
     Returns:
         True if compilation succeeded, False otherwise
@@ -53,16 +75,19 @@ def run_fbuild_compile(
     import shutil
     import subprocess
 
+    from running_process import RunningProcess
+
     if environment is None:
         raise ValueError("environment must be specified for fbuild compilation")
 
-    print("=" * 60)
-    print("COMPILING (fbuild)")
-    print("=" * 60)
+    out = _get_output(quiet, log_file)
+    print("=" * 60, file=out)
+    print("COMPILING (fbuild)", file=out)
+    print("=" * 60, file=out)
 
     fbuild_exe = shutil.which("fbuild")
     if fbuild_exe is None:
-        print("❌ fbuild CLI not found on PATH")
+        print("BUILD FAIL fbuild not found on PATH")
         return False
 
     cmd: list[str] = [
@@ -77,14 +102,23 @@ def run_fbuild_compile(
     if clean:
         cmd.append("-c")
 
-    print(f"Running: {subprocess.list2cmdline(cmd)}")
-    print()
+    print(f"Running: {subprocess.list2cmdline(cmd)}", file=out)
+    print(file=out)
 
+    t0 = time.monotonic()
     try:
-        result = subprocess.run(
-            cmd,
-            timeout=timeout,
-        )
+        if quiet:
+            result = RunningProcess.run(
+                cmd,
+                timeout=timeout,
+                stdout=log_file if log_file else subprocess.DEVNULL,
+                stderr=subprocess.STDOUT if log_file else subprocess.DEVNULL,
+            )
+        else:
+            result = RunningProcess.run(
+                cmd,
+                timeout=timeout,
+            )
         success = result.returncode == 0
     except KeyboardInterrupt as ki:
         from ci.util.global_interrupt_handler import handle_keyboard_interrupt
@@ -93,16 +127,23 @@ def run_fbuild_compile(
         handle_keyboard_interrupt(ki)
         raise
     except subprocess.TimeoutExpired:
-        print(f"\n❌ Compilation timed out after {timeout}s\n")
+        elapsed = time.monotonic() - t0
+        print(f"BUILD FAIL timeout after {elapsed:.1f}s")
         return False
     except Exception as e:
-        print(f"\n❌ Compilation error: {e}\n")
+        elapsed = time.monotonic() - t0
+        print(f"BUILD FAIL {e}")
         return False
 
-    if success:
-        print("\n✅ Compilation succeeded (fbuild)\n")
+    elapsed = time.monotonic() - t0
+    if quiet:
+        status = "ok" if success else "FAIL"
+        print(f"BUILD {status} {elapsed:.1f}s")
     else:
-        print("\n❌ Compilation failed (fbuild)\n")
+        if success:
+            print(f"\n✅ Compilation succeeded (fbuild) [{elapsed:.1f}s]\n")
+        else:
+            print(f"\n❌ Compilation failed (fbuild) [{elapsed:.1f}s]\n")
 
     return success
 
@@ -113,6 +154,8 @@ def run_fbuild_upload(
     upload_port: str | None = None,
     verbose: bool = False,
     timeout: float = 1800,
+    quiet: bool = False,
+    log_file: IO[str] | None = None,
 ) -> bool:
     """Upload firmware using fbuild.
 
@@ -125,21 +168,25 @@ def run_fbuild_upload(
         upload_port: Serial port (None = auto-detect)
         verbose: Enable verbose output
         timeout: Maximum deploy time in seconds (default: 30 minutes)
+        quiet: Suppress verbose output (emit single summary line)
+        log_file: File to redirect verbose output to in quiet mode
 
     Returns:
         True if upload succeeded, False otherwise
     """
-    print("=" * 60)
-    print("UPLOADING (fbuild)")
-    print("=" * 60)
+    out = _get_output(quiet, log_file)
+    print("=" * 60, file=out)
+    print("UPLOADING (fbuild)", file=out)
+    print("=" * 60, file=out)
 
     ensure_fbuild_daemon()
 
+    t0 = time.monotonic()
     try:
         if environment is None:
             raise ValueError("environment must be specified for fbuild upload")
 
-        with connect_daemon(build_dir, environment) as conn:
+        with connect_daemon(str(build_dir), environment) as conn:
             success: bool = conn.deploy(
                 port=upload_port,
                 clean=False,
@@ -148,10 +195,15 @@ def run_fbuild_upload(
                 timeout=timeout,
             )
 
-        if success:
-            print("\n✅ Upload succeeded (fbuild)\n")
+        elapsed = time.monotonic() - t0
+        if quiet:
+            status = "ok" if success else "FAIL"
+            print(f"FLASH {status} {elapsed:.1f}s")
         else:
-            print("\n❌ Upload failed (fbuild)\n")
+            if success:
+                print(f"\n✅ Upload succeeded (fbuild) [{elapsed:.1f}s]\n")
+            else:
+                print(f"\n❌ Upload failed (fbuild) [{elapsed:.1f}s]\n")
 
         return success
 
@@ -162,7 +214,8 @@ def run_fbuild_upload(
         handle_keyboard_interrupt(ki)
         raise
     except Exception as e:
-        print(f"\n❌ Upload error: {e}\n")
+        elapsed = time.monotonic() - t0
+        print(f"FLASH FAIL {e}")
         return False
 
 
@@ -174,8 +227,14 @@ def run_fbuild_deploy(
     clean: bool = False,
     monitor_after: bool = False,
     timeout: float = 1800,
+    quiet: bool = False,
+    log_file: IO[str] | None = None,
 ) -> bool:
     """Deploy firmware using fbuild with optional monitoring.
+
+    Uses the daemon's combined build+deploy path which checks the firmware
+    ledger — if source hash + build flags are unchanged, the entire
+    build+flash is skipped (returns in ~1s).
 
     Args:
         build_dir: Project directory containing platformio.ini
@@ -185,21 +244,25 @@ def run_fbuild_deploy(
         clean: Perform clean build before deploy
         monitor_after: Start monitoring after deploy
         timeout: Maximum deploy time in seconds (default: 30 minutes)
+        quiet: Suppress verbose output (emit single summary line)
+        log_file: File to redirect verbose output to in quiet mode
 
     Returns:
         True if deploy (and optional monitoring) succeeded, False otherwise
     """
-    print("=" * 60)
-    print("DEPLOYING (fbuild)")
-    print("=" * 60)
+    out = _get_output(quiet, log_file)
+    print("=" * 60, file=out)
+    print("DEPLOYING (fbuild)", file=out)
+    print("=" * 60, file=out)
 
     ensure_fbuild_daemon()
 
+    t0 = time.monotonic()
     try:
         if environment is None:
             raise ValueError("environment must be specified for fbuild deploy")
 
-        with connect_daemon(build_dir, environment) as conn:
+        with connect_daemon(str(build_dir), environment) as conn:
             success: bool = conn.deploy(
                 port=upload_port,
                 clean=clean,
@@ -207,10 +270,15 @@ def run_fbuild_deploy(
                 timeout=timeout,
             )
 
-        if success:
-            print("\n✅ Deploy succeeded (fbuild)\n")
+        elapsed = time.monotonic() - t0
+        if quiet:
+            status = "ok" if success else "FAIL"
+            print(f"BUILD+FLASH {status} {elapsed:.1f}s")
         else:
-            print("\n❌ Deploy failed (fbuild)\n")
+            if success:
+                print(f"\n✅ Deploy succeeded (fbuild) [{elapsed:.1f}s]\n")
+            else:
+                print(f"\n❌ Deploy failed (fbuild) [{elapsed:.1f}s]\n")
 
         return success
 
@@ -221,7 +289,8 @@ def run_fbuild_deploy(
         handle_keyboard_interrupt(ki)
         raise
     except Exception as e:
-        print(f"\n❌ Deploy error: {e}\n")
+        elapsed = time.monotonic() - t0
+        print(f"BUILD+FLASH FAIL {e}")
         return False
 
 
@@ -250,7 +319,7 @@ def run_fbuild_monitor(
         if environment is None:
             raise ValueError("environment must be specified for fbuild monitor")
 
-        with connect_daemon(build_dir, environment) as conn:
+        with connect_daemon(str(build_dir), environment) as conn:
             success: bool = conn.monitor(
                 port=port,
                 baud_rate=baud_rate,
