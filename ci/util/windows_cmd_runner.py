@@ -102,7 +102,7 @@ def get_clean_windows_env() -> dict[str, str]:
     # Ensure critical variables are set for Windows
     if platform.system() == "Windows":
         # Force UTF-8 encoding
-        clean_env["PYTHONIOENCODING"] = "utf-8"
+        clean_env["PYTHONIOENCODING"] = "utf-8:replace"
         clean_env["PYTHONUTF8"] = "1"
 
         # Set COMSPEC to cmd.exe if not already set

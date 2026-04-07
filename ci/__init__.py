@@ -1,10 +1,8 @@
-"""FastLED CI tools and utilities
+"""FastLED CI tools and utilities.
 
-Module-level initialization is deferred to avoid paying ~20ms import cost
-(global_interrupt_handler, console_utf8) on ultra-early-exit paths that only
-need ci.early_exit_cache (stdlib-only). The first import of any ci.util module
-that uses handle_keyboard_interrupt or console output will trigger those imports
-naturally.
+Importing the ``ci`` package should make console output safe on Windows before
+any entrypoint prints Unicode status text. The helper remains lightweight and is
+best-effort only, so package import should never fail due to console setup.
 """
 
 _ci_initialized = False
@@ -28,3 +26,6 @@ def _ensure_init() -> None:
     except Exception:
         # Never fail import due to console configuration
         pass
+
+
+_ensure_init()

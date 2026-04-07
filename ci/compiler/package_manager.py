@@ -96,7 +96,8 @@ def get_installed_packages_from_pio() -> dict[str, str]:
     try:
         # Force UTF-8 encoding for PlatformIO subprocess to avoid Windows CP1252 encoding errors
         env = os.environ.copy()
-        env["PYTHONIOENCODING"] = "utf-8"
+        env["PYTHONIOENCODING"] = "utf-8:replace"
+        env["PYTHONUTF8"] = "1"
 
         result = subprocess.run(
             ["pio", "pkg", "list", "--global"],

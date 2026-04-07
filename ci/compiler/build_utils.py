@@ -17,7 +17,8 @@ def get_utf8_env() -> dict[str, str]:
     get_pio_execution_env() instead.
     """
     env = os.environ.copy()
-    env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONIOENCODING"] = "utf-8:replace"
+    env["PYTHONUTF8"] = "1"
     return env
 
 

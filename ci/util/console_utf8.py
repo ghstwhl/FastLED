@@ -10,6 +10,9 @@ def configure_utf8_console() -> None:
     Safe no-op on non-Windows platforms and on environments where
     reconfigure is unavailable.
     """
+    os.environ.setdefault("PYTHONIOENCODING", "utf-8:replace")
+    os.environ.setdefault("PYTHONUTF8", "1")
+
     if os.name != "nt":
         return
 

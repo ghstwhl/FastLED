@@ -50,7 +50,8 @@ def _get_utf8_env() -> dict[str, str]:
     when using the default CP1252 console encoding. This ensures UTF-8 is used.
     """
     env = os.environ.copy()
-    env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONIOENCODING"] = "utf-8:replace"
+    env["PYTHONUTF8"] = "1"
     return env
 
 
