@@ -8,17 +8,8 @@ Defines the interface that all FastLED compiler implementations must follow.
 from abc import ABC, abstractmethod
 from concurrent.futures import Future
 from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
 from typing import Optional
-
-
-class CacheType(Enum):
-    """Compiler cache type options."""
-
-    NO_CACHE = "no_cache"
-    ZCCACHE = "zccache"
-    CCACHE = "ccache"
 
 
 @dataclass
@@ -112,17 +103,5 @@ class Compiler(ABC):
 
         Returns:
             True if installation succeeded, False otherwise
-        """
-        pass
-
-    @abstractmethod
-    def get_cache_stats(self) -> str:
-        """Get compiler statistics as a formatted string.
-
-        This can include cache statistics, build metrics, performance data,
-        or any other relevant compiler statistics.
-
-        Returns:
-            Formatted string containing compiler statistics, or empty string if none available
         """
         pass

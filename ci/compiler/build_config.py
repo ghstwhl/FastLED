@@ -1,9 +1,6 @@
 """Build configuration for FastLED PlatformIO builds."""
 
 import json
-import os
-import shutil
-import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
@@ -11,7 +8,6 @@ from running_process import RunningProcess
 from running_process.process_output_reader import EndOfStream
 
 from ci.compiler.build_utils import get_utf8_env
-from ci.compiler.compiler import CacheType
 from ci.util.create_build_dir import insert_tool_aliases
 from ci.util.global_interrupt_handler import handle_keyboard_interrupt
 
@@ -19,39 +15,6 @@ from ci.util.global_interrupt_handler import handle_keyboard_interrupt
 if TYPE_CHECKING:
     from ci.boards import Board
     from ci.compiler.path_manager import FastLEDPaths
-
-
-def _find_zccache() -> str | None:
-    """Find zccache: .venv first, then sibling repo dev build, then PATH."""
-    suffix = ".exe" if os.name == "nt" else ""
-    repo_root = Path(__file__).resolve().parent.parent.parent
-
-    # Check project .venv first (installed release version)
-    venv_candidate = (
-        repo_root
-        / ".venv"
-        / ("Scripts" if os.name == "nt" else "bin")
-        / f"zccache{suffix}"
-    )
-    if venv_candidate.is_file():
-        return str(venv_candidate)
-
-    # Check sibling zccache repo (pick most recently built binary)
-    sibling = repo_root.parent / "zccache"
-    best: str | None = None
-    best_mtime: float = 0
-    for profile in ("release", "debug"):
-        candidate = sibling / "target" / profile / f"zccache{suffix}"
-        if candidate.is_file():
-            mtime = candidate.stat().st_mtime
-            if mtime > best_mtime:
-                best = str(candidate)
-                best_mtime = mtime
-    if best is not None:
-        return best
-
-    # Check PATH
-    return shutil.which("zccache")
 
 
 # Module-level constants
@@ -172,7 +135,6 @@ def apply_board_specific_config(
     additional_defines: Optional[list[str]] = None,
     additional_include_dirs: Optional[list[str]] = None,
     additional_libs: Optional[list[str]] = None,
-    cache_type: CacheType = CacheType.NO_CACHE,
 ) -> bool:
     """Apply board-specific build configuration from Board class."""
     # Use provided paths object (which may have overrides)
@@ -190,9 +152,6 @@ def apply_board_specific_config(
         packages_dir=str(paths.packages_dir),
         project_root=str(project_root),
         build_cache_dir=str(paths.build_cache_dir),
-        extra_scripts=(
-            ["post:cache_setup.scons"] if cache_type != CacheType.NO_CACHE else None
-        ),
     )
 
     # Apply PlatformIO cache optimization to speed up builds
@@ -238,294 +197,5 @@ def apply_board_specific_config(
         print(f"Applied additional include dirs: {additional_include_dirs}")
     if board.platform_packages:
         print(f"Using platform_packages: {board.platform_packages}")
-
-    return True
-
-
-def copy_cache_build_script(build_dir: Path, cache_config: dict[str, str]) -> None:
-    """Copy the standalone cache setup script and set environment variables for configuration."""
-    # Source script location
-    project_root = _get_project_root()
-    source_script = project_root / "ci" / "compiler" / "cache_setup.scons"
-    dest_script = build_dir / "cache_setup.scons"
-
-    # Copy the standalone script
-    if not source_script.exists():
-        raise RuntimeError(f"Cache setup script not found: {source_script}")
-
-    shutil.copy2(source_script, dest_script)
-    print(f"Copied cache setup script: {source_script} -> {dest_script}")
-
-    # Set environment variables for cache configuration
-    # These will be read by the cache_setup.scons script
-    cache_type = cache_config.get("CACHE_TYPE", "zccache")
-
-    os.environ["FASTLED_CACHE_TYPE"] = cache_type
-    os.environ["FASTLED_ZCCACHE_DIR"] = cache_config.get("ZCCACHE_DIR", "")
-    os.environ["FASTLED_ZCCACHE_CACHE_SIZE"] = cache_config.get(
-        "ZCCACHE_CACHE_SIZE", "2G"
-    )
-    os.environ["FASTLED_CACHE_DEBUG"] = (
-        "1" if os.environ.get("XCACHE_DEBUG") == "1" else "0"
-    )
-
-    if cache_type == "xcache":
-        os.environ["FASTLED_CACHE_EXECUTABLE"] = cache_config.get(
-            "CACHE_EXECUTABLE", ""
-        )
-        os.environ["FASTLED_ZCCACHE_PATH"] = cache_config.get("ZCCACHE_PATH", "")
-        os.environ["FASTLED_XCACHE_PATH"] = cache_config.get("XCACHE_PATH", "")
-    elif cache_type == "zccache":
-        os.environ["FASTLED_CACHE_EXECUTABLE"] = cache_config.get("ZCCACHE_PATH", "")
-        os.environ["FASTLED_ZCCACHE_PATH"] = cache_config.get("ZCCACHE_PATH", "")
-    else:
-        os.environ["FASTLED_CACHE_EXECUTABLE"] = cache_config.get("CCACHE_PATH", "")
-
-    print(f"Set cache environment variables for {cache_type} configuration")
-
-
-def get_cache_build_flags(board_name: str, cache_type: CacheType) -> dict[str, str]:
-    """Get environment variables for compiler cache configuration."""
-    if cache_type == CacheType.NO_CACHE:
-        print("No compiler cache configured")
-        return {}
-    elif cache_type == CacheType.ZCCACHE:
-        return get_zccache_build_flags(board_name)
-    elif cache_type == CacheType.CCACHE:
-        return get_ccache_build_flags(board_name)
-    else:
-        print(f"Unknown cache type: {cache_type}")
-        return {}
-
-
-def get_zccache_build_flags(board_name: str) -> dict[str, str]:
-    """Get build flags for ZCCACHE configuration with xcache wrapper support."""
-    from ci.compiler.path_manager import FastLEDPaths
-
-    # Find zccache binary (prefer sibling repo dev build over global install)
-    zccache_path: str | None = _find_zccache()
-
-    if not zccache_path:
-        print(
-            "zccache not found, compilation will proceed without caching. To install, run: bash ./install"
-        )
-        return {}
-
-    print(f"Setting up ZCCACHE build flags: {zccache_path}")
-
-    # Set up zccache directory in the global .fastled directory
-    # Shared across all boards for maximum cache efficiency
-    paths = FastLEDPaths(board_name)
-    zccache_dir = paths.fastled_root / "zccache"
-    zccache_dir.mkdir(parents=True, exist_ok=True)
-
-    print(f"ZCCACHE cache directory: {zccache_dir}")
-    print("ZCCACHE cache size limit: 2G")
-
-    # Get xcache wrapper path
-    project_root = _get_project_root()
-    xcache_path = project_root / "ci" / "util" / "xcache.py"
-
-    if xcache_path.exists():
-        print(f"Using xcache wrapper for ESP32S3 response file support: {xcache_path}")
-        cache_type = "xcache"
-        cache_executable_path = f"python {xcache_path}"
-    else:
-        print(f"xcache not found at {xcache_path}, using direct zccache")
-        cache_type = "zccache"
-        cache_executable_path = zccache_path
-
-    # Return the cache configuration
-    config = {
-        "CACHE_TYPE": cache_type,
-        "ZCCACHE_DIR": str(zccache_dir),
-        "ZCCACHE_CACHE_SIZE": "2G",
-        "ZCCACHE_PATH": zccache_path,
-        "XCACHE_PATH": str(xcache_path) if xcache_path.exists() else "",
-        "CACHE_EXECUTABLE": cache_executable_path,
-    }
-
-    return config
-
-
-def get_ccache_build_flags(board_name: str) -> dict[str, str]:
-    """Get environment variables for CCACHE configuration."""
-    from ci.compiler.path_manager import FastLEDPaths
-
-    # Check if ccache is available
-    ccache_path = shutil.which("ccache")
-    if not ccache_path:
-        print("CCACHE not found in PATH, compilation will proceed without caching")
-        return {}
-
-    print(f"Setting up CCACHE build environment: {ccache_path}")
-
-    # Set up ccache directory in the global .fastled directory
-    # Shared across all boards for maximum cache efficiency
-    paths = FastLEDPaths(board_name)
-    ccache_dir = paths.fastled_root / "ccache"
-    ccache_dir.mkdir(parents=True, exist_ok=True)
-
-    print(f"CCACHE cache directory: {ccache_dir}")
-    print("CCACHE cache size limit: 2G")
-
-    # Return environment variables that PlatformIO will use
-    env_vars = {
-        "CACHE_TYPE": "ccache",
-        "CCACHE_DIR": str(ccache_dir),
-        "CCACHE_MAXSIZE": "2G",
-        "CCACHE_PATH": ccache_path,
-    }
-
-    return env_vars
-
-
-def setup_zccache_environment(board_name: str) -> bool:
-    """Set up zccache environment variables for the current process."""
-    from ci.compiler.path_manager import FastLEDPaths
-
-    # Find zccache binary (prefer sibling repo dev build over global install)
-    zccache_path: str | None = _find_zccache()
-
-    if not zccache_path:
-        print(
-            "zccache not found, compilation will proceed without caching. To install, run: bash ./install"
-        )
-        return False
-
-    print(f"Setting up ZCCACHE environment: {zccache_path}")
-
-    # Set up zccache directory in the global .fastled directory
-    # Shared across all boards for maximum cache efficiency
-    paths = FastLEDPaths(board_name)
-    zccache_dir = paths.fastled_root / "zccache"
-    zccache_dir.mkdir(parents=True, exist_ok=True)
-
-    # Configure zccache environment variables
-    os.environ["ZCCACHE_DIR"] = str(zccache_dir)
-    os.environ["ZCCACHE_CACHE_SIZE"] = "2G"
-
-    print(f"ZCCACHE cache directory: {zccache_dir}")
-
-    # Set compiler wrapper environment variables that PlatformIO will use
-    # PlatformIO respects these environment variables for compiler selection
-    original_cc = os.environ.get("CC", "")
-    original_cxx = os.environ.get("CXX", "")
-
-    # Only wrap if not already wrapped
-    if "zccache" not in original_cc:
-        # Set environment variables that PlatformIO/SCons will use
-        os.environ["CC"] = (
-            f'"{zccache_path}" {original_cc}'
-            if original_cc
-            else f'"{zccache_path}" gcc'
-        )
-        os.environ["CXX"] = (
-            f'"{zccache_path}" {original_cxx}'
-            if original_cxx
-            else f'"{zccache_path}" g++'
-        )
-
-        print(f"Set CC environment variable: {os.environ['CC']}")
-        print(f"Set CXX environment variable: {os.environ['CXX']}")
-
-    print(f"ZCCACHE cache directory: {zccache_dir}")
-    print("ZCCACHE cache size limit: 2G")
-
-    # Show zccache statistics if available
-    try:
-        result = subprocess.run(
-            [zccache_path, "status"],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            check=False,
-        )
-        if result.returncode == 0:
-            print("ZCCACHE Statistics:")
-            for line in result.stdout.strip().split("\n"):
-                if line.strip():
-                    print(f"   {line}")
-        else:
-            print("ZCCACHE stats not available (cache empty or first run)")
-    except KeyboardInterrupt as ki:
-        handle_keyboard_interrupt(ki)
-        raise
-    except Exception as e:
-        print(f"Could not retrieve ZCCACHE stats: {e}")
-
-    return True
-
-
-def setup_ccache_environment(board_name: str) -> bool:
-    """Set up ccache environment variables for the current process."""
-    from ci.compiler.path_manager import FastLEDPaths
-
-    # Check if ccache is available
-    ccache_path = shutil.which("ccache")
-    if not ccache_path:
-        print("CCACHE not found in PATH, compilation will proceed without caching")
-        return False
-
-    print(f"Setting up CCACHE environment: {ccache_path}")
-
-    # Set up ccache directory in the global .fastled directory
-    # Shared across all boards for maximum cache efficiency
-    paths = FastLEDPaths(board_name)
-    ccache_dir = paths.fastled_root / "ccache"
-    ccache_dir.mkdir(parents=True, exist_ok=True)
-
-    # Configure ccache environment variables
-    os.environ["CCACHE_DIR"] = str(ccache_dir)
-    os.environ["CCACHE_MAXSIZE"] = "2G"
-
-    print(f"CCACHE cache directory: {ccache_dir}")
-
-    # Set compiler wrapper environment variables that PlatformIO will use
-    # PlatformIO respects these environment variables for compiler selection
-    original_cc = os.environ.get("CC", "")
-    original_cxx = os.environ.get("CXX", "")
-
-    # Only wrap if not already wrapped
-    if "ccache" not in original_cc:
-        # Set environment variables that PlatformIO/SCons will use
-        os.environ["CC"] = (
-            f'"{ccache_path}" {original_cc}' if original_cc else f'"{ccache_path}" gcc'
-        )
-        os.environ["CXX"] = (
-            f'"{ccache_path}" {original_cxx}'
-            if original_cxx
-            else f'"{ccache_path}" g++'
-        )
-
-        print(f"Set CC environment variable: {os.environ['CC']}")
-        print(f"Set CXX environment variable: {os.environ['CXX']}")
-
-    print(f"CCACHE cache directory: {ccache_dir}")
-    print("CCACHE cache size limit: 2G")
-
-    # Show ccache statistics if available
-    try:
-        result = subprocess.run(
-            [ccache_path, "--show-stats"],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            check=False,
-        )
-        if result.returncode == 0:
-            print("CCACHE Statistics:")
-            for line in result.stdout.strip().split("\n"):
-                if line.strip():
-                    print(f"   {line}")
-        else:
-            print("CCACHE stats not available (cache empty or first run)")
-    except KeyboardInterrupt as ki:
-        handle_keyboard_interrupt(ki)
-        raise
-    except Exception as e:
-        print(f"Could not retrieve CCACHE stats: {e}")
 
     return True

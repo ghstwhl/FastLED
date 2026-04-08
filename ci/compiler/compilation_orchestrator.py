@@ -15,7 +15,7 @@ from typeguard import typechecked
 
 from ci.boards import Board
 from ci.compiler.board_example_utils import get_filtered_examples
-from ci.compiler.compiler import CacheType, SketchResult
+from ci.compiler.compiler import SketchResult
 from ci.compiler.fbuild_boards import FBUILD_BOARDS
 from ci.compiler.pio import FastLEDPaths, PioCompiler
 from ci.util.global_interrupt_handler import handle_keyboard_interrupt
@@ -39,7 +39,6 @@ def compile_board_examples(
     examples: list[str],
     defines: list[str],
     verbose: bool,
-    enable_cache: bool,
     global_cache_dir: Optional[Path] = None,
     merged_bin: bool = False,
     merged_bin_output: Optional[Path] = None,
@@ -106,15 +105,6 @@ def compile_board_examples(
     print(f"{'=' * 60}")
 
     try:
-        # Determine cache type based on flag and board frameworks
-        frameworks = [f.strip().lower() for f in (board.framework or "").split(",")]
-        mixed_frameworks = "arduino" in frameworks and "espidf" in frameworks
-        cache_type = (
-            CacheType.ZCCACHE
-            if enable_cache and not mixed_frameworks
-            else CacheType.NO_CACHE
-        )
-
         # Use fbuild for supported boards (none currently; all use PlatformIO)
         use_fbuild = board.board_name.lower() in FBUILD_BOARDS
 
@@ -125,7 +115,6 @@ def compile_board_examples(
             global_cache_dir=resolved_cache_dir,
             additional_defines=defines,
             additional_libs=extra_packages,
-            cache_type=cache_type,
             use_fbuild=use_fbuild,
         )
 
@@ -225,21 +214,6 @@ def compile_board_examples(
                         if not f.done():
                             f.cancel()
                     break
-
-        # Show compiler statistics after all builds complete
-        try:
-            stats = compiler.get_cache_stats()
-            if stats:
-                print("\n" + "=" * 60)
-                print("COMPILER STATISTICS")
-                print("=" * 60)
-                print(stats)
-                print("=" * 60)
-        except KeyboardInterrupt as ki:
-            handle_keyboard_interrupt(ki)
-            raise
-        except Exception as e:
-            print(f"Warning: Could not retrieve compiler statistics: {e}")
 
         any_failures = failure_count > 0
         return BoardCompilationResult(

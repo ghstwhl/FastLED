@@ -59,7 +59,7 @@ CXX=... meson setup builddir         # WRONG - use bash scripts
 
 - **Consistency**: FastLED build system handles configuration, caching, dependencies
 - **Safety**: Direct meson/ninja calls bypass critical setup and validation
-- **Complexity**: Build system manages zccache, compiler selection, platform-specific flags
+- **Complexity**: Build system manages compiler selection, platform-specific flags, and cache invalidation
 - **Reliability**: test.py/compile scripts ensure correct build environment
 
 **If you see example commands like `CXX=clang-tool-chain-cpp meson setup builddir` in documentation, these are for REFERENCE ONLY showing what the build system does internally - do NOT execute them directly.**
@@ -100,7 +100,7 @@ bash test tests/fl/stl/move                # Build system revalidates automatica
 1. **Self-Healing**: The build system automatically detects stale builds and revalidates
 2. **Special Code**: We have dedicated cache invalidation logic that handles edge cases
 3. **Safety**: Manual deletion can corrupt build state or remove important artifacts
-4. **Performance**: The `--clean` flag selectively cleans only what's needed, preserving zccache
+4. **Performance**: The `--clean` flag selectively cleans only what's needed, preserving relevant caches
 5. **Correctness**: `--clean` ensures proper cleanup order and dependency tracking
 
 **The build system is designed to be robust. Trust it to self-heal. Only use `--clean` if you specifically need a guaranteed clean rebuild.**
@@ -168,7 +168,7 @@ CXX=clang-tool-chain-cpp CC=clang-tool-chain-c meson setup builddir
 ```
 - Clang 21.1.5 provides proper MSVC compatibility layer and cross-platform support
 - test.py automatically uses clang-tool-chain (no alternative compilers supported)
-- The clang-tool-chain wrappers include zccache integration for fast builds
+- The clang-tool-chain wrappers and Meson tooling handle the native test/toolchain setup
 
 ## Unified GNU Build (Windows = Linux)
 clang-tool-chain provides a uniform GNU-style build environment across all platforms:

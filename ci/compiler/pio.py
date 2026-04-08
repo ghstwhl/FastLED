@@ -29,16 +29,14 @@ from ci.boards import Board, create_board
 # Import from new modules
 from ci.compiler.build_config import (
     apply_board_specific_config,
-    copy_cache_build_script,
     generate_build_info_json_from_existing_build,
-    get_cache_build_flags,
 )
 from ci.compiler.build_utils import (
     create_building_banner,
     get_example_error_message,
     get_pio_execution_env,
 )
-from ci.compiler.compiler import CacheType, Compiler, InitResult, SketchResult
+from ci.compiler.compiler import Compiler, InitResult, SketchResult
 from ci.compiler.lock_manager import PlatformLock
 from ci.compiler.package_manager import (
     aggressive_clean_pio_packages,
@@ -64,7 +62,6 @@ def _init_platformio_build(
     additional_defines: Optional[list[str]] = None,
     additional_include_dirs: Optional[list[str]] = None,
     additional_libs: Optional[list[str]] = None,
-    cache_type: CacheType = CacheType.NO_CACHE,
     use_fbuild: bool = False,
 ) -> InitResult:
     """Initialize the PlatformIO build directory. Assumes lock is already held by caller.
@@ -113,22 +110,6 @@ def _init_platformio_build(
     if additional_include_dirs:
         merged_include_dirs.extend(additional_include_dirs)
 
-    # Set up compiler cache through build_flags if enabled and available
-    cache_config = get_cache_build_flags(board.board_name, cache_type)
-    if cache_config:
-        print(f"Applied cache configuration: {list(cache_config.keys())}")
-
-        # Add compiler launcher build flags directly
-        zccache_path = cache_config.get("ZCCACHE_PATH")
-        if zccache_path:
-            # Add build flags to use zccache as compiler launcher
-            launcher_flags = [f'-DCACHE_LAUNCHER="{zccache_path}"']
-            board_with_sketch_include.build_flags.extend(launcher_flags)
-            print(f"Added cache launcher flags: {launcher_flags}")
-
-        # Create build script that will set up cache environment
-        copy_cache_build_script(build_dir, cache_config)
-
     # Optimization report generation is available but OFF by default
     # To enable optimization reports, add these flags to your board configuration:
     # - "-fopt-info-all=optimization_report.txt" for detailed optimization info
@@ -169,7 +150,6 @@ def _init_platformio_build(
         additional_defines,
         merged_include_dirs,
         additional_libs,
-        cache_type,
     ):
         return InitResult(
             success=False,
@@ -318,7 +298,6 @@ class PioCompiler(Compiler):
         additional_defines: Optional[list[str]] = None,
         additional_include_dirs: Optional[list[str]] = None,
         additional_libs: Optional[list[str]] = None,
-        cache_type: CacheType = CacheType.NO_CACHE,
         use_fbuild: bool = False,
     ) -> None:
         # Call parent constructor
@@ -333,7 +312,6 @@ class PioCompiler(Compiler):
         self.additional_defines = additional_defines
         self.additional_include_dirs = additional_include_dirs
         self.additional_libs = additional_libs
-        self.cache_type = cache_type
         self.use_fbuild = use_fbuild
 
         # Global cache directory is already resolved by caller
@@ -372,7 +350,6 @@ class PioCompiler(Compiler):
             self.additional_defines,
             self.additional_include_dirs,
             self.additional_libs,
-            self.cache_type,
             use_fbuild=self.use_fbuild,
         )
         if result.success:
@@ -659,50 +636,6 @@ class PioCompiler(Compiler):
             build_dir=self.build_dir,
             example=example,
         )
-
-    def get_cache_stats(self) -> str:
-        """Get compiler statistics as a formatted string.
-
-        For PIO compiler, this includes cache statistics (zccache/ccache).
-        """
-        if self.cache_type == CacheType.NO_CACHE:
-            return ""
-
-        cache_name = "zccache" if self.cache_type == CacheType.ZCCACHE else "ccache"
-        cache_path = shutil.which(cache_name)
-
-        if not cache_path:
-            return f"{cache_name.upper()} not found in PATH"
-
-        try:
-            stats_arg = (
-                "status" if self.cache_type == CacheType.ZCCACHE else "--show-stats"
-            )
-            result = RunningProcess.run(
-                [cache_path, stats_arg],
-                cwd=None,
-                check=False,
-                timeout=10,
-            )
-
-            if result.returncode == 0:
-                stats_lines: list[str] = []
-                for line in result.stdout.strip().split("\n"):
-                    if line.strip():
-                        stats_lines.append(line)
-
-                # Add header with cache type
-                stats_output = f"{cache_name.upper()} STATISTICS:\n"
-                stats_output += "\n".join(stats_lines)
-                return stats_output
-            else:
-                return f"Failed to get {cache_name.upper()} statistics: {result.stderr}"
-
-        except KeyboardInterrupt as ki:
-            handle_keyboard_interrupt(ki)
-            raise
-        except Exception as e:
-            return f"Error retrieving {cache_name.upper()} statistics: {e}"
 
     def _internal_build_no_lock(
         self, example: str, cancelled: threading.Event
@@ -1351,7 +1284,6 @@ def run_pio_build(
     verbose: bool = False,
     additional_defines: Optional[list[str]] = None,
     additional_include_dirs: Optional[list[str]] = None,
-    cache_type: CacheType = CacheType.NO_CACHE,
 ) -> list[Future[SketchResult]]:
     """Run build for specified examples and platform using new PlatformIO system.
 
@@ -1369,41 +1301,5 @@ def run_pio_build(
         additional_defines,
         additional_include_dirs,
         None,
-        cache_type,
     )
-    futures = pio.build(examples)
-
-    # Show cache statistics after all builds complete
-    if cache_type != CacheType.NO_CACHE:
-        # Create a callback to show stats when all builds complete
-        def add_stats_callback():
-            completed_count = 0
-            total_count = len(futures)
-
-            def on_future_complete(future: Any) -> None:
-                nonlocal completed_count
-                completed_count += 1
-
-                # When all futures complete, show compiler statistics
-                if completed_count == total_count:
-                    try:
-                        stats = pio.get_cache_stats()
-                        if stats:
-                            print("\n" + "=" * 60)
-                            print("COMPILER STATISTICS")
-                            print("=" * 60)
-                            print(stats)
-                            print("=" * 60)
-                    except KeyboardInterrupt as ki:
-                        handle_keyboard_interrupt(ki)
-                        raise
-                    except Exception as e:
-                        print(f"Warning: Could not retrieve compiler statistics: {e}")
-
-            # Add callback to all futures
-            for future in futures:
-                future.add_done_callback(on_future_complete)
-
-        add_stats_callback()
-
-    return futures
+    return pio.build(examples)

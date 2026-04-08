@@ -32,8 +32,6 @@ class CompilationConfig:
     defines: list[str] = field(default_factory=lambda: [])
     extra_packages: list[str] = field(default_factory=lambda: [])
     verbose: bool = False
-    enable_cache: bool = False
-
     # Output options
     output_path: Optional[Path] = None
     merged_bin: bool = False
@@ -194,22 +192,6 @@ class CompilationArgumentParser:
         parser.add_argument(
             "-v", "--verbose", action="store_true", help="Enable verbose output"
         )
-        parser.add_argument(
-            "--enable-cache",
-            action="store_true",
-            help="Enable zccache for faster compilation",
-        )
-        parser.add_argument(
-            "--cache",
-            action="store_true",
-            help="(Deprecated) Enable zccache for faster compilation - use --enable-cache instead",
-        )
-        parser.add_argument(
-            "--no-cache",
-            action="store_true",
-            help="Disable zccache for faster compilation (default is already disabled)",
-        )
-
         # Output options
         parser.add_argument(
             "-o",
@@ -315,7 +297,6 @@ class CompilationArgumentParser:
             defines=defines,
             extra_packages=extra_packages,
             verbose=args.verbose,
-            enable_cache=(args.enable_cache or args.cache) and not args.no_cache,
             output_path=Path(args.out) if args.out else None,
             merged_bin=args.merged_bin,
             log_failures=Path(args.log_failures) if args.log_failures else None,
