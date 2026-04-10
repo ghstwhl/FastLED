@@ -76,6 +76,20 @@ def get_meson_executable() -> str:
 
 _cached_fingerprint: str | None = None
 _cached_fingerprint_time: float = 0.0
+_cached_js_fingerprint: str | None = None
+_cached_js_fingerprint_time: float = 0.0
+_cached_emcc_version_key: str | None = None
+_cached_emcc_version_value: str | None = None
+_cached_emcc_version_time: float = 0.0
+_LINK_ENV_VARS = (
+    "EMCC_CFLAGS",
+    "EMCC_DEBUG",
+    "EMSDK",
+    "EM_CONFIG",
+    "EMSDK_NODE",
+    "LLVM_ROOT",
+    "BINARYEN_ROOT",
+)
 
 
 def _compute_src_fingerprint() -> str:
@@ -130,6 +144,132 @@ def _compute_src_fingerprint() -> str:
     _cached_fingerprint = h.hexdigest()
     _cached_fingerprint_time = now
     return _cached_fingerprint
+
+
+def _iter_js_affecting_files() -> list[Path]:
+    """Return files that can change Emscripten-generated JS glue."""
+    files: list[Path] = []
+    src_dir = PROJECT_ROOT / "src"
+    macro_markers = ("EM_JS(", "EM_ASYNC_JS(", "EM_ASM(", "EMSCRIPTEN_BINDINGS(")
+
+    compiler_js = src_dir / "platforms" / "wasm" / "compiler" / "js_library.js"
+    if compiler_js.exists():
+        files.append(compiler_js)
+
+    build_flags = src_dir / "platforms" / "wasm" / "compiler" / "build_flags.toml"
+    if build_flags.exists():
+        files.append(build_flags)
+
+    for path in src_dir.rglob("*"):
+        if not path.is_file():
+            continue
+        if path.suffix not in (".cpp", ".hpp", ".h", ".ipp"):
+            continue
+        if path.name.endswith(".js.cpp.hpp"):
+            files.append(path)
+            continue
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        if any(marker in text for marker in macro_markers):
+            files.append(path)
+
+    return sorted(set(files))
+
+
+def _compute_js_glue_fingerprint() -> str:
+    """Fingerprint only sources that can affect generated JS glue."""
+    global _cached_js_fingerprint, _cached_js_fingerprint_time
+    now = time.monotonic()
+    if _cached_js_fingerprint is not None and (now - _cached_js_fingerprint_time) < 0.5:
+        return _cached_js_fingerprint
+
+    digest = hashlib.md5(usedforsecurity=False)
+    for path in _iter_js_affecting_files():
+        try:
+            st = path.stat()
+            digest.update(f"{path}:{st.st_mtime:.6f}:{st.st_size}".encode())
+        except OSError:
+            digest.update(f"{path}:MISSING".encode())
+
+    _cached_js_fingerprint = digest.hexdigest()
+    _cached_js_fingerprint_time = now
+    return _cached_js_fingerprint
+
+
+def _clear_link_cache(build_dir: Path) -> None:
+    for name in (
+        "wasm_ld_args.json",
+        "wasm_ld_args.key",
+        "js_glue_fingerprint",
+        "link_environment_fingerprint",
+    ):
+        (build_dir / name).unlink(missing_ok=True)
+
+
+def _js_glue_fingerprint_matches(build_dir: Path) -> bool:
+    fingerprint_file = build_dir / "js_glue_fingerprint"
+    if not fingerprint_file.exists():
+        return False
+    try:
+        stored = fingerprint_file.read_text(encoding="utf-8").strip()
+    except OSError:
+        return False
+    return stored == _compute_js_glue_fingerprint()
+
+
+def _get_emcc_version_signature() -> str:
+    """Return a short cached signature of the active emcc version."""
+    from ci.wasm_tools import get_emcc
+
+    global \
+        _cached_emcc_version_key, \
+        _cached_emcc_version_value, \
+        _cached_emcc_version_time
+    emcc = get_emcc()
+    now = time.monotonic()
+    if (
+        _cached_emcc_version_key == emcc
+        and _cached_emcc_version_value is not None
+        and (now - _cached_emcc_version_time) < 0.5
+    ):
+        return _cached_emcc_version_value
+
+    try:
+        result = subprocess.run([emcc, "--version"], capture_output=True, text=True)
+        version_text = ((result.stdout or "") + (result.stderr or "")).strip()
+    except OSError:
+        version_text = "ERROR"
+
+    _cached_emcc_version_key = emcc
+    _cached_emcc_version_value = version_text
+    _cached_emcc_version_time = now
+    return version_text
+
+
+def _compute_link_environment_fingerprint(mode: str) -> str:
+    """Fingerprint link conditions that affect emcc/JS output."""
+    digest = hashlib.md5(usedforsecurity=False)
+    digest.update(f"mode:{mode}".encode())
+    digest.update(json.dumps(get_link_flags(mode)).encode())
+    digest.update(f"emcc_version:{_get_emcc_version_signature()}".encode())
+
+    for key in _LINK_ENV_VARS:
+        digest.update(f"{key}={os.environ.get(key, '')}".encode())
+
+    return digest.hexdigest()
+
+
+def _link_environment_fingerprint_matches(build_dir: Path, mode: str) -> bool:
+    fingerprint_file = build_dir / "link_environment_fingerprint"
+    if not fingerprint_file.exists():
+        return False
+    try:
+        stored = fingerprint_file.read_text(encoding="utf-8").strip()
+    except OSError:
+        return False
+    return stored == _compute_link_environment_fingerprint(mode)
 
 
 def _compute_src_file_list_hash() -> str:
@@ -886,6 +1026,7 @@ def _intercept_emcc_link(
     cached_wasm: Path,
     build_dir: Path,
     cwd: str,
+    mode: str,
     library_archive: Path | None = None,
 ) -> int:
     """Run emcc link as subprocess with verbose output to capture wasm-ld command.
@@ -955,6 +1096,12 @@ def _intercept_emcc_link(
     if library_archive is not None and library_archive.exists():
         cache_key_file = build_dir / "wasm_ld_args.key"
         cache_key_file.write_text(_link_cache_key(library_archive), encoding="utf-8")
+    (build_dir / "js_glue_fingerprint").write_text(
+        _compute_js_glue_fingerprint(), encoding="utf-8"
+    )
+    (build_dir / "link_environment_fingerprint").write_text(
+        _compute_link_environment_fingerprint(mode), encoding="utf-8"
+    )
 
     # Clean up emcc temp dir (we've saved what we need)
     try:
@@ -969,6 +1116,7 @@ def _fast_link(
     sketch_object: Path,
     cached_wasm: Path,
     build_dir: Path,
+    mode: str,
     library_archive: Path | None = None,
     verbose: bool = False,
 ) -> bool:
@@ -990,6 +1138,16 @@ def _fast_link(
     if not cached_stub.exists():
         return False
 
+    if not _js_glue_fingerprint_matches(build_dir):
+        print("[WASM] JS glue inputs changed - invalidating linker cache")
+        _clear_link_cache(build_dir)
+        return False
+
+    if not _link_environment_fingerprint_matches(build_dir, mode):
+        print("[WASM] Link environment changed - invalidating linker cache")
+        _clear_link_cache(build_dir)
+        return False
+
     # Invalidate cache if the library archive changed since last capture
     cache_key_file = build_dir / "wasm_ld_args.key"
     if library_archive is not None and library_archive.exists():
@@ -998,12 +1156,11 @@ def _fast_link(
             stored_key = cache_key_file.read_text(encoding="utf-8").strip()
             if stored_key != current_key:
                 print("[WASM] Library changed — invalidating linker cache")
-                cache_file.unlink(missing_ok=True)
-                cache_key_file.unlink(missing_ok=True)
+                _clear_link_cache(build_dir)
                 return False
         else:
             # No key file — can't verify, invalidate to be safe
-            cache_file.unlink(missing_ok=True)
+            _clear_link_cache(build_dir)
             return False
 
     try:
@@ -1029,13 +1186,12 @@ def _fast_link(
         result = subprocess.run(cmd, cwd=str(PROJECT_ROOT))
     except OSError:
         # Executable not found (e.g. stale cache with bad path) — fall back
-        cache_file.unlink(missing_ok=True)
+        _clear_link_cache(build_dir)
         return False
     if result.returncode != 0:
         print("[WASM] Fast link failed, falling back to full emcc link")
         # Delete stale cache so next run recaptures
-        cache_file.unlink(missing_ok=True)
-        cache_key_file.unlink(missing_ok=True)
+        _clear_link_cache(build_dir)
         return False
 
     # Copy cached JS glue to sketch cache dir (use copy, not copy2,
@@ -1090,17 +1246,15 @@ def link_wasm(
     # Fast path: reuse cached JS glue + run wasm-ld directly.
     # Disabled when asyncify is active — asyncify is a Binaryen pass that
     # only runs through emcc, not wasm-ld.
-    # Disabled when JSPI is active — JSPI requires emcc to generate JS
-    # wrappers (WebAssembly.Suspending/promising) for EM_ASYNC_JS imports
-    # and JSPI_EXPORTS. Stale cached JS glue won't have these wrappers.
     # Also disabled when SEPARATE_DWARF_URL is used — emcc handles DWARF
     # extraction as a post-link step that wasm-ld alone cannot perform.
     link_flags = get_link_flags(mode)
     uses_asyncify = any("ASYNCIFY" in f for f in link_flags)
-    uses_jspi = any("JSPI" in f for f in link_flags)
     needs_separate_dwarf = any("SEPARATE_DWARF" in f for f in link_flags)
-    if not uses_asyncify and not uses_jspi and not needs_separate_dwarf:
-        if _fast_link(sketch_object, cached_wasm, build_dir, library_archive, verbose):
+    if not uses_asyncify and not needs_separate_dwarf:
+        if _fast_link(
+            sketch_object, cached_wasm, build_dir, mode, library_archive, verbose
+        ):
             _copy_linked_output(sketch_cache_dir, output_js)
             print(f"[WASM] Output: {output_js}")
             return True
@@ -1133,10 +1287,12 @@ def link_wasm(
         cached_wasm,
         build_dir,
         str(PROJECT_ROOT),
+        mode,
         library_archive,
     )
     if rc != 0:
         print(f"[WASM] Linking failed with return code {rc}")
+        _clear_linked_output(sketch_cache_dir, output_js)
         return False
 
     # Cache JS glue for fast re-linking (identical across all sketches)
@@ -1173,6 +1329,21 @@ def _copy_linked_output(sketch_cache_dir: Path, output_js: Path) -> None:
             "fastled.wasm",
         ):
             shutil.copy2(str(f), str(output_dir / f.name))
+
+
+def _clear_linked_output(sketch_cache_dir: Path, output_js: Path) -> None:
+    """Remove stale linked artifacts after a hard link failure."""
+    output_dir = output_js.parent
+    stale_paths = [
+        sketch_cache_dir / "fastled.js",
+        sketch_cache_dir / "fastled.wasm",
+        sketch_cache_dir / "fastled.wasm.dwarf",
+        output_js,
+        output_js.with_suffix(".wasm"),
+        output_dir / "fastled.wasm.dwarf",
+    ]
+    for path in stale_paths:
+        path.unlink(missing_ok=True)
 
 
 def _copy_from_dist(dist_dir: Path, output_dir: Path) -> None:
@@ -1235,45 +1406,10 @@ def _get_vite_source_mtime(template_dir: Path) -> float:
 
 
 def copy_templates(output_dir: Path) -> None:
-    """Copy template files to the output directory.
+    """Copy template files using the bundled esbuild frontend pipeline."""
+    from ci.esbuild_frontend import copy_dist_to_output
 
-    Requires Vite to build the TypeScript frontend into browser-runnable JS.
-    Caches the Vite build output — skips rebuild if sources haven't changed.
-    Raises RuntimeError if Vite build is not possible.
-    """
-    template_dir = PROJECT_ROOT / "src" / "platforms" / "wasm" / "compiler"
-
-    if not (template_dir / "node_modules").exists():
-        print("[WASM] Installing frontend dependencies (npm install)...")
-        rc = _run_npm(["install"], cwd=template_dir)
-        if rc != 0:
-            raise RuntimeError("npm install failed")
-
-    dist_dir = template_dir / "dist"
-    # Check if output_dir already has Vite assets and they're up-to-date
-    output_index = output_dir / "index.html"
-    needs_build = True
-    if dist_dir.exists() and output_index.exists():
-        source_mtime = _get_vite_source_mtime(template_dir)
-        output_mtime = output_index.stat().st_mtime
-        if source_mtime <= output_mtime:
-            needs_build = False
-
-    if needs_build:
-        print("[WASM] Building frontend with Vite...")
-        rc = _run_npx(["vite", "build"], cwd=template_dir)
-        if rc != 0:
-            raise RuntimeError("Vite build failed")
-
-        if not dist_dir.exists():
-            raise RuntimeError(
-                "Vite build succeeded but dist/ directory was not created."
-            )
-
-        print("[WASM] Copying Vite build output...")
-        _copy_from_dist(dist_dir, output_dir)
-    else:
-        print("[WASM] Frontend assets up-to-date, skipping Vite build")
+    copy_dist_to_output(output_dir)
 
 
 def generate_manifest(example_name: str, output_dir: Path) -> None:
