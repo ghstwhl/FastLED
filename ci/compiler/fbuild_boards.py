@@ -27,12 +27,12 @@ FBUILD_BOARDS: frozenset[str] = frozenset(
         "esp32s3",
         "esp32c3",
         "esp32c6",
-        # "esp32c2",
-        # "esp32c5",
-        # "esp32p4",
+        "esp32c2",
+        "esp32c5",
+        "esp32p4",
         "esp32s2",
         "esp32h2",
-        # "upesy_wroom",
-        # "seeed_xiao_esp32s3",
+        "upesy_wroom",
+        "seeed_xiao_esp32s3",
     }
 )
