@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "fbuild>=2.1.10",
+    "fbuild>=2.1.12",
     "platformio==6.1.18",
     "python-dateutil",
     "ruff",
@@ -41,7 +41,7 @@ dependencies = [
     "ffmpeg-python>=0.2.0",
     "static-ffmpeg>=2.7",
     "fastled>=2.0.5",
-    "running-process>=1.1.6,<3.0.0",
+    "running-process>=3.0.6",
     "nodejs-wheel>=22.0.0",
     "daemoniker>=0.2.3",
     "colorama>=0.4.6",
