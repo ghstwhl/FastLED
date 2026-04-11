@@ -1,6 +1,6 @@
 // @filter
 // require:
-//   - platform: esp32,native,teensy
+//   - platform: esp32s3,esp32c6,esp32p4,teensy41,teensy40
 // exclude:
 //   - memory: low
 // @end-filter
